@@ -11,3 +11,9 @@ cards.forEach(card => {
 closeBtn.addEventListener('click', () => {
   overlay.classList.add('hidden');
 });
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    overlay.classList.add('hidden');
+  }
+});
