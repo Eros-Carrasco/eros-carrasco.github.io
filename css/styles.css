@@ -1,0 +1,79 @@
+/* ===== BASE ===== */
+body {
+  margin: 0;
+  background: #0e0e0e;
+  color: white;
+  font-family: system-ui, sans-serif;
+}
+
+/* ===== GRID ===== */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  padding: 40px;
+}
+
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== CARD ===== */
+.card {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.card:hover {
+  outline: 1px solid rgba(255,255,255,0.25);
+}
+
+.card-media {
+  height: 240px;
+  background: #222;
+}
+
+.card-info {
+  padding: 16px;
+}
+
+/* ===== TAGS ===== */
+.tags span {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-right: 8px;
+}
+
+/* ===== OVERLAY ICON ===== */
+.card-overlay-icon {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  opacity: 0;
+}
+
+.card:hover .card-overlay-icon {
+  opacity: 1;
+}
+
+/* ===== OVERLAY ===== */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.95);
+  z-index: 100;
+}
+
+.hidden {
+  display: none;
+}
