@@ -45,7 +45,7 @@ body {
 
 /* ===== CARD MEDIA ===== */
 .card-media {
-  height: clamp(180px, 22vh, 260px);
+  height: clamp(150px, 18vh, 200px);
   background: #222;
 }
 
