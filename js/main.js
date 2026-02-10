@@ -17,3 +17,17 @@ document.addEventListener('keydown', (e) => {
     overlay.classList.add('hidden');
   }
 });
+
+document.querySelectorAll('.card').forEach(card => {
+  const video = card.querySelector('video');
+  if (!video) return;
+
+  card.addEventListener('mouseenter', () => {
+    video.currentTime = 0;
+    video.play();
+  });
+
+  card.addEventListener('mouseleave', () => {
+    video.pause();
+  });
+});
