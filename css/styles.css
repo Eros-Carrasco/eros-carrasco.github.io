@@ -11,7 +11,7 @@ body {
 .grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  gap: 20px;
 
   min-height: 100vh;
   padding: 32px; /* antes 40px */
@@ -51,7 +51,7 @@ body {
 
 /* ===== CARD INFO ===== */
 .card-info {
-  padding: 14px 16px;
+  padding: 10px 14px;
 }
 
 .card-info h3 {
