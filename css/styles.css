@@ -1,6 +1,7 @@
 /* ===== BASE ===== */
 body {
   margin: 0;
+  min-height: 100vh;
   background: #0e0e0e;
   color: white;
   font-family: system-ui, sans-serif;
@@ -11,9 +12,13 @@ body {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
-  padding: 40px;
+
+  min-height: 100vh;
+  padding: 32px; /* antes 40px */
+  box-sizing: border-box;
 }
 
+/* Breakpoints */
 @media (max-width: 1024px) {
   .grid {
     grid-template-columns: repeat(2, 1fr);
@@ -35,16 +40,23 @@ body {
 }
 
 .card:hover {
-  outline: 1px solid rgba(255,255,255,0.25);
+  outline: 1px solid rgba(255, 255, 255, 0.18);
 }
 
+/* ===== CARD MEDIA ===== */
 .card-media {
-  height: 240px;
+  height: clamp(180px, 22vh, 260px);
   background: #222;
 }
 
+/* ===== CARD INFO ===== */
 .card-info {
-  padding: 16px;
+  padding: 14px 16px;
+}
+
+.card-info h3 {
+  margin: 0 0 6px 0;
+  font-size: 18px;
 }
 
 /* ===== TAGS ===== */
@@ -52,6 +64,7 @@ body {
   font-size: 12px;
   opacity: 0.7;
   margin-right: 8px;
+  white-space: nowrap;
 }
 
 /* ===== OVERLAY ICON ===== */
@@ -60,17 +73,20 @@ body {
   top: 12px;
   right: 12px;
   opacity: 0;
+  font-size: 14px;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .card:hover .card-overlay-icon {
   opacity: 1;
+  transform: scale(1.05);
 }
 
 /* ===== OVERLAY ===== */
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.95);
+  background: rgba(0, 0, 0, 0.95);
   z-index: 100;
 }
 
