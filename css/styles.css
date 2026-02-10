@@ -37,10 +37,12 @@ body {
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
+  background: #111;
 }
 
 .card:hover {
-  outline: 1px solid rgba(255, 255, 255, 0.18);
+  outline: 1px solid rgba(255, 255, 255, 0.25);
+  outline-offset: -1px; /* 👈 hace que se vea encima del video */
 }
 
 /* ===== CARD MEDIA ===== */
@@ -48,6 +50,9 @@ body {
   position: relative;
   overflow: hidden;
   background: #222;
+
+  /* 👇 IMPORTANTE: define altura del area media */
+  height: clamp(150px, 18vh, 200px);
 }
 
 .card-media video,
@@ -56,10 +61,14 @@ body {
   height: 100%;
   object-fit: cover;
   display: block;
+
+  /* 👇 IMPORTANTE: evita que el video “capture” el mouse */
+  pointer-events: none;
 }
 
 /* ===== CARD INFO ===== */
 .card-info {
+  background: #0e0e0e; /* 👈 bloque negro sólido */
   padding: 6px 16px;
 }
 
