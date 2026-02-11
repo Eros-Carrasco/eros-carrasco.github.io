@@ -53,7 +53,8 @@ body {
      Puedes usar aspect-ratio o una altura fija. 
      Dado que te gustaba el tamaño anterior (aprox 200px media + 60px info),
      podemos fijar una altura total o un aspect-ratio. */
-  height: 280px; /* O usa: aspect-ratio: 3/4; para que sea responsiva */
+  /* height: 280px; O usa: aspect-ratio: 3/4; para que sea responsiva */
+  aspect-ratio: 3 / 4;
 }
 
 /* ... hover styles ... */
@@ -115,7 +116,8 @@ body {
 }
 
 .card:hover .card-overlay-icon {
-  outline: 5px solid var(--card-accent);
+  box-shadow: 0 0 0 1.5px var(--card-accent),
+              0 0 20px rgba(0,0,0,0.4);
   transform: scale(1.05);
 }
 
