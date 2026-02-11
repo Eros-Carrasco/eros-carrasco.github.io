@@ -163,3 +163,9 @@ body {
   --card-accent: #ff6b6b;
   --card-bg: #562626;
 }
+
+.tags span:not(:last-child)::after {
+  content: " — ";
+  opacity: 0.6;
+  margin: 0 4px;
+}
