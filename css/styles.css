@@ -55,7 +55,8 @@ body {
      podemos fijar una altura total o un aspect-ratio. */
   /* height: 280px; O usa: aspect-ratio: 3/4; para que sea responsiva */
   /* aspect-ratio: 3 / 8; */
-  height: 320px
+  height: 320px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 /* ... hover styles ... */
