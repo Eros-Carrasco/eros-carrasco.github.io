@@ -16,9 +16,8 @@ body {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
-
   min-height: 100vh;
-  padding: 32px; /* antes 40px */
+  padding: 32px;
   box-sizing: border-box;
 }
 
@@ -42,39 +41,36 @@ body {
   overflow: hidden;
   cursor: pointer;
   background: #111;
+
   --card-accent: #888;
   --card-bg: #0e0e0e;
 
-  /* 👇 CAMBIO 1: Convertimos la tarjeta en un contenedor Flex vertical */
   display: flex;
   flex-direction: column;
-  
-  /* 👇 CAMBIO 2: Definimos la altura AQUÍ en lugar de en la imagen.
-     Puedes usar aspect-ratio o una altura fija. 
-     Dado que te gustaba el tamaño anterior (aprox 200px media + 60px info),
-     podemos fijar una altura total o un aspect-ratio. */
-  /* height: 280px; O usa: aspect-ratio: 3/4; para que sea responsiva */
-  /* aspect-ratio: 3 / 8; */
+
   height: 320px;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+
+  transition: 
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
 }
 
-/* ... hover styles ... */
+/* 🔥 HOVER REAL */
+.card:hover {
+  transform: scale(1.03);
+  box-shadow:
+    0 0 0 2px var(--card-accent),
+    0 15px 35px rgba(0,0,0,0.4);
+}
 
 /* ===== CARD MEDIA ===== */
 .card-media {
   position: relative;
   overflow: hidden;
   background: #222;
-
-  /* 👇 CAMBIO 3: Quitamos la altura fija y usamos flex */
-  /* height: clamp(150px, 18vh, 200px);  <-- ELIMINAR ESTO */
-  
-  flex: 1; /* Esto dice: "Ocupa todo el espacio que sobre" */
-  
-  /* Mantiene la imagen contenida correctamente */
-  display: flex; 
-  min-height: 0; 
+  flex: 1;
+  display: flex;
+  min-height: 0;
 }
 
 .card-media video,
@@ -90,8 +86,6 @@ body {
 .card-info {
   background: var(--card-bg);
   padding: 12px 16px;
-  /* Ya no necesitas nada más, el flex padre lo empuja al fondo
-     porque el media de arriba tiene flex: 1 */
 }
 
 .card-info h3 {
@@ -107,6 +101,12 @@ body {
   white-space: nowrap;
 }
 
+.tags span:not(:last-child)::after {
+  content: " — ";
+  opacity: 0.6;
+  margin: 0 4px;
+}
+
 /* ===== OVERLAY ICON ===== */
 .card-overlay-icon {
   position: absolute;
@@ -114,16 +114,18 @@ body {
   right: 12px;
   opacity: 0;
   font-size: 14px;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: 
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
+/* Icon aparece en hover */
 .card:hover .card-overlay-icon {
-  box-shadow: 0 0 0 1.5px var(--card-accent),
-              0 0 20px rgba(0,0,0,0.4);
-  transform: scale(1.05);
+  opacity: 1;
+  transform: scale(1.1);
 }
 
-/* ===== OVERLAY ===== */
+/* ===== OVERLAY FULLSCREEN ===== */
 .overlay {
   position: fixed;
   inset: 0;
@@ -135,6 +137,7 @@ body {
   display: none;
 }
 
+/* ===== PROJECT COLORS ===== */
 .card[data-project="transfr"] {
   --card-accent: #5ddcff;
   --card-bg: #1d3d4f;
@@ -163,10 +166,4 @@ body {
 .card[data-project="multiplayer"] {
   --card-accent: #ff6b6b;
   --card-bg: #562626;
-}
-
-.tags span:not(:last-child)::after {
-  content: " — ";
-  opacity: 0.6;
-  margin: 0 4px;
 }
