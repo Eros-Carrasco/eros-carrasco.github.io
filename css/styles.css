@@ -15,9 +15,7 @@ body {
   min-height: 100vh;
   padding: 32px;
   box-sizing: border-box;
-  
-  /* 👇 CRUCIAL: evita que las cards se estiren para llenar el 100vh */
-  align-items: start; 
+  /* El grid estira las cards por defecto, lo cual mantendremos */
 }
 
 /* Breakpoints */
@@ -40,7 +38,10 @@ body {
   overflow: hidden;
   cursor: pointer;
   background: #111;
-  /* Elimina cualquier height fijo si existiera */
+
+  /* 👇 Convierte la card en un motor flexible */
+  display: flex;
+  flex-direction: column;
 }
 
 .card:hover {
@@ -53,14 +54,17 @@ body {
   position: relative;
   overflow: hidden;
   background: #222;
-  height: clamp(150px, 18vh, 200px);
+
+  /* 👇 MAGIA: "flex: 1" le dice que se estire todo lo que el grid pida */
+  flex: 1; 
 }
 
 .card-media video,
 .card-media img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  /* 👇 Mantiene la imagen perfecta sin importar cuánto se estire la card */
+  object-fit: cover; 
   display: block;
   pointer-events: none;
 }
@@ -68,11 +72,14 @@ body {
 /* ===== CARD INFO ===== */
 .card-info {
   background: #0e0e0e; 
-  padding: 12px 16px 16px 16px; /* Ajustado para que respire mejor abajo */
+  padding: 12px 16px;
+  
+  /* 👇 Evita que la zona de info se deforme; siempre mide lo mismo */
+  flex-shrink: 0; 
 }
 
 .card-info h3 {
-  margin: 0 0 4px 0; /* Menos espacio entre título y tags */
+  margin: 0 0 4px 0;
   font-size: 18px;
   line-height: 1.2;
 }
@@ -80,14 +87,12 @@ body {
 /* ===== TAGS ===== */
 .tags {
   display: flex;
-  flex-wrap: wrap;
   gap: 8px;
 }
 
 .tags span {
   font-size: 12px;
-  opacity: 0.6;
-  white-space: nowrap;
+  opacity: 0.7;
 }
 
 /* ===== OVERLAY ICON ===== */
@@ -98,6 +103,7 @@ body {
   opacity: 0;
   font-size: 14px;
   transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 10;
 }
 
 .card:hover .card-overlay-icon {
