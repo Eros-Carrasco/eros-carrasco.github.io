@@ -12,22 +12,16 @@ body {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
-  min-height: 100vh;
   padding: 32px;
   box-sizing: border-box;
 }
 
 /* Breakpoints */
 @media (max-width: 1024px) {
-  .grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  .grid { grid-template-columns: repeat(2, 1fr); }
 }
-
 @media (max-width: 640px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
+  .grid { grid-template-columns: 1fr; }
 }
 
 /* ===== CARD ===== */
@@ -36,13 +30,12 @@ body {
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
-  /* Cambiamos el fondo para que el espacio vacío sea igual al de la info */
-  background: #0e0e0e; 
-
-  /* 👇 Activa flex para mover la info al fondo */
-  display: flex;
-  flex-direction: column;
-  height: 100%; 
+  background: #0e0e0e; /* Fondo igual al de la info */
+  
+  /* Forzamos una altura mínima para que todas se vean imponentes */
+  /* como en tu captura de abajo */
+  min-height: 380px; 
+  display: block; /* Volvemos a block para evitar conflictos de flex */
 }
 
 .card:hover {
@@ -55,29 +48,32 @@ body {
   position: relative;
   overflow: hidden;
   background: #222;
-
-  /* 👇 Mantiene el tamaño que te gustó de la captura de abajo */
-  height: 240px; 
-  flex-shrink: 0; /* Evita que la imagen se intente encoger */
+  
+  /* 👇 ALTURA BLOQUEADA: No importa qué pase, medirá esto */
+  height: 220px; 
+  width: 100%;
 }
 
 .card-media video,
 .card-media img {
   width: 100%;
   height: 100%;
-  /* 👇 Recorta la imagen para que quepa en el espacio sin estirarse */
-  object-fit: cover; 
+  object-fit: cover; /* Recorta la imagen para que encaje sin estirarse */
   display: block;
-  pointer-events: none;
 }
 
 /* ===== CARD INFO ===== */
 .card-info {
-  background: #0e0e0e; 
+  background: #0e0e0e;
   padding: 16px;
   
-  /* 👇 EMPUJA ESTA CAJA HASTA EL FONDO DE LA CARD */
-  margin-top: auto; 
+  /* 👇 POSICIÓN ABSOLUTA: Esto la manda al fondo sí o sí */
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  
+  z-index: 2;
 }
 
 .card-info h3 {
@@ -90,7 +86,6 @@ body {
 .tags {
   display: flex;
   gap: 8px;
-  flex-wrap: wrap;
 }
 
 .tags span {
@@ -103,25 +98,21 @@ body {
   position: absolute;
   top: 12px;
   right: 12px;
-  opacity: 0;
   font-size: 14px;
-  transition: opacity 0.2s ease, transform 0.2s ease;
   z-index: 10;
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
 .card:hover .card-overlay-icon {
   opacity: 1;
-  transform: scale(1.05);
 }
 
-/* ===== OVERLAY ===== */
+/* ===== OVERLAY (MODAL) ===== */
 .overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.95);
   z-index: 100;
 }
-
-.hidden {
-  display: none;
-}
+.hidden { display: none; }
