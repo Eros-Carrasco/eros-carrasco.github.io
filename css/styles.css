@@ -4,8 +4,8 @@ body {
   min-height: 100vh;
   background: radial-gradient(
     circle at top,
-    #141414 0%,
-    #0b0b0b 60%
+    #0755dc 0%,
+    #008ecb 60%
   );
   color: white;
   font-family: system-ui, sans-serif;
@@ -115,7 +115,7 @@ body {
 }
 
 .card:hover .card-overlay-icon {
-  outline: 2px solid var(--card-accent);
+  outline: 5px solid var(--card-accent);
   transform: scale(1.05);
 }
 
@@ -133,30 +133,30 @@ body {
 
 .card[data-project="transfr"] {
   --card-accent: #5ddcff;
-  --card-bg: #0b1216;
+  --card-bg: #1d3d4f;
 }
 
 .card[data-project="about"] {
   --card-accent: #ffffff;
-  --card-bg: #111111;
+  --card-bg: #354b53;
 }
 
 .card[data-project="procedural"] {
   --card-accent: #3bd16f;
-  --card-bg: #0f1b14;
+  --card-bg: #104827;
 }
 
 .card[data-project="mocap"] {
   --card-accent: #ff9f43;
-  --card-bg: #1a120a;
+  --card-bg: #6c4116;
 }
 
 .card[data-project="ml"] {
   --card-accent: #5da9ff;
-  --card-bg: #121826;
+  --card-bg: #523c74;
 }
 
 .card[data-project="multiplayer"] {
   --card-accent: #ff6b6b;
-  --card-bg: #1a0e0e;
+  --card-bg: #562626;
 }
