@@ -40,46 +40,52 @@ body {
   cursor: pointer;
   background: #111;
 
-  /* Flex vertical: La estructura para que no haya huecos */
+  /* Estructura Flex Vertical */
   display: flex;
   flex-direction: column; 
   height: 100%; 
 }
 
-.card:hover {
-  outline: 4px solid rgba(255, 255, 255, 0.25);
-  outline-offset: -1px;
-}
-
-/* ===== CARD MEDIA (IMAGEN) ===== */
+/* ===== CARD MEDIA ===== */
 .card-media {
+  /* 👇 1. Le damos una altura base para que siempre exista (ej. 200px) */
+  /* y le permitimos crecer (flex-grow: 1) para llenar huecos vacíos */
+  flex-grow: 1;
+  flex-basis: 200px; 
+  
   position: relative;
   overflow: hidden;
   background: #222;
-
-  /* 👇 Define una altura base MÍNIMA, pero deja que crezca */
-  /* Esto asegura que siempre se vea algo de imagen, pero flex: 1 rellena el resto */
-  min-height: 200px; 
-  flex: 1; 
+  width: 100%;
 }
 
 .card-media video,
 .card-media img {
+  /* 👇 2. ESTO ES LO QUE FALTABA: */
+  /* Posición absoluta para que la imagen NO EMPUJE el tamaño de la tarjeta. */
+  /* Simplemente se adapta al tamaño que tenga el contenedor .card-media */
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  /* 👇 CORTE PERFECTO: La imagen llena el área sin deformarse */
+  
   object-fit: cover; 
   display: block;
   pointer-events: none;
 }
 
-/* ===== CARD INFO (TEXTO) ===== */
+/* ===== CARD INFO ===== */
 .card-info {
   background: #0e0e0e; 
   padding: 16px;
   
-  /* 👇 RÍGIDO: Esto se queda abajo y empuja a la imagen hacia arriba */
+  /* La info manda, no se encoge */
   flex-shrink: 0; 
+  
+  /* Asegura que esté siempre encima del contenido */
+  position: relative; 
+  z-index: 2;
 }
 
 .card-info h3 {
