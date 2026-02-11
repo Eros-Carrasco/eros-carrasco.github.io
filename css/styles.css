@@ -5,7 +5,7 @@ body {
   background: radial-gradient(
     circle at top,
     #3d4553 0%,
-    #008ecb 60%
+    #144d65 60%
   );
   color: white;
   font-family: system-ui, sans-serif;
@@ -54,7 +54,8 @@ body {
      Dado que te gustaba el tamaño anterior (aprox 200px media + 60px info),
      podemos fijar una altura total o un aspect-ratio. */
   /* height: 280px; O usa: aspect-ratio: 3/4; para que sea responsiva */
-  aspect-ratio: 3 / 8;
+  /* aspect-ratio: 3 / 8; */
+  height: 360px
 }
 
 /* ... hover styles ... */
