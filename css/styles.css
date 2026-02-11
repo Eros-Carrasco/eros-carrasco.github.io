@@ -12,8 +12,16 @@ body {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
+  min-height: 100vh;
   padding: 32px;
   box-sizing: border-box;
+
+  /* 👇 ESTO ES LO QUE FALTABA PARA QUE NO SEAN GIGANTES */
+  /* Le dice al grid: "Acomoda las filas al inicio, no las estires por toda la pantalla" */
+  align-content: start; 
+  
+  /* Asegura que todas las tarjetas de una misma fila tengan la misma altura */
+  align-items: stretch; 
 }
 
 /* Breakpoints */
@@ -24,7 +32,7 @@ body {
   .grid { grid-template-columns: 1fr; }
 }
 
-/* ===== CARD (Contenedor Flexible) ===== */
+/* ===== CARD ===== */
 .card {
   position: relative;
   border-radius: 12px;
@@ -32,11 +40,9 @@ body {
   cursor: pointer;
   background: #111;
 
-  /* 👇 1. Activa el modo columna para apilar Imagen + Info */
+  /* Flex vertical: La estructura para que no haya huecos */
   display: flex;
   flex-direction: column; 
-  
-  /* 👇 2. Obliga a la tarjeta a usar toda la altura que el Grid le da */
   height: 100%; 
 }
 
@@ -45,45 +51,36 @@ body {
   outline-offset: -1px;
 }
 
-/* ===== CARD MEDIA (La parte elástica) ===== */
+/* ===== CARD MEDIA (IMAGEN) ===== */
 .card-media {
   position: relative;
   overflow: hidden;
   background: #222;
 
-  /* 👇 3. CRUCIAL: Esto dice "ocupa TODO el espacio sobrante" */
-  /* Si hay hueco negro, la imagen crecerá para taparlo */
+  /* 👇 Define una altura base MÍNIMA, pero deja que crezca */
+  /* Esto asegura que siempre se vea algo de imagen, pero flex: 1 rellena el resto */
+  min-height: 200px; 
   flex: 1; 
-  
-  /* Asegúrate de NO tener un height fijo aquí (bórralo si tienes height: 240px) */
-  width: 100%;
 }
 
 .card-media video,
 .card-media img {
   width: 100%;
   height: 100%;
-  
-  /* 👇 4. Mantiene la foto bonita: recorta los bordes si se hace muy alta,
-     pero NUNCA se deforma ni se estira feo */
+  /* 👇 CORTE PERFECTO: La imagen llena el área sin deformarse */
   object-fit: cover; 
-  
   display: block;
   pointer-events: none;
 }
 
-/* ===== CARD INFO (La base fija) ===== */
+/* ===== CARD INFO (TEXTO) ===== */
 .card-info {
   background: #0e0e0e; 
-  padding: 16px; /* Ajusta el padding a tu gusto */
+  padding: 16px;
   
-  /* 👇 5. Evita que la info se aplaste o estire. Solo mide lo que ocupa el texto. */
+  /* 👇 RÍGIDO: Esto se queda abajo y empuja a la imagen hacia arriba */
   flex-shrink: 0; 
-  
-  /* IMPORTANTE: Borra 'position: absolute' o 'margin-top: auto' de aquí */
 }
-
-/* ... el resto de tus estilos (h3, tags, overlay, etc.) siguen igual ... */
 
 .card-info h3 {
   margin: 0 0 4px 0;
@@ -95,6 +92,7 @@ body {
 .tags {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .tags span {
@@ -107,17 +105,17 @@ body {
   position: absolute;
   top: 12px;
   right: 12px;
-  font-size: 14px;
-  z-index: 10;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  font-size: 14px;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 10;
 }
 
 .card:hover .card-overlay-icon {
   opacity: 1;
+  transform: scale(1.05);
 }
 
-/* ===== OVERLAY (MODAL) ===== */
 .overlay {
   position: fixed;
   inset: 0;
