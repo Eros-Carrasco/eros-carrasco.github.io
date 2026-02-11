@@ -24,18 +24,20 @@ body {
   .grid { grid-template-columns: 1fr; }
 }
 
-/* ===== CARD ===== */
+/* ===== CARD (Contenedor Flexible) ===== */
 .card {
   position: relative;
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
-  background: #0e0e0e; /* Fondo igual al de la info */
+  background: #111;
+
+  /* 👇 1. Activa el modo columna para apilar Imagen + Info */
+  display: flex;
+  flex-direction: column; 
   
-  /* Forzamos una altura mínima para que todas se vean imponentes */
-  /* como en tu captura de abajo */
-  min-height: 380px; 
-  display: block; /* Volvemos a block para evitar conflictos de flex */
+  /* 👇 2. Obliga a la tarjeta a usar toda la altura que el Grid le da */
+  height: 100%; 
 }
 
 .card:hover {
@@ -43,14 +45,17 @@ body {
   outline-offset: -1px;
 }
 
-/* ===== CARD MEDIA ===== */
+/* ===== CARD MEDIA (La parte elástica) ===== */
 .card-media {
   position: relative;
   overflow: hidden;
   background: #222;
+
+  /* 👇 3. CRUCIAL: Esto dice "ocupa TODO el espacio sobrante" */
+  /* Si hay hueco negro, la imagen crecerá para taparlo */
+  flex: 1; 
   
-  /* 👇 ALTURA BLOQUEADA: No importa qué pase, medirá esto */
-  height: 220px; 
+  /* Asegúrate de NO tener un height fijo aquí (bórralo si tienes height: 240px) */
   width: 100%;
 }
 
@@ -58,23 +63,27 @@ body {
 .card-media img {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* Recorta la imagen para que encaje sin estirarse */
+  
+  /* 👇 4. Mantiene la foto bonita: recorta los bordes si se hace muy alta,
+     pero NUNCA se deforma ni se estira feo */
+  object-fit: cover; 
+  
   display: block;
+  pointer-events: none;
 }
 
-/* ===== CARD INFO ===== */
+/* ===== CARD INFO (La base fija) ===== */
 .card-info {
-  background: #0e0e0e;
-  padding: 16px;
+  background: #0e0e0e; 
+  padding: 16px; /* Ajusta el padding a tu gusto */
   
-  /* 👇 POSICIÓN ABSOLUTA: Esto la manda al fondo sí o sí */
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  /* 👇 5. Evita que la info se aplaste o estire. Solo mide lo que ocupa el texto. */
+  flex-shrink: 0; 
   
-  z-index: 2;
+  /* IMPORTANTE: Borra 'position: absolute' o 'margin-top: auto' de aquí */
 }
+
+/* ... el resto de tus estilos (h3, tags, overlay, etc.) siguen igual ... */
 
 .card-info h3 {
   margin: 0 0 4px 0;
