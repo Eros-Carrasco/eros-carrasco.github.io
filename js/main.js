@@ -7,37 +7,67 @@ let lastFocusedEl = null;
 // ----- 1) PROJECT DATA (edit this per card) -----
 const PROJECTS = {
   transfr: {
-    title: "VR Career Exploration Simulations – Transfr",
+    title: "Career Exploration XR Simulations – Transfr",
     subtitle:
-      "Designed and developed production-ready career exploration experiences in Unity, focused on clear guided interactions, accessibility, and real-world deployment.",
-    pills: ["Unity", "XR Production", "Interaction Design", "Accessibility"],
+      "Designed and developed five full-scale career exploration simulations in Unity, owning narrative design, interaction systems, and production implementation from concept to deployment.",
+
+    pills: [
+      "Unity Production",
+      "XR Interaction Systems",
+      "Narrative Design",
+      "Accessibility",
+      "Localization Pipeline"
+    ],
+
     hero: {
-      type: "video",
+      type: "iframe",
       src: "assets/videos/card_transfr_1.mp4",
-      poster: "", // optional
+      // src: "https://player.vimeo.com/video/YOUR_FULL_SHOWCASE_VIDEO",
+      title: "Transfr Showcase Reel"
     },
+
     context: [
-      "Built multiple career exploration simulations aligned with classroom deployment needs.",
-      "Worked within established SDK workflows and collaborated across disciplines (PM, QA, SMEs, engineers).",
+      "Led the design and development of five CE2 simulations from the ground up.",
+      "Collaborated with product managers, SDK engineers, QA, and subject matter experts in a production environment.",
+      "Built for real classroom deployment and large-scale educational use."
     ],
+
     role: [
-      "Led XR development and experience design within Unity.",
-      "Built complex interactions using Transfr’s SDK and maintained clean guided user flow.",
-      "Implemented accessibility features such as height adjustment and closed captions.",
-      "Contributed SDK feedback, bug reports, and workflow improvements.",
+      "Owned narrative structure, experience flow, and interaction design.",
+      "Designed and implemented complex mechanics using Transfr’s internal SDK.",
+      "Managed full scene building and 3D asset integration in Unity.",
+      "Iterated through production reviews and stakeholder feedback cycles.",
+      "Delivered polished, deployment-ready XR simulations."
     ],
+
     technical: [
-      "Interaction architecture and state management",
-      "Performance-minded scene building and content optimization",
-      "Localization-ready content structure (EN ↔ ES workflows)",
-      "Iterative QA collaboration and polish passes",
+      "Interaction architecture & state management",
+      "Guided user flow design (no-fail CE structure)",
+      "Performance optimization for large-scale environments",
+      "Accessibility systems (height adjustment + closed captions)",
+      "Cross-functional iteration within structured SDK workflows"
     ],
-    // Transfr: mostly video-based. Keep gallery optional:
+
+    production: [
+      "CE2: Settle an Insurance Claim – Claims Adjuster",
+      "CE2: Perform a Professional Facial Treatment – Cosmetologist",
+      "CE2: Repair Diesel Farm Equipment – Diesel Technician",
+      "CE2: Assemble Components of an EV Battery – EV Battery Manufacturing Technician",
+      "CE2: Replace an EV Battery – Electric Vehicle Service Technician"
+    ],
+
+    localization: [
+      "Localized over 30 Career Exploration simulations into Spanish.",
+      "Refined and documented localization workflows for internal teams.",
+      "Trained SDK-Support team members on localization processes.",
+      "Fixed retroactive bugs across the CE2 library (Aug–Oct 2024 releases)."
+    ],
+
     gallery: [
-      // Add screenshots when you have them:
-      // { thumb: "assets/images/transfr_01.jpg", full: "assets/images/transfr_01.jpg", alt: "Interaction close-up" },
+      // add 6–8 strong screenshots later
     ],
-    demo: null, // no embedded demo for transfr
+
+    demo: null
   },
 
   procedural: {
@@ -126,7 +156,9 @@ const PROJECTS = {
     pills: ["Unity", "Netcode", "Multiplayer"],
     hero: {
       type: "video",
-      src: "assets/videos/card_memberbot.mp4",
+      src: "https://vimeo.com/1164528040?share=copy&fl=sv&fe=ci",
+      // src: "assets/videos/card_memberbot.mp4",
+
       poster: "",
     },
     context: ["A focused prototype to explore networking + gameplay feel."],
@@ -188,14 +220,14 @@ function galleryHTML(gallery = []) {
   return `
     <div class="gallery">
       ${gallery
-        .map(
-          (img) => `
+      .map(
+        (img) => `
         <a href="${img.full}" target="_blank" rel="noopener">
           <img src="${img.thumb}" alt="${img.alt || ""}">
         </a>
       `
-        )
-        .join("")}
+      )
+      .join("")}
     </div>
   `;
 }
@@ -247,16 +279,15 @@ function renderProject(projectKey) {
         ${galleryHTML(p.gallery)}
       </section>
 
-      ${
-        p.demo
-          ? `
+      ${p.demo
+      ? `
         <section class="project-section span-2">
           <h2 class="section-title">Interactive Demo</h2>
           ${demoHTML(p.demo)}
         </section>
       `
-          : ""
-      }
+      : ""
+    }
     </div>
   `;
 }
@@ -299,12 +330,28 @@ document.addEventListener("keydown", (e) => {
 
 // ----- 5) CARD CLICKS -----
 document.querySelectorAll(".card").forEach((card) => {
+  const video = card.querySelector("video");
+
+  // ---- Hover behavior ----
+  if (video) {
+    card.addEventListener("mouseenter", () => {
+      video.currentTime = 0;
+      video.play();
+    });
+
+    card.addEventListener("mouseleave", () => {
+      video.pause();
+      video.currentTime = 0;
+    });
+  }
+
+  // ---- Click behavior ----
   card.addEventListener("click", () => {
     const key = card.getAttribute("data-project");
     openOverlay(key, card);
   });
 
-  // optional: allow keyboard open
+  // ---- Keyboard accessibility ----
   card.setAttribute("tabindex", "0");
   card.addEventListener("keydown", (e) => {
     if (e.key === "Enter" || e.key === " ") {
