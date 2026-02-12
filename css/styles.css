@@ -175,3 +175,227 @@ body {
 .card[data-project="multiplayer"] {
   --card-accent: #5ddcff;
 }
+
+/* ===== OVERLAY (FULLSCREEN PROJECT) ===== */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+
+  /* fade */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+
+  /* background */
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(10px);
+}
+
+.overlay.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* page container */
+.overlay-page {
+  height: 100%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+
+  /* spacing */
+  padding: 28px 22px 60px;
+  box-sizing: border-box;
+}
+
+/* inner width */
+.overlay-inner {
+  width: min(1080px, 100%);
+  margin: 0 auto;
+}
+
+/* top bar */
+.overlay-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 0;
+
+  /* subtle fade so button stays readable on hero */
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.65) 0%,
+    rgba(0,0,0,0) 100%
+  );
+}
+
+.overlay-close {
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(10, 17, 23, 0.55);
+  color: white;
+  border-radius: 999px;
+  padding: 10px 12px;
+  cursor: pointer;
+
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.overlay-close:hover {
+  transform: scale(1.05);
+  background: rgba(10, 17, 23, 0.75);
+  border-color: rgba(255,255,255,0.35);
+}
+
+/* hero */
+.project-hero {
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.project-hero-media {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: rgba(255,255,255,0.03);
+}
+
+.project-hero-media video,
+.project-hero-media img,
+.project-hero-media iframe {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: 0;
+  object-fit: cover;
+}
+
+.project-hero-caption {
+  padding: 16px 18px 18px;
+}
+
+.project-title {
+  margin: 0 0 6px 0;
+  font-size: 26px;
+  letter-spacing: -0.02em;
+}
+
+.project-subtitle {
+  margin: 0;
+  opacity: 0.8;
+  line-height: 1.5;
+}
+
+/* sections */
+.project-sections {
+  margin-top: 22px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.project-section {
+  border-radius: 18px;
+  padding: 18px 18px 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.section-title {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+/* two-column on desktop */
+@media (min-width: 900px) {
+  .project-sections {
+    grid-template-columns: 1.2fr 0.8fr;
+    align-items: start;
+  }
+  .project-section.span-2 {
+    grid-column: 1 / -1;
+  }
+}
+
+/* lists */
+.project-section ul {
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.6;
+  opacity: 0.9;
+}
+
+/* tags row */
+.project-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pill {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  opacity: 0.9;
+}
+
+/* gallery */
+.gallery {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (min-width: 900px) {
+  .gallery {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.gallery a {
+  display: block;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+}
+
+.gallery img {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.35s ease;
+}
+
+.gallery a:hover img {
+  transform: scale(1.05);
+}
+
+/* optional embed demo */
+.embed {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.3);
+}
+
+.embed iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
