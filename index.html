@@ -142,12 +142,19 @@
   </main>
 
   <!-- OVERLAY -->
-  <div id="overlay" class="overlay hidden">
-    <button class="close">×</button>
-    <div class="overlay-content">
-      <!-- injected content -->
+<div id="overlay" class="overlay">
+  <div class="overlay-page" role="dialog" aria-modal="true" aria-label="Project details">
+    <div class="overlay-inner">
+      <div class="overlay-topbar">
+        <button class="overlay-close" aria-label="Close">✕</button>
+      </div>
+
+      <div class="overlay-content">
+        <!-- injected content -->
+      </div>
     </div>
   </div>
+</div>
 
   <script src="js/main.js"></script>
 </body>
