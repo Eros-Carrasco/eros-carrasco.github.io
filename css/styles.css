@@ -260,7 +260,8 @@ body {
 
 .project-hero-media {
   width: 100%;
-  aspect-ratio: 16 / 9;
+  /* aspect-ratio: 16 / 9; */
+  height: clamp(280px, 50vh, 520px);
   background: rgba(255,255,255,0.03);
 }
 
