@@ -3,25 +3,24 @@ body {
   margin: 0;
   min-height: 100vh;
   background: radial-gradient(
-    circle at top,
-    #3d4553 0%,
-    #144d65 60%
+    circle at 40% 20%,
+    #0b3f5a 0%,
+    #0a1117 70%
   );
   color: white;
-  font-family: system-ui, sans-serif;
+  font-family: system-ui, -apple-system, sans-serif;
 }
 
 /* ===== GRID ===== */
 .grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  gap: 28px;
   min-height: 100vh;
-  padding: 32px;
+  padding: 40px;
   box-sizing: border-box;
 }
 
-/* Breakpoints */
 @media (max-width: 1024px) {
   .grid {
     grid-template-columns: repeat(2, 1fr);
@@ -37,37 +36,39 @@ body {
 /* ===== CARD ===== */
 .card {
   position: relative;
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
   cursor: pointer;
-  background: #111;
 
   --card-accent: #888;
-  --card-bg: #0e0e0e;
 
   display: flex;
   flex-direction: column;
 
   height: 320px;
 
+  background: #0f141b;
+
+  box-shadow: 
+    0 10px 25px rgba(0,0,0,0.35);
+
   transition: 
-    transform 0.25s ease,
-    box-shadow 0.25s ease;
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
-/* 🔥 HOVER REAL */
+/* ===== HOVER ===== */
 .card:hover {
-  transform: scale(1.03);
+  transform: translateY(-6px) scale(1.02);
   box-shadow:
-    0 0 0 2px var(--card-accent),
-    0 15px 35px rgba(0,0,0,0.4);
+    0 0 0 1.5px var(--card-accent),
+    0 20px 45px rgba(0,0,0,0.5);
 }
 
 /* ===== CARD MEDIA ===== */
 .card-media {
   position: relative;
   overflow: hidden;
-  background: #222;
   flex: 1;
   display: flex;
   min-height: 0;
@@ -79,47 +80,60 @@ body {
   height: 100%;
   object-fit: cover;
   display: block;
-  pointer-events: none;
+  transition: transform 0.5s ease;
 }
 
-/* ===== CARD INFO ===== */
+.card:hover .card-media video,
+.card:hover .card-media img {
+  transform: scale(1.05);
+}
+
+/* ===== CARD INFO (GRADIENT INTEGRADO) ===== */
 .card-info {
-  background: var(--card-bg);
-  padding: 12px 16px;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+
+  padding: 20px 18px;
+
+  background: linear-gradient(
+    to top,
+    rgba(10,17,23,0.95) 0%,
+    rgba(10,17,23,0.85) 40%,
+    rgba(10,17,23,0) 100%
+  );
 }
 
 .card-info h3 {
   margin: 0 0 6px 0;
   font-size: 18px;
+  font-weight: 600;
 }
 
-/* ===== TAGS ===== */
 .tags span {
   font-size: 12px;
-  opacity: 0.7;
-  margin-right: 8px;
+  opacity: 0.75;
   white-space: nowrap;
 }
 
 .tags span:not(:last-child)::after {
   content: " — ";
-  opacity: 0.6;
-  margin: 0 4px;
+  opacity: 0.5;
+  margin: 0 6px;
 }
 
 /* ===== OVERLAY ICON ===== */
 .card-overlay-icon {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 14px;
+  right: 14px;
   opacity: 0;
   font-size: 14px;
   transition: 
-    opacity 0.2s ease,
-    transform 0.2s ease;
+    opacity 0.25s ease,
+    transform 0.25s ease;
 }
 
-/* Icon aparece en hover */
 .card:hover .card-overlay-icon {
   opacity: 1;
   transform: scale(1.1);
@@ -137,33 +151,27 @@ body {
   display: none;
 }
 
-/* ===== PROJECT COLORS ===== */
+/* ===== PROJECT ACCENTS ===== */
 .card[data-project="transfr"] {
   --card-accent: #5ddcff;
-  --card-bg: #1d3d4f;
 }
 
 .card[data-project="about"] {
-  --card-accent: #ffffff;
-  --card-bg: #354b53;
+  --card-accent: #5ddcff;
 }
 
 .card[data-project="procedural"] {
-  --card-accent: #3bd16f;
-  --card-bg: #104827;
+  --card-accent: #5ddcff;
 }
 
 .card[data-project="mocap"] {
-  --card-accent: #ff9f43;
-  --card-bg: #6c4116;
+  --card-accent: #5ddcff;
 }
 
 .card[data-project="ml"] {
-  --card-accent: #5da9ff;
-  --card-bg: #523c74;
+  --card-accent: #5ddcff;
 }
 
 .card[data-project="multiplayer"] {
-  --card-accent: #ff6b6b;
-  --card-bg: #562626;
+  --card-accent: #5ddcff;
 }
