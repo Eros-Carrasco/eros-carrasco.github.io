@@ -175,9 +175,7 @@ const PROJECTS = {
     pills: ["Unity", "Netcode", "Multiplayer"],
     hero: {
       type: "video",
-      src: "https://vimeo.com/1164528040?share=copy&fl=sv&fe=ci",
-      // src: "assets/videos/card_memberbot.mp4",
-
+      src: "https://player.vimeo.com/video/1164528040",
       poster: "",
     },
     context: ["A focused prototype to explore networking + gameplay feel."],
@@ -350,9 +348,9 @@ function renderAbout(p) {
 
       ${p.links?.length
       ? `
-        <section class="project-section span-2">
+        <section class="project-section">
           <h2 class="section-title">Links</h2>
-          ${listHTML(p.links)}
+          ${linksHTML(p.links)}
         </section>
       `
       : ""
@@ -430,3 +428,23 @@ document.querySelectorAll(".card").forEach((card) => {
     }
   });
 });
+
+function linksHTML(links = []) {
+  if (!links.length) return "";
+
+  return `
+    <ul class="links-list">
+      ${links
+        .map(
+          (link) => `
+            <li>
+              <a href="${link.url}" target="_blank" rel="noopener">
+                ${link.label}
+              </a>
+            </li>
+          `
+        )
+        .join("")}
+    </ul>
+  `;
+}

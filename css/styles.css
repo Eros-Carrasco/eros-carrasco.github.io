@@ -400,3 +400,38 @@ body {
   border: 0;
   display: block;
 }
+
+.links-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.links-list li {
+  margin: 0;
+}
+
+.links-list a {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 999px;
+
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+
+  color: white;
+  text-decoration: none;
+  font-size: 13px;
+
+  transition: all 0.2s ease;
+}
+
+.links-list a:hover {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.2);
+  transform: translateY(-2px);
+}
