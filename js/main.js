@@ -112,8 +112,27 @@ const PROJECTS = {
       "Production collaboration + documentation"
     ],
     currentFocus: [],
-    links: [],
-    demo: null,
+    links: [
+      {
+        label: "Download CV",
+        url: "assets/CV_Resume.pdf",
+        type: "external"
+      },
+      {
+        label: "LinkedIn",
+        url: "https://www.linkedin.com/in/eros-carrasco/",
+        type: "external"
+      },
+      {
+        label: "GitHub",
+        url: "https://github.com/Eros-Carrasco",
+        type: "external"
+      },
+      {
+        label: "Email",
+        url: "mailto:ErosCarrasco11@gmail.com",
+        type: "external"
+      }],
   },
 
   mocap: {
@@ -244,10 +263,19 @@ function demoHTML(demo) {
   return "";
 }
 
+
 function renderProject(projectKey) {
   const p = PROJECTS[projectKey];
   if (!p) return `<p>Project not found.</p>`;
 
+  if (projectKey === "about") {
+    return renderAbout(p);
+  }
+
+  return renderStandardProject(p);
+}
+
+function renderStandardProject(p) {
   return `
     <div class="project-hero">
       ${heroHTML(p.hero)}
@@ -269,30 +297,9 @@ function renderProject(projectKey) {
         ${listHTML(p.role)}
       </section>
 
-      <div class="project-sections">
-      <section class="project-section">
-        <h2 class="section-title">Overview</h2>
-        ${listHTML(p.overview)}
-      </section>
-
-      <section class="project-section">
-        <h2 class="section-title">Production Experience</h2>
-        ${listHTML(p.productionExperience)}
-      </section>
-
       <section class="project-section span-2">
         <h2 class="section-title">Technical Focus</h2>
         ${listHTML(p.technical)}
-      </section>
-
-      <section class="project-section span-2">
-        <h2 class="section-title">Current Focus</h2>
-        ${listHTML(p.currentFocus)}
-      </section>
-
-      <section class="project-section span-2">
-        <h2 class="section-title">Links</h2>
-        ${listHTML(p.links)}
       </section>
 
       <section class="project-section span-2">
@@ -305,6 +312,47 @@ function renderProject(projectKey) {
         <section class="project-section span-2">
           <h2 class="section-title">Interactive Demo</h2>
           ${demoHTML(p.demo)}
+        </section>
+      `
+      : ""
+    }
+    </div>
+  `;
+}
+
+function renderAbout(p) {
+  return `
+    <div class="project-hero">
+      ${heroHTML(p.hero)}
+      <div class="project-hero-caption">
+        <h1 class="project-title">${p.title}</h1>
+        <p class="project-subtitle">${p.subtitle}</p>
+        ${pillsHTML(p.pills)}
+      </div>
+    </div>
+
+    <div class="project-sections">
+
+      <section class="project-section span-2">
+        <h2 class="section-title">Overview</h2>
+        ${listHTML(p.overview)}
+      </section>
+
+      <section class="project-section span-2">
+        <h2 class="section-title">Experience at Scale</h2>
+        ${listHTML(p.productionExperience)}
+      </section>
+
+      <section class="project-section">
+        <h2 class="section-title">Current Focus</h2>
+        ${listHTML(p.currentFocus)}
+      </section>
+
+      ${p.links?.length
+      ? `
+        <section class="project-section span-2">
+          <h2 class="section-title">Links</h2>
+          ${listHTML(p.links)}
         </section>
       `
       : ""
