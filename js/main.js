@@ -95,24 +95,24 @@ const PROJECTS = {
   },
 
   about: {
-    title: "About Eros Carrasco",
+    title: "Eros Carrasco",
     subtitle:
-      "Creative technologist focused on XR and interactive systems—bridging design, engineering, and production.",
-    pills: ["XR", "Unity", "WebXR", "NYU"],
+      "Creative Technologist at the intersection of XR and AI",
+    pills: ["NYU M.S.", "Production Experience"],
     hero: {
       type: "image",
       src: "assets/images/card_about.jpg",
     },
-    context: [
+    overview: [
       "Short bio, current focus, and what you’re building next."
     ],
-    role: [
+    productionExperience: [
       "XR development (Unity + WebXR)",
       "Interactive systems and tooling",
       "Production collaboration + documentation"
     ],
-    technical: [],
-    gallery: [],
+    currentFocus: [],
+    links: [],
     demo: null,
   },
 
@@ -269,9 +269,30 @@ function renderProject(projectKey) {
         ${listHTML(p.role)}
       </section>
 
+      <div class="project-sections">
+      <section class="project-section">
+        <h2 class="section-title">Overview</h2>
+        ${listHTML(p.overview)}
+      </section>
+
+      <section class="project-section">
+        <h2 class="section-title">Production Experience</h2>
+        ${listHTML(p.productionExperience)}
+      </section>
+
       <section class="project-section span-2">
         <h2 class="section-title">Technical Focus</h2>
         ${listHTML(p.technical)}
+      </section>
+
+      <section class="project-section span-2">
+        <h2 class="section-title">Current Focus</h2>
+        ${listHTML(p.currentFocus)}
+      </section>
+
+      <section class="project-section span-2">
+        <h2 class="section-title">Links</h2>
+        ${listHTML(p.links)}
       </section>
 
       <section class="project-section span-2">
