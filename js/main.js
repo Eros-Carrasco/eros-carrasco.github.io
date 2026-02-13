@@ -136,6 +136,12 @@ const PROJECTS = {
         url: "mailto:ErosCarrasco11@gmail.com",
         type: "external"
       }],
+
+    selectedRecognition: [{
+      title: "1st Place — NYU Data Science Bootcamp",
+      image: "assets/images/bootcampBadge.png",
+      link: "https://credentials.engineering.nyu.edu/7844a2f4-ff71-4ea0-a2c7-48d8b27766f9#acc.gz582Yac"
+    }]
   },
 
   mocap: {
@@ -355,6 +361,13 @@ function renderAbout(p) {
           <h2 class="section-title">Links</h2>
           ${linksHTML(p.links)}
         </section>
+
+        ${p.selectedRecognition?.length ? `
+  <section class="project-section span-2">
+    <h2 class="section-title">Selected Recognition</h2>
+    ${recognitionHTML(p.selectedRecognition)}
+  </section>
+` : ""}
       `
       : ""
     }
@@ -449,5 +462,20 @@ function linksHTML(links = []) {
       )
       .join("")}
     </ul>
+  `;
+}
+
+function recognitionHTML(items = []) {
+  if (!items.length) return "";
+
+  return `
+    <div class="recognition-list">
+      ${items.map(item => `
+        <a href="${item.link}" target="_blank" class="recognition-item">
+          <img src="${item.image}" alt="${item.title}" />
+          <span>${item.title}</span>
+        </a>
+      `).join("")}
+    </div>
   `;
 }
