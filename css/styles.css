@@ -253,9 +253,13 @@ body {
 .project-hero {
   border-radius: 18px;
   overflow: hidden;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  background: linear-gradient(
+    145deg,
+    rgba(255,255,255,0.04),
+    rgba(95, 192, 233, 0.11)
+  );
+
+  border:1.5px solid rgba(255,255,255,0.06);
 }
 
 .project-hero-media {
@@ -302,8 +306,14 @@ body {
 .project-section {
   border-radius: 18px;
   padding: 18px 18px 16px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.1);
+
+  background: linear-gradient(
+    145deg,
+    rgba(255,255,255,0.04),
+    rgba(95, 192, 233, 0.11)
+  );
+
+  border:1.5px solid rgba(255,255,255,0.06);
 }
 
 .section-title {

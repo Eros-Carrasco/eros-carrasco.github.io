@@ -108,12 +108,12 @@ const PROJECTS = {
       "I combine design ownership with strong technical execution, leading architecture decisions and complex interaction systems.",
       "I aim to work where ambitious, complex technologies are being built and pushed forward — currently expanding into AI-integrated interactive systems at NYU."
     ],
-    productionExperience: [
-      "Led the end-to-end development of five XR simulations in production environments.",
-      "Fully owned the design and technical direction of one complete simulation from ground up.",
-      "Architected custom interaction systems beyond standard SDK constraints.",
-      "Drove interaction direction through stakeholder reviews, delivering scalable production-ready experiences."
-    ],
+    // productionExperience: [
+    //   "Led the end-to-end development of five XR simulations in production environments.",
+    //   "Fully owned the design and technical direction of one complete simulation from ground up.",
+    //   "Architected custom interaction systems beyond standard SDK constraints.",
+    //   "Drove interaction direction through stakeholder reviews, delivering scalable production-ready experiences."
+    // ],
     currentFocus: ["Building AI-integrated XR systems through deep learning coursework at NYU, developing advanced interactive projects under Ken Perlin."],
     links: [
       {
@@ -343,11 +343,6 @@ function renderAbout(p) {
       <section class="project-section span-2">
         <h2 class="section-title">Overview</h2>
         ${listHTML(p.overview)}
-      </section>
-
-      <section class="project-section span-2">
-        <h2 class="section-title">Experience at Scale</h2>
-        ${listHTML(p.productionExperience)}
       </section>
 
       <section class="project-section">
