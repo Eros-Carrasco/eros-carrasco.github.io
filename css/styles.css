@@ -435,3 +435,37 @@ body {
   border-color: rgba(255,255,255,0.2);
   transform: translateY(-2px);
 }
+
+.recognition-list {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.recognition-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.recognition-item:hover {
+  transform: translateY(-2px);
+  background: rgba(255,255,255,0.08);
+}
+
+.recognition-item img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.recognition-item span {
+  font-weight: 500;
+}
