@@ -104,14 +104,17 @@ const PROJECTS = {
       src: "assets/images/card_about.jpg",
     },
     overview: [
-      "Short bio, current focus, and what you’re building next."
+      "Production-focused XR developer building interactive systems from concept to deployment.",
+      "I combine design ownership with strong technical execution, leading architecture decisions and complex interaction systems.",
+      "I aim to work where ambitious, complex technologies are being built and pushed forward — currently expanding into AI-integrated interactive systems at NYU."
     ],
     productionExperience: [
-      "XR development (Unity + WebXR)",
-      "Interactive systems and tooling",
-      "Production collaboration + documentation"
+      "Led the end-to-end development of five XR simulations in production environments.",
+      "Fully owned the design and technical direction of one complete simulation from ground up.",
+      "Architected custom interaction systems beyond standard SDK constraints.",
+      "Drove interaction direction through stakeholder reviews, delivering scalable production-ready experiences."
     ],
-    currentFocus: [],
+    currentFocus: ["Building AI-integrated XR systems through deep learning coursework at NYU, developing advanced interactive projects under Ken Perlin."],
     links: [
       {
         label: "Download CV",
@@ -174,7 +177,7 @@ const PROJECTS = {
       "Online multiplayer prototype exploring networking, interaction, and moment-to-moment feel.",
     pills: ["Unity", "Netcode", "Multiplayer"],
     hero: {
-      type: "video",
+      type: "iframe",
       src: "https://player.vimeo.com/video/1164528040",
       poster: "",
     },
@@ -435,16 +438,16 @@ function linksHTML(links = []) {
   return `
     <ul class="links-list">
       ${links
-        .map(
-          (link) => `
+      .map(
+        (link) => `
             <li>
               <a href="${link.url}" target="_blank" rel="noopener">
                 ${link.label}
               </a>
             </li>
           `
-        )
-        .join("")}
+      )
+      .join("")}
     </ul>
   `;
 }
