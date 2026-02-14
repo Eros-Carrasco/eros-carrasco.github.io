@@ -89,7 +89,7 @@ const PROJECTS = {
     demo: {
       type: "iframe",
       // Put your demo URL here. Could be WebXR / p5 / Unity WebGL build
-      src: "YOUR_DEMO_URL_HERE",
+      src: "unity-webgl/index.html",
       title: "Procedural Demo",
     },
   },
