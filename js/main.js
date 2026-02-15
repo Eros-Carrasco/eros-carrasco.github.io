@@ -118,7 +118,7 @@ const PROJECTS = {
     links: [
       {
         label: "Download CV",
-        url: "assets/CV_Resume.pdf",
+        url: "assets/Eros Carrasco - Resume.pdf",
         type: "external"
       },
       {
