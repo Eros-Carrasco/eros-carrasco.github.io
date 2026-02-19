@@ -6,65 +6,53 @@ let lastFocusedEl = null;
 
 // ----- 1) PROJECT DATA (edit this per card) -----
 const PROJECTS = {
+
   transfr: {
     title: "Career Exploration XR Simulations – Transfr",
     subtitle:
-      "Designed and developed five full-scale career exploration simulations in Unity, owning narrative design, interaction systems, and production implementation from concept to deployment.",
+      "Designed and developed five VR career exploration simulations in Unity, deployed in real educational environments.",
 
     pills: [
       "Unity Production",
-      "XR Interaction Systems",
-      "Narrative Design",
+      "XR Systems",
+      "Design Ownership",
       "Accessibility",
-      "Localization Pipeline"
+      "Localization"
     ],
 
     hero: {
-      type: "iframe",
+      type: "video",
       src: "assets/videos/card_transfr_1.mp4",
-      // src: "https://player.vimeo.com/video/YOUR_FULL_SHOWCASE_VIDEO",
       title: "Transfr Showcase Reel"
     },
 
-    context: [
-      "Led the design and development of five CE2 simulations from the ground up.",
-      "Collaborated with product managers, SDK engineers, QA, and subject matter experts in a production environment.",
-      "Built for real classroom deployment and large-scale educational use."
+    // 1️⃣ Scope — hard facts first
+    scope: [
+      "Developed 5 full-scale VR simulations introducing students to real-world careers.",
+      "Localized 30+ simulations into Spanish and formalized the company’s localization workflow.",
+      "Contributed to SDK feedback, bug detection, and cross-simulation stability improvements."
     ],
 
-    role: [
-      "Owned narrative structure, experience flow, and interaction design.",
-      "Designed and implemented complex mechanics using Transfr’s internal SDK.",
-      "Managed full scene building and 3D asset integration in Unity.",
-      "Iterated through production reviews and stakeholder feedback cycles.",
-      "Delivered polished, deployment-ready XR simulations."
+    // 2️⃣ Ownership — leadership clarity
+    ownership: [
+      "Led simulation design from initial research to final implementation.",
+      "Defined interaction systems, user flow, pacing, and required asset structure.",
+      "Implemented complex mechanics beyond standard SDK templates",
+      "Iterated with product managers, engineers, instructional designers, SMEs, and QA.",
+      "Delivered production-ready simulations used at scale in classrooms."
     ],
 
-    technical: [
-      "Interaction architecture & state management",
-      "Guided user flow design (no-fail CE structure)",
-      "Performance optimization for large-scale environments",
-      "Accessibility systems (height adjustment + closed captions)",
-      "Cross-functional iteration within structured SDK workflows"
-    ],
 
-    production: [
-      "CE2: Settle an Insurance Claim – Claims Adjuster",
-      "CE2: Perform a Professional Facial Treatment – Cosmetologist",
-      "CE2: Repair Diesel Farm Equipment – Diesel Technician",
-      "CE2: Assemble Components of an EV Battery – EV Battery Manufacturing Technician",
-      "CE2: Replace an EV Battery – Electric Vehicle Service Technician"
-    ],
 
-    localization: [
-      "Localized over 30 Career Exploration simulations into Spanish.",
-      "Refined and documented localization workflows for internal teams.",
-      "Trained SDK-Support team members on localization processes.",
-      "Fixed retroactive bugs across the CE2 library (Aug–Oct 2024 releases)."
+    // 4️⃣ Production Environment — real-world signal
+    productionEnvironment: [
+      "Collaborated cross-functionally with SDK engineers, product managers, instructional designers, SMEs, and QA.",
+      "Presented and defended design decisions during stakeholder reviews.",
+      "Adapted systems and scope based on technical, timeline, and resource constraints."
     ],
 
     gallery: [
-      // add 6–8 strong screenshots later
+      // screenshots when ready
     ],
 
     demo: null
@@ -279,6 +267,10 @@ function renderProject(projectKey) {
     return renderAbout(p);
   }
 
+  if (projectKey === "transfr") {
+    return renderTransfr(p);
+  }
+
   return renderStandardProject(p);
 }
 
@@ -366,6 +358,45 @@ function renderAbout(p) {
       `
       : ""
     }
+    </div>
+  `;
+}
+
+function renderTransfr(p) {
+  return `
+    <div class="project-hero">
+      ${heroHTML(p.hero)}
+      <div class="project-hero-caption">
+        <h1 class="project-title">${p.title}</h1>
+        <p class="project-subtitle">${p.subtitle}</p>
+        ${pillsHTML(p.pills)}
+      </div>
+    </div>
+
+    <div class="project-sections">
+
+      <section class="project-section span-2">
+        <h2 class="section-title">Impact</h2>
+        ${listHTML(p.scope)}
+      </section>
+
+      <section class="project-section span-2">
+        <h2 class="section-title">Responsibility</h2>
+        ${listHTML(p.ownership)}
+      </section>
+
+      <section class="project-section">
+        <h2 class="section-title">Production Environment</h2>
+        ${listHTML(p.productionEnvironment)}
+      </section>
+
+
+
+      <section class="project-section span-2">
+        <h2 class="section-title">Visual Gallery</h2>
+        ${galleryHTML(p.gallery)}
+      </section>
+
     </div>
   `;
 }
