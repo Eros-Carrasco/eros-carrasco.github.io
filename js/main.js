@@ -105,7 +105,7 @@ const PROJECTS = {
     currentFocus: ["Building AI-integrated XR systems through deep learning coursework at NYU, developing advanced interactive projects under Ken Perlin."],
     links: [
       {
-        label: "Download CV",
+        label: "Resume",
         url: "assets/Eros Carrasco - Resume.pdf",
         type: "external"
       },
