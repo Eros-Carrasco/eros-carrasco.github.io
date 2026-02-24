@@ -29,8 +29,8 @@ const PROJECTS = {
     // 1️⃣ Scope — hard facts first
     scope: [
       "Developed 5 full-scale VR simulations introducing students to real-world careers.",
-      "Localized 30+ simulations into Spanish and formalized the company’s localization workflow.",
-      "Contributed to SDK feedback, bug detection, and cross-simulation stability improvements."
+      "Localized 30+ simulations into Spanish and formalized the company’s localization workflow."
+      // "Contributed to SDK feedback, bug detection, and cross-simulation stability improvements."
     ],
 
     // 2️⃣ Ownership — leadership clarity
@@ -51,11 +51,6 @@ const PROJECTS = {
       "Adapted systems and scope based on technical, timeline, and resource constraints."
     ],
 
-    gallery: [
-      // screenshots when ready
-    ],
-
-    demo: null
   },
 
   procedural: {
@@ -385,17 +380,11 @@ function renderTransfr(p) {
         ${listHTML(p.ownership)}
       </section>
 
-      <section class="project-section">
+      <section class="project-section span-2">
         <h2 class="section-title">Production Environment</h2>
         ${listHTML(p.productionEnvironment)}
       </section>
 
-
-
-      <section class="project-section span-2">
-        <h2 class="section-title">Visual Gallery</h2>
-        ${galleryHTML(p.gallery)}
-      </section>
 
     </div>
   `;
