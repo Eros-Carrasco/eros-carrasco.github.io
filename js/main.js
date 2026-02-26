@@ -26,12 +26,25 @@ const PROJECTS = {
       title: "Transfr Showcase Reel"
     },
 
-    // 1️⃣ Scope — hard facts first
-    scope: [
-      "Developed 5 full-scale VR simulations introducing students to real-world careers.",
-      "Localized 30+ simulations into Spanish and formalized the company’s localization workflow."
-      // "Contributed to SDK feedback, bug detection, and cross-simulation stability improvements."
+    impactStats: [
+      {
+        value: "5",
+        title: "VR Simulations Developed",
+        description: "Career exploration experiences deployed in real classrooms."
+      },
+      {
+        value: "30+",
+        title: "Simulations Localized to Spanish",
+        description: "Established and formalized the company’s localization workflow."
+      }
     ],
+
+    // // 1️⃣ Scope — hard facts first
+    // scope: [
+    //   "Developed 5 full-scale VR simulations introducing students to real-world careers.",
+    //   "Localized 30+ simulations into Spanish and formalized the company’s localization workflow."
+    //   // "Contributed to SDK feedback, bug detection, and cross-simulation stability improvements."
+    // ],
 
     // 2️⃣ Ownership — leadership clarity
     ownership: [
@@ -127,19 +140,53 @@ const PROJECTS = {
     }]
   },
 
+
   mocap: {
-    title: "Motion Capture & Animation Tool",
-    subtitle:
-      "Tooling for capturing, organizing, and iterating on motion—built to accelerate animation workflows.",
-    pills: ["Unity Tooling", "Animation", "Pipeline"],
+    title: "Salsa AI",
+    oneLiner:
+      "Beat-synced salsa step sequencing in Unity, with pose-based transition weights for natural mixing in any order.",
+    pills: ["Unity Tooling", "Mocap", "Beat Sync"],
     hero: {
       type: "video",
       src: "assets/videos/card_motionCapture.mp4",
       poster: "",
     },
-    context: ["A practical tool focused on fast iteration and clean organization."],
-    role: ["Tool design + implementation, UX for creators, pipeline thinking."],
-    technical: ["Editor tooling", "Data organization", "Workflow acceleration"],
+
+    whatItDoes: [
+      "Turns any salsa track into a beat grid and drives step timing from real beat intervals (not a fixed BPM).",
+      "Arrange steps in any order—or randomize—to generate endless routines from a small library.",
+      "Uses pose-boundary analysis to compute per-body-part blend weights so transitions don’t look cut."
+    ],
+
+    interesting: [
+      "Salsa songs don’t keep a single BPM—tempo shifts constantly. Measuring time between beats lets the system follow those changes and stay on time.",
+      "Any-order sequencing usually breaks transitions. I solve it by measuring start/end pose distances between clips.",
+      "Instead of one blend value, transitions use per-body-part weights (limbs + torso) to keep motion natural."
+    ],
+
+    howItWorks: {
+      musicAnalysis: [
+        "Detect song start offset (handles silent lead-ins).",
+        "Extract beat timestamps + strong beats and measure time between beats (captures BPM changes).",
+        "Export timing data → Unity uses it to compute step durations and stay on-beat."
+      ],
+      poseAnalysis: [
+        "Run clip analysis in a background/isolated scene.",
+        "Sample first + last frame of each clip → compute per-body-part distance.",
+        "Store results → generates custom blend weights per transition."
+      ],
+      runtime: [
+        "Choose next step (manual/random).",
+        "Apply timing (beat grid) + weights (pose distances) → smooth playback."
+      ]
+    },
+
+    whySalsa: [
+      "Salsa animations are almost non-existent online—finding even one usable clip is hard. This project becomes a curated mocap library of 7 distinct salsa steps.",
+      "With those steps, the sequencer can generate endless routines (manual or randomized) while keeping timing + transitions natural.",
+      "While I focused on salsa, the system already supports other dances and genres—expanding it is mainly adding more clips (including mixing steps across styles)."
+    ],
+
     gallery: [],
     demo: null,
   },
@@ -266,6 +313,10 @@ function renderProject(projectKey) {
     return renderTransfr(p);
   }
 
+  if (projectKey === "mocap") {
+    return renderMocap(p);
+  }
+
   return renderStandardProject(p);
 }
 
@@ -372,7 +423,7 @@ function renderTransfr(p) {
 
       <section class="project-section span-2">
         <h2 class="section-title">Impact</h2>
-        ${listHTML(p.scope)}
+        ${statsHTML(p.impactStats)}
       </section>
 
       <section class="project-section span-2">
@@ -385,6 +436,59 @@ function renderTransfr(p) {
         ${listHTML(p.productionEnvironment)}
       </section>
 
+
+    </div>
+  `;
+}
+
+function renderMocap(p) {
+  return `
+    <div class="project-hero">
+      ${heroHTML(p.hero)}
+      <div class="project-hero-caption">
+        <h1 class="project-title">${p.title}</h1>
+        <p class="project-subtitle">${p.oneLiner}</p>
+        ${pillsHTML(p.pills)}
+      </div>
+    </div>
+
+    <div class="project-sections">
+
+      <section class="project-section span-2">
+        <h2 class="section-title">What it does</h2>
+        ${listHTML(p.whatItDoes)}
+      </section>
+
+      <section class="project-section span-2">
+        <h2 class="section-title">What makes it hard / interesting</h2>
+        ${listHTML(p.interesting)}
+      </section>
+
+      <section class="project-section span-2">
+        <h2 class="section-title">How it works</h2>
+
+        <div class="how-grid">
+          <div class="how-block">
+            <h3 class="how-title">Music analysis (Python → Unity)</h3>
+            ${listHTML(p.howItWorks?.musicAnalysis)}
+          </div>
+
+          <div class="how-block">
+            <h3 class="how-title">Pose analysis (Unity)</h3>
+            ${listHTML(p.howItWorks?.poseAnalysis)}
+          </div>
+
+          <div class="how-block">
+            <h3 class="how-title">Runtime</h3>
+            ${listHTML(p.howItWorks?.runtime)}
+          </div>
+        </div>
+      </section>
+
+      <section class="project-section span-2">
+        <h2 class="section-title">Why salsa (and why it scales)</h2>
+        ${listHTML(p.whySalsa)}
+      </section>
 
     </div>
   `;
@@ -490,6 +594,22 @@ function recognitionHTML(items = []) {
           <img src="${item.image}" alt="${item.title}" />
           <span>${item.title}</span>
         </a>
+      `).join("")}
+    </div>
+  `;
+}
+
+function statsHTML(stats = []) {
+  return `
+    <div class="stats-grid">
+      ${stats.map(stat => `
+        <div class="stat-card">
+          <div class="stat-value">${stat.value}</div>
+          <div class="stat-content">
+            <div class="stat-title">${stat.title}</div>
+            <div class="stat-desc">${stat.description}</div>
+          </div>
+        </div>
       `).join("")}
     </div>
   `;
