@@ -538,3 +538,56 @@ body {
   opacity: 0.95;
 }
 
+.how-stack {
+  display: grid;
+  gap: 14px;
+}
+
+/* 1) Que el texto dentro de cada bloque no sea tan ancho (más fácil de leer) */
+.how-block ul {
+  max-width: 72ch; /* limita el ancho de las líneas */
+}
+
+/* 2) Cambiar los bullets (•) por un guion sutil (–) para que no cargue a la izquierda */
+.how-block ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.how-block li {
+  position: relative;
+  padding-left: 14px;
+}
+
+.how-block li::before {
+  content: "–";
+  position: absolute;
+  left: 0;
+  opacity: 0.55;
+}
+
+.what-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 900px) {
+  .what-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.what-block {
+  border-radius: 14px;
+  padding: 14px 14px 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.what-block p {
+  margin: 0;
+  line-height: 1.55;
+  opacity: 0.95;
+}

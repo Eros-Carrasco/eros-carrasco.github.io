@@ -153,9 +153,9 @@ const PROJECTS = {
     },
 
     whatItDoes: [
-      "Syncs salsa steps to any track (beat-accurate timing).",
-      "Builds endless routines from a small step library (manual or random).",
-      "Keeps transitions natural across any step order."
+      "Syncs salsa steps to any track (beat-accurate)",
+      "Generates endless routines from a mocap step library",
+      "Keeps transitions smooth in any step order"
     ],
 
     howItWorks: {
@@ -176,15 +176,14 @@ const PROJECTS = {
     },
 
     interesting: [
-      "Salsa songs don’t keep a single BPM—tempo shifts constantly. Measuring time between beats lets the system follow those changes and stay on time.",
+      "Salsa songs don’t keep a single BPM—tempo, it shifts constantly. Measuring time between beats lets the system follow those changes and stay on time.",
       "Any-order sequencing usually breaks transitions. I solve it by measuring start/end pose distances between clips.",
-      "Instead of one blend value, transitions use per-body-part weights (limbs + torso) to keep motion natural."
+      "Instead of one blend value, transitions use a specific weight for each body part to keep motion natural."
     ],
 
     whySalsa: [
-      "Salsa animations are almost non-existent online—finding even one usable clip is hard. This project becomes a curated mocap library of 7 distinct salsa steps.",
-      "With those steps, the sequencer can generate endless routines (manual or randomized) while keeping timing + transitions natural.",
-      "While I focused on salsa, the system already supports other dances and genres—expanding it is mainly adding more clips (including mixing steps across styles)."
+      "Salsa animations are almost non-existent, online—finding one usable clip is hard. This project becomes a curated mocap library of 7 distinct salsa steps.",
+      "While I focused on salsa, the system already supports other dances and genres, expanding it is mainly adding more clips (including mixing steps across styles)."
     ],
 
     gallery: [],
@@ -455,30 +454,37 @@ function renderMocap(p) {
     <div class="project-sections">
 
       <section class="project-section span-2">
-        <h2 class="section-title">What it does</h2>
-        ${listHTML(p.whatItDoes)}
-      </section>
+  <h2 class="section-title">What it does</h2>
+
+  <div class="what-grid">
+    ${p.whatItDoes.map(line => `
+      <div class="what-block">
+        <p>${line}</p>
+      </div>
+    `).join("")}
+  </div>
+</section>
 
       <section class="project-section span-2">
-        <h2 class="section-title">How it works</h2>
+  <h2 class="section-title">How it works</h2>
 
-        <div class="how-grid">
-          <div class="how-block">
-            <h3 class="how-title">Music Analysis (Python → Unity)</h3>
-            ${listHTML(p.howItWorks?.musicAnalysis)}
-          </div>
+  <div class="how-stack">
+    <div class="how-block">
+      <h3 class="how-title">Music Analysis (Python → Unity)</h3>
+      ${listHTML(p.howItWorks?.musicAnalysis)}
+    </div>
 
-          <div class="how-block">
-            <h3 class="how-title">Animation Analysis (Unity)</h3>
-            ${listHTML(p.howItWorks?.poseAnalysis)}
-          </div>
+    <div class="how-block">
+      <h3 class="how-title">Animation Analysis (Unity)</h3>
+      ${listHTML(p.howItWorks?.poseAnalysis)}
+    </div>
 
-          <div class="how-block">
-            <h3 class="how-title">Runtime</h3>
-            ${listHTML(p.howItWorks?.runtime)}
-          </div>
-        </div>
-      </section>
+    <div class="how-block">
+      <h3 class="how-title">Runtime</h3>
+      ${listHTML(p.howItWorks?.runtime)}
+    </div>
+  </div>
+</section>
 
       <section class="project-section span-2">
         <h2 class="section-title">What makes it hard / interesting</h2>
