@@ -153,33 +153,33 @@ const PROJECTS = {
     },
 
     whatItDoes: [
-      "Turns any salsa track into a beat grid and drives step timing from real beat intervals (not a fixed BPM).",
-      "Arrange steps in any order—or randomize—to generate endless routines from a small library.",
-      "Uses pose-boundary analysis to compute per-body-part blend weights so transitions don’t look cut."
+      "Syncs salsa steps to any track (beat-accurate timing).",
+      "Builds endless routines from a small step library (manual or random).",
+      "Keeps transitions natural across any step order."
     ],
+
+    howItWorks: {
+      musicAnalysis: [
+        "Extract beat timestamps and measure beat intervals to capture tempo changes.",
+        "Unity editor tooling runs the pipeline and exports timing data as ScriptableObjects.",
+      ],
+      poseAnalysis: [
+        "Run clip analysis in a background scene.",
+        "Compare first and last frames for each step combination to measure pose distance (limbs + torso).",
+        "Generate custom transition weights for every step combination."
+      ],
+      runtime: [
+        "Play steps in a chosen order or randomized.",
+        "Match playback speed to the song timing data.",
+        "Apply the precomputed weights to keep transitions smooth."
+      ]
+    },
 
     interesting: [
       "Salsa songs don’t keep a single BPM—tempo shifts constantly. Measuring time between beats lets the system follow those changes and stay on time.",
       "Any-order sequencing usually breaks transitions. I solve it by measuring start/end pose distances between clips.",
       "Instead of one blend value, transitions use per-body-part weights (limbs + torso) to keep motion natural."
     ],
-
-    howItWorks: {
-      musicAnalysis: [
-        "Detect song start offset (handles silent lead-ins).",
-        "Extract beat timestamps + strong beats and measure time between beats (captures BPM changes).",
-        "Export timing data → Unity uses it to compute step durations and stay on-beat."
-      ],
-      poseAnalysis: [
-        "Run clip analysis in a background/isolated scene.",
-        "Sample first + last frame of each clip → compute per-body-part distance.",
-        "Store results → generates custom blend weights per transition."
-      ],
-      runtime: [
-        "Choose next step (manual/random).",
-        "Apply timing (beat grid) + weights (pose distances) → smooth playback."
-      ]
-    },
 
     whySalsa: [
       "Salsa animations are almost non-existent online—finding even one usable clip is hard. This project becomes a curated mocap library of 7 distinct salsa steps.",
@@ -460,21 +460,16 @@ function renderMocap(p) {
       </section>
 
       <section class="project-section span-2">
-        <h2 class="section-title">What makes it hard / interesting</h2>
-        ${listHTML(p.interesting)}
-      </section>
-
-      <section class="project-section span-2">
         <h2 class="section-title">How it works</h2>
 
         <div class="how-grid">
           <div class="how-block">
-            <h3 class="how-title">Music analysis (Python → Unity)</h3>
+            <h3 class="how-title">Music Analysis (Python → Unity)</h3>
             ${listHTML(p.howItWorks?.musicAnalysis)}
           </div>
 
           <div class="how-block">
-            <h3 class="how-title">Pose analysis (Unity)</h3>
+            <h3 class="how-title">Animation Analysis (Unity)</h3>
             ${listHTML(p.howItWorks?.poseAnalysis)}
           </div>
 
@@ -483,6 +478,11 @@ function renderMocap(p) {
             ${listHTML(p.howItWorks?.runtime)}
           </div>
         </div>
+      </section>
+
+      <section class="project-section span-2">
+        <h2 class="section-title">What makes it hard / interesting</h2>
+        ${listHTML(p.interesting)}
       </section>
 
       <section class="project-section span-2">
