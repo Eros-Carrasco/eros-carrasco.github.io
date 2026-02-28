@@ -145,7 +145,7 @@ const PROJECTS = {
     title: "Salsa AI",
     oneLiner:
       "Beat-synced salsa step sequencing in Unity, with pose-based transition weights for natural mixing in any order.",
-    pills: ["Unity Tooling", "Mocap", "Beat Sync"],
+    pills: ["Python-in-Unity Pipeline", "Mocap Animation Set", "Beat-to-Motion Sync"],
     hero: {
       type: "video",
       src: "assets/videos/card_motionCapture.mp4",
@@ -176,7 +176,7 @@ const PROJECTS = {
     },
 
     interesting: [
-      "Salsa songs don’t keep a single BPM—tempo, it shifts constantly. Measuring time between beats lets the system follow those changes and stay on time.",
+      "Salsa songs don’t keep a single tempo, it shifts constantly. Measuring time between beats lets the system follow those changes and stay on time.",
       "Any-order sequencing usually breaks transitions. I solve it by measuring start/end pose distances between clips.",
       "Instead of one blend value, transitions use a specific weight for each body part to keep motion natural."
     ],
