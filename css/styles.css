@@ -491,7 +491,7 @@ body {
   gap: 20px;
   padding: 20px;
   border-radius: 18px;
-  background: rgba(255,255,255,0.04);
+  background: rgba(14, 165, 233, 0.364);
   backdrop-filter: blur(8px);
 }
 
@@ -503,7 +503,7 @@ body {
 
 .stat-title {
   font-weight: 600;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .stat-desc {
