@@ -146,9 +146,11 @@ const PROJECTS = {
     oneLiner:
       "Beat-synced salsa step sequencing in Unity, with pose-based transition weights for natural mixing in any order.",
     pills: ["Python-in-Unity Pipeline", "Mocap Animation Set", "Beat-to-Motion Sync"],
+    
     hero: {
       type: "video",
-      src: "assets/videos/card_motionCapture.mp4",
+      // <-- NUEVO: Aquí pones el video de tu personaje honguito en el environment lindo
+      src: "assets/videos/salsa_hero_honguito.mp4", 
       poster: "",
     },
 
@@ -158,21 +160,50 @@ const PROJECTS = {
       "Keeps transitions smooth in any step order"
     ],
 
+    // <-- NUEVO: Arreglo para tus 3 videos cortitos del origen del Mocap
+    mocapSourceVideos: [
+      "assets/videos/mocap_1.mp4",
+      "assets/videos/mocap_2.mp4",
+      "assets/videos/mocap_3.mp4"
+    ],
+
     howItWorks: {
-      musicAnalysis: [
-        "Extract beat timestamps and measure beat intervals to capture tempo changes.",
-        "Unity editor tooling runs the pipeline and exports timing data as ScriptableObjects.",
-      ],
-      poseAnalysis: [
-        "Run clip analysis in a background scene.",
-        "Compare first and last frames for each step combination to measure pose distance (limbs + torso).",
-        "Generate custom transition weights for every step combination."
-      ],
-      runtime: [
-        "Play steps in a chosen order or randomized.",
-        "Match playback speed to the song timing data.",
-        "Apply the precomputed weights to keep transitions smooth."
-      ]
+      // <-- NUEVO: Sección de Ingesta de datos (yt-dlp)
+      dataIngestion: {
+        title: "Data Ingestion (Editor Tooling)",
+        text: [
+          "Custom Unity Editor tool wrapping yt-dlp via command line.",
+          "Fetches and converts any YouTube link into a usable WAV file directly inside the project, streamlining the testing pipeline."
+        ],
+        video: "assets/videos/mocaptool_1.mp4" // Video de la herramienta descargando
+      },
+      musicAnalysis: {
+        title: "Music Analysis (Python → Unity)",
+        text: [
+          "Extract beat timestamps and measure beat intervals to capture tempo changes.",
+          "Unity editor tooling runs the pipeline and exports timing data as ScriptableObjects."
+        ],
+        video: "assets/videos/mocaptool_2.mp4" // Video del análisis de la música
+      },
+      poseAnalysis: {
+        title: "Animation Analysis (Unity)",
+        text: [
+          "Run clip analysis in a background scene.",
+          "Compare first and last frames for each step combination to measure pose distance (limbs + torso).",
+          "Generate custom transition weights for every step combination."
+        ],
+        video: "assets/videos/mocaptool_3.mp4" // Video del análisis de animaciones
+      },
+      runtime: {
+        title: "Runtime",
+        text: [
+          "Play steps in a chosen order or randomized.",
+          "Match playback speed to the song timing data.",
+          "Apply the precomputed weights to keep transitions smooth."
+        ],
+        // Video del robot bailando rápido mostrando el Animator
+        video: "assets/videos/runtime_animator.mp4" 
+      }
     },
 
     interesting: [
@@ -441,6 +472,24 @@ function renderTransfr(p) {
 }
 
 function renderMocap(p) {
+  // <-- NUEVO: Función auxiliar para crear los bloques de How It Works con video integrado
+  const renderHowBlock = (blockData) => {
+    if (!blockData) return "";
+    return `
+      <div class="how-block how-block-with-video">
+        <div class="how-text">
+          <h3 class="how-title">${blockData.title}</h3>
+          ${listHTML(blockData.text)}
+        </div>
+        ${blockData.video ? `
+          <div class="how-video">
+            <video src="${blockData.video}" autoplay muted loop playsinline controls></video>
+          </div>
+        ` : ""}
+      </div>
+    `;
+  };
+
   return `
     <div class="project-hero">
       ${heroHTML(p.hero)}
@@ -454,37 +503,36 @@ function renderMocap(p) {
     <div class="project-sections">
 
       <section class="project-section span-2">
-  <h2 class="section-title">What it does</h2>
+        <h2 class="section-title">What it does</h2>
+        <div class="what-grid">
+          ${p.whatItDoes.map(line => `
+            <div class="what-block">
+              <p>${line}</p>
+            </div>
+          `).join("")}
+        </div>
+      </section>
 
-  <div class="what-grid">
-    ${p.whatItDoes.map(line => `
-      <div class="what-block">
-        <p>${line}</p>
-      </div>
-    `).join("")}
-  </div>
-</section>
+      ${p.mocapSourceVideos?.length ? `
+        <section class="project-section span-2">
+          <h2 class="section-title">The Origin of the Data (Mocap)</h2>
+          <div class="mocap-grid">
+            ${p.mocapSourceVideos.map(vid => `
+              <video src="${vid}" autoplay muted loop playsinline></video>
+            `).join("")}
+          </div>
+        </section>
+      ` : ""}
 
       <section class="project-section span-2">
-  <h2 class="section-title">How it works</h2>
-
-  <div class="how-stack">
-    <div class="how-block">
-      <h3 class="how-title">Music Analysis (Python → Unity)</h3>
-      ${listHTML(p.howItWorks?.musicAnalysis)}
-    </div>
-
-    <div class="how-block">
-      <h3 class="how-title">Animation Analysis (Unity)</h3>
-      ${listHTML(p.howItWorks?.poseAnalysis)}
-    </div>
-
-    <div class="how-block">
-      <h3 class="how-title">Runtime</h3>
-      ${listHTML(p.howItWorks?.runtime)}
-    </div>
-  </div>
-</section>
+        <h2 class="section-title">How it works</h2>
+        <div class="how-stack">
+          ${renderHowBlock(p.howItWorks?.dataIngestion)}
+          ${renderHowBlock(p.howItWorks?.musicAnalysis)}
+          ${renderHowBlock(p.howItWorks?.poseAnalysis)}
+          ${renderHowBlock(p.howItWorks?.runtime)}
+        </div>
+      </section>
 
       <section class="project-section span-2">
         <h2 class="section-title">What makes it hard / interesting</h2>

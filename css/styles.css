@@ -591,3 +591,43 @@ body {
   line-height: 1.55;
   opacity: 0.95;
 }
+
+/* ===== NUEVO: CSS PARA VIDEOS DEL MOCAP ===== */
+.mocap-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 10px;
+}
+.mocap-grid video {
+  width: 100%;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+@media (max-width: 640px) {
+  .mocap-grid { 
+    grid-template-columns: 1fr; /* En celular se apilan */
+  }
+}
+
+/* ===== NUEVO: CSS PARA VIDEOS EN HOW IT WORKS ===== */
+.how-block-with-video {
+  display: grid;
+  gap: 20px;
+  /* Mitad texto (1fr) y mitad video (1fr). Puedes cambiar a 1.2fr 0.8fr si quieres el video más chico */
+  grid-template-columns: 1fr 1fr; 
+  align-items: center;
+}
+.how-video video {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.2);
+  display: block;
+}
+@media (max-width: 900px) {
+  .how-block-with-video { 
+    grid-template-columns: 1fr; /* En pantallas pequeñas se pone el video debajo del texto */
+  }
+}
