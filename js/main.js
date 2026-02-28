@@ -150,7 +150,7 @@ const PROJECTS = {
     hero: {
       type: "video",
       // <-- NUEVO: Aquí pones el video de tu personaje honguito en el environment lindo
-      src: "assets/videos/salsa_hero_honguito.mp4", 
+      src: "assets/videos/mocap_hero.mp4", 
       poster: "",
     },
 
@@ -201,8 +201,7 @@ const PROJECTS = {
           "Match playback speed to the song timing data.",
           "Apply the precomputed weights to keep transitions smooth."
         ],
-        // Video del robot bailando rápido mostrando el Animator
-        video: "assets/videos/runtime_animator.mp4" 
+        video: "assets/videos/mocap_mushy.mp4" 
       }
     },
 
@@ -213,7 +212,7 @@ const PROJECTS = {
     ],
 
     whySalsa: [
-      "Salsa animations are almost non-existent, online—finding one usable clip is hard. This project becomes a curated mocap library of 7 distinct salsa steps.",
+      "Salsa animations are almost non-existent. This project becomes a curated mocap library of 7 distinct salsa steps.",
       "While I focused on salsa, the system already supports other dances and genres, expanding it is mainly adding more clips (including mixing steps across styles)."
     ],
 
