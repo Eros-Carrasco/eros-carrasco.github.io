@@ -170,10 +170,10 @@ const PROJECTS = {
     howItWorks: {
       // <-- NUEVO: Sección de Ingesta de datos (yt-dlp)
       dataIngestion: {
-        title: "Data Ingestion (Editor Tooling)",
+        title: "YouTube Audio Importer (Python → Unity)",
         text: [
-          "Custom Unity Editor tool wrapping yt-dlp via command line.",
-          "Fetches and converts any YouTube link into a usable WAV file directly inside the project, streamlining the testing pipeline."
+          "Convert YouTube links to WAV files instantly in Unity, speeding up the music testing loop.",
+          "Built the download pipeline with yt-dlp and Editor scripting."
         ],
         video: "assets/videos/mocaptool_1.mp4" // Video de la herramienta descargando
       },
