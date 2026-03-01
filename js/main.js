@@ -129,7 +129,7 @@ const PROJECTS = {
       },
       {
         label: "Email",
-        url: "mailto:ErosCarrasco11@gmail.com",
+        url: "mailto:ejj2059@nyu.edu",
         type: "external"
       }],
 
