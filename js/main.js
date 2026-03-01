@@ -35,7 +35,7 @@ const PROJECTS = {
       {
         value: "30+",
         title: "Simulations Localized to Spanish",
-        description: "Established and formalized the company’s localization workflow."
+        description: "Formalized the company’s localization workflow."
       }
     ],
 
@@ -64,6 +64,11 @@ const PROJECTS = {
       "Adapted systems and scope based on technical, timeline, and resource constraints."
     ],
 
+    gameplayVideos: [
+      { title: "Assemble Components of an EV Battery", id: "xrnN0EvmYmY" },
+      { title: "Replace EV Battery", id: "MAn4C9F4Ub0" },
+      { title: "Repair Diesel Farm Equipment", id: "15ak7XKbooE" }
+    ],
   },
 
   procedural: {
@@ -465,6 +470,12 @@ function renderTransfr(p) {
         ${listHTML(p.productionEnvironment)}
       </section>
 
+      ${p.gameplayVideos?.length ? `
+        <section class="project-section span-2">
+          <h2 class="section-title">Gameplay & Playthroughs</h2>
+          ${youtubeGalleryHTML(p.gameplayVideos)}
+        </section>
+      ` : ""}
 
     </div>
   `;
@@ -662,6 +673,28 @@ function statsHTML(stats = []) {
             <div class="stat-title">${stat.title}</div>
             <div class="stat-desc">${stat.description}</div>
           </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function youtubeGalleryHTML(videos = []) {
+  if (!videos.length) return "";
+  return `
+    <div class="youtube-grid">
+      ${videos.map(v => `
+        <div class="youtube-card">
+          <div class="youtube-wrapper">
+            <iframe 
+              src="https://www.youtube.com/embed/${v.id}" 
+              title="${v.title}" 
+              frameborder="0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+              allowfullscreen>
+            </iframe>
+          </div>
+          <h3 class="youtube-title">${v.title}</h3>
         </div>
       `).join("")}
     </div>
