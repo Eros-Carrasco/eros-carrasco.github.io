@@ -51,7 +51,6 @@ const PROJECTS = {
       "Led simulation design from initial research to final implementation.",
       "Defined interaction systems, user flow, pacing, and required asset structure.",
       "Implemented complex mechanics beyond standard SDK templates",
-      "Iterated with product managers, engineers, instructional designers, SMEs, and QA.",
       "Delivered production-ready simulations used at scale in classrooms."
     ],
 
