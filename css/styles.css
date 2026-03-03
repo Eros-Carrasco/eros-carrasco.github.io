@@ -13,12 +13,15 @@ body {
 
 /* ===== GRID ===== */
 .grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center; /* Esto es lo que centra la última fila */
   gap: 28px;
-  min-height: 100vh;
   padding: 40px;
   box-sizing: border-box;
+  max-width: 1350px; /* Evita que se estiren a 4 columnas en pantallas gigantes */
+  margin: 0 auto; /* Centra todo el bloque en tu pantalla */
+  min-height: 100vh;
 }
 
 @media (max-width: 1024px) {
@@ -55,13 +58,16 @@ body {
   transition: 
     transform 0.3s ease,
     box-shadow 0.3s ease;
+
+    width: calc(33.333% - 19px); /* Fuerza a que ocupen un tercio del espacio exacto */
+  min-width: 310px; /* Si la pantalla es pequeña (celular/tablet), saltan a la siguiente línea */
 }
 
 /* ===== HOVER ===== */
 .card:hover {
   transform: translateY(-6px) scale(1.02);
   box-shadow:
-    0 0 0 1.5px var(--card-accent),
+    0 0 0 1.6px var(--card-accent),
     0 20px 45px rgba(0,0,0,0.5);
 }
 
@@ -99,7 +105,7 @@ body {
   background: linear-gradient(
     to top,
     rgba(10,17,23,0.95) 0%,
-    rgba(10,17,23,0.85) 40%,
+    rgba(10,17,23,0.85) 20%,
     rgba(10,17,23,0) 100%
   );
 }
@@ -136,7 +142,7 @@ body {
 
 .card:hover .card-overlay-icon {
   opacity: 1;
-  transform: scale(1.1);
+  transform: scale(1.4);
 }
 
 /* ===== OVERLAY FULLSCREEN ===== */
