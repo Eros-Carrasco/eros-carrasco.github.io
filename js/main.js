@@ -114,7 +114,7 @@ const PROJECTS = {
 
     demo: {
     type: "iframe",
-    src: "unity-webgl/index.html",
+    src: "unity-webgl/index.html?v=5",
     title: "Technical Sandbox",
     // Esta es la instrucción que leerá la función de abajo
     instructions: "Use the sliders to manipulate the terrain parameters (Seed, Scale, Strength) and vegetation density in real-time."
