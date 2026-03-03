@@ -71,27 +71,54 @@ const PROJECTS = {
   },
 
   procedural: {
-    title: "Procedural World Generation",
+    title: "IDM Biome: Experimental Ecosystem",
     subtitle:
-      "Procedural visuals and interaction experiments—designed for exploration, style, and real-time play.",
-    pills: ["WebGL", "Procedural", "Shaders", "Interactive"],
+      "A proof-of-concept exploring the intersection of physical hardware, live data, and social interaction.",
+    pills: ["Unity", "C#", "Arduino", "API Integration"],
     hero: {
       type: "video",
       src: "assets/videos/card_procedural.mp4",
-      poster: "",
+      poster: "assets/images/biome_poster.jpg",
     },
-    context: ["Procedural generation exploration with interactive controls."],
-    role: ["Design + implementation, visuals, and interaction tuning."],
-    technical: ["Procedural systems", "Real-time rendering", "Interactive controls"],
-    gallery: [
-      // add images when you want
+    context: [
+      "A series of prototypes designed to explore how a digital world can be shaped by its physical and social surroundings.",
+      "Developed locally as a technical foundation for a future interactive installation at the IDM space."
     ],
-    demo: {
-      type: "iframe",
-      // Put your demo URL here. Could be WebXR / p5 / Unity WebGL build
-      src: "unity-webgl/index.html",
-      title: "Procedural Demo",
+    // NUEVA SECCIÓN: Aquí metemos tus videos y experimentos
+    experiments: {
+      hardware: {
+        title: "Physical Bridge (Arduino)",
+        text: [
+          "Custom Arduino controller using potentiometers to manipulate procedural terrain generation in real-time.",
+          "Implemented deadzone filtering to handle sensor jitter and smooth out the interaction."
+        ],
+        video: "assets/videos/arduino_video.mp4" // Tu video usando el Arduino
+      },
+      social: {
+        title: "Cloud-Based Identity (Google Sheets)",
+        text: [
+          "Integration with Google Sheets API to allow users to 'join' the biome.",
+          "Entering a name in the sheet dynamically spawns a persistent avatar in the virtual ecosystem."
+        ],
+        video: "assets/videos/sheets_video.mp4" // Tu video metiendo el nombre
+      },
+      liveData: {
+        title: "Live Environment (Weather API)",
+        text: [
+          "Synchronizing the digital environment with Brooklyn's real-time weather.",
+          "Built an asynchronous polling system to fetch JSON data from the Open-Meteo API."
+        ],
+        video: null // Si no tienes video de esto, no pasa nada, el layout se adapta
+      }
     },
+
+    demo: {
+    type: "iframe",
+    src: "unity-webgl/index.html",
+    title: "Technical Sandbox",
+    // Esta es la instrucción que leerá la función de abajo
+    instructions: "Use the sliders to manipulate the terrain parameters (Seed, Scale, Strength) and vegetation density in real-time."
+  },
   },
 
   about: {
@@ -150,11 +177,11 @@ const PROJECTS = {
     oneLiner:
       "Beat-synced salsa step sequencing in Unity, with pose-based transition weights for natural mixing in any order.",
     pills: ["Python-in-Unity Pipeline", "Mocap Animation Set", "Beat-to-Motion Sync"],
-    
+
     hero: {
       type: "video",
       // <-- NUEVO: Aquí pones el video de tu personaje honguito en el environment lindo
-      src: "assets/videos/mocap_hero.mp4", 
+      src: "assets/videos/mocap_hero.mp4",
       poster: "",
     },
 
@@ -205,7 +232,7 @@ const PROJECTS = {
           "Match playback speed to the song timing data.",
           "Apply the precomputed weights to keep transitions smooth."
         ],
-        video: "assets/videos/mocap_mushy.mp4" 
+        video: "assets/videos/mocap_mushy.mp4"
       }
     },
 
@@ -348,6 +375,10 @@ function renderProject(projectKey) {
 
   if (projectKey === "mocap") {
     return renderMocap(p);
+  }
+
+  if (projectKey === "procedural") {
+    return renderProcedural(p);
   }
 
   return renderStandardProject(p);
@@ -553,6 +584,68 @@ function renderMocap(p) {
         ${listHTML(p.whySalsa)}
       </section>
 
+    </div>
+  `;
+}
+
+function renderProcedural(p) {
+  // Reutilizamos la lógica visual que creaste para Mocap
+  const renderExperiment = (blockData) => {
+    if (!blockData) return "";
+    return `
+      <div class="how-block how-block-with-video">
+        <div class="how-text">
+          <h3 class="how-title">${blockData.title}</h3>
+          ${listHTML(blockData.text)}
+        </div>
+        ${blockData.video ? `
+          <div class="how-video">
+            <video src="${blockData.video}" autoplay muted loop playsinline controls></video>
+          </div>
+        ` : ""}
+      </div>
+    `;
+  };
+
+  return `
+    <div class="project-hero">
+      ${heroHTML(p.hero)}
+      <div class="project-hero-caption">
+        <h1 class="project-title">${p.title}</h1>
+        <p class="project-subtitle">${p.subtitle}</p>
+        ${pillsHTML(p.pills)}
+      </div>
+    </div>
+
+    <div class="project-sections">
+      
+      <section class="project-section span-2">
+        <h2 class="section-title">Context & Goal</h2>
+        ${listHTML(p.context)}
+      </section>
+
+      <section class="project-section span-2">
+        <h2 class="section-title">The Experiments</h2>
+        <div class="how-stack">
+          ${renderExperiment(p.experiments?.hardware)}
+          ${renderExperiment(p.experiments?.social)}
+          ${renderExperiment(p.experiments?.liveData)}
+        </div>
+      </section>
+
+      
+      
+      <section class="project-section span-2">
+        <h2 class="section-title">Interactive Simulation</h2>
+    
+        ${p.demo.instructions ? `<p class="section-description">${p.demo.instructions}</p>` : ""}
+    
+        <div class="demo-container">
+          ${demoHTML(p.demo)}
+        </div>
+      </section>
+
+      
     </div>
   `;
 }
