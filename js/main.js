@@ -307,9 +307,9 @@ const PROJECTS = {
       ]
     },
     fullDemo: {
-      title: "Full Gameplay Session",
+      title: "Gameplay Video",
       src: "https://player.vimeo.com/video/1164528040",
-      description: "Demo Video."
+      description: ""
     }
   },
 };
