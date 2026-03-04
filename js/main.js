@@ -101,24 +101,25 @@ const PROJECTS = {
           "Entering a name in the sheet dynamically spawns a persistent avatar in the virtual ecosystem."
         ],
         video: "assets/videos/procedural_sheets.mp4" // Tu video metiendo el nombre
-      },
-      liveData: {
-        title: "Live Environment (Weather API)",
-        text: [
-          "Synchronizing the digital environment with Brooklyn's real-time weather.",
-          "Built an asynchronous polling system to fetch JSON data from the Open-Meteo API."
-        ],
-        video: null // Si no tienes video de esto, no pasa nada, el layout se adapta
       }
     },
 
     demo: {
-    type: "iframe",
-    src: "unity-webgl/index.html?v=5",
-    title: "Technical Sandbox",
-    // Esta es la instrucción que leerá la función de abajo
-    instructions: "Use the sliders to manipulate the terrain parameters (Seed, Scale, Strength) and vegetation density in real-time."
-  },
+      type: "iframe",
+      src: "unity-webgl/index.html?v=5",
+      title: "Technical Sandbox",
+      // Esta es la instrucción que leerá la función de abajo
+      instructions: "Use the sliders to manipulate the terrain parameters (Seed, Scale, Strength) and vegetation density in real-time."
+    },
+
+    liveData: {
+      title: "Live Environment (Weather API)",
+      text: [
+        "Implemented an asynchronous polling system using UnityWebRequest in C#.",
+        "Fetches live data from Downtown Brooklyn via the Open-Meteo API.",
+      ]
+    }
+
   },
 
   about: {
@@ -629,22 +630,25 @@ function renderProcedural(p) {
         <div class="how-stack">
           ${renderExperiment(p.experiments?.hardware)}
           ${renderExperiment(p.experiments?.social)}
-          ${renderExperiment(p.experiments?.liveData)}
         </div>
       </section>
 
-      
       
       <section class="project-section span-2">
-        <h2 class="section-title">Interactive Simulation</h2>
-    
-        ${p.demo.instructions ? `<p class="section-description">${p.demo.instructions}</p>` : ""}
-    
-        <div class="demo-container">
-          ${demoHTML(p.demo)}
+        <h2 class="section-title">Live Sandbox & API Integration</h2>
+        <div class="sandbox-api-layout">
+          
+          <div class="sandbox-container">
+            ${demoHTML(p.demo)}
+          </div>
+          
+          <div class="api-context">
+            <h3 class="how-title" style="margin-top: 0;">${p.liveData.title}</h3>
+            ${listHTML(p.liveData.text)}
+          </div>
+
         </div>
       </section>
-
       
     </div>
   `;

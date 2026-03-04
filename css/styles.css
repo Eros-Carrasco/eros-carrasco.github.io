@@ -681,3 +681,41 @@ body {
   letter-spacing: 0.02em;
   line-height: 1.4;
 }
+
+/* ===== PROCEDURAL SANDBOX LAYOUT ===== */
+.sandbox-api-layout {
+  display: grid;
+  /* El build toma 2 partes, el texto 1 parte */
+  grid-template-columns: 5fr 1fr; 
+  gap: 40px;
+  align-items: top;
+  margin-top: 20px;
+}
+
+.api-context .how-title {
+  font-size: 1rem;
+  color: var(--card-accent, #aaa);
+  margin-top: 0;
+  margin-bottom: 44px; /* <-- Aumenta este valor si quieres más espacio debajo del título */
+}
+
+@media (max-width: 900px) {
+  .sandbox-api-layout {
+    grid-template-columns: 1fr; /* En celular, el texto se pone abajo del build */
+  }
+}
+
+/* 2. Espacio entre los bullet points */
+.api-context ul {
+  padding-left: 10px; /* Sangría de las viñetas */
+}
+
+.api-context ul li {
+  margin-bottom: 18px; /* <-- Aumenta este valor para separar más cada texto */
+  line-height: 1.8;    /* <-- Le da un poco más de espacio entre las líneas de un mismo párrafo */
+}
+
+/* Quita el margen extra al último elemento para que quede bien centrado */
+.api-context ul li:last-child {
+  margin-bottom: 0;
+}
