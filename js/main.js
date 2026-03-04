@@ -268,20 +268,50 @@ const PROJECTS = {
   },
 
   multiplayer: {
-    title: "Multiplayer Game in Unity",
-    subtitle:
-      "Online multiplayer prototype exploring networking, interaction, and moment-to-moment feel.",
-    pills: ["Unity", "Netcode", "Multiplayer"],
+    title: "Member Bot: Arena",
+    subtitle: "A fast-paced multiplayer arena showcasing advanced network synchronization and scalable software architecture.",
+    pills: ["Unity Netcode (NGO)", "Editor Scripting", "ScriptableObjects", "System Architecture"],
     hero: {
-      type: "iframe",
-      src: "https://player.vimeo.com/video/1164528040",
-      poster: "",
+      type: "video",
+      src: "assets/videos/memberbot_hero.mp4", // Tu clip corto en loop
+      poster: "assets/images/memberbot_poster.jpg",
     },
-    context: ["A focused prototype to explore networking + gameplay feel."],
-    role: ["Programming, architecture, iteration."],
-    technical: ["Netcode patterns", "State sync", "Gameplay systems"],
-    gallery: [],
-    demo: null,
+    context: [
+      "Acted as the sole programmer over a year-long development cycle, building the game from the ground up alongside a team of 3D artists and sound designers.",
+      "Focused heavily on creating a modular, designer-friendly codebase to integrate art and audio assets seamlessly into a synchronized online environment."
+    ],
+    technicalNetcode: {
+      title: "Multiplayer Implementation",
+      text: [
+        "Implemented Unity Netcode for GameObjects (NGO), handling complex state synchronization across distributed clients.",
+        "Managed NetworkVariables and RPCs (Remote Procedure Calls) to ensure smooth server-authoritative movement and hit detection."
+      ]
+    },
+    technicalArchitecture: {
+      title: "Architecture & Editor Tooling",
+      text: [
+        "Structured the core systems using the Observer design pattern and ScriptableObjects to broadcast events, keeping the codebase decoupled and SOLID.",
+        "Developed custom Editor scripts and Property Drawers (e.g., dynamic range sliders) to give designers direct control over SFX pitch variations and weapon mechanics.",
+        "Engineered a highly modular WeaponData system nesting VFX, SFX, and physics configurations, alongside a custom Gizmo manager for runtime debugging."
+      ]
+    },
+    designProcess: {
+      title: "From Sketch to Server",
+      text: [
+        "Collaborated directly with the art team, translating 2D conceptual designs into functional, network-synced 3D mechanics."
+      ],
+      images: [
+        // Coloca aquí las rutas de las capturas que tú elijas
+        "assets/images/memberbot_1.png",
+        "assets/images/memberbot_2.png",
+        "assets/images/memberbot_3.png"
+      ]
+    },
+    fullDemo: {
+      title: "Full Gameplay Session",
+      src: "https://player.vimeo.com/video/1164528040",
+      description: "A 2-minute unedited match demonstrating the synchronization, combat loop, and overall network stability."
+    }
   },
 };
 
@@ -379,6 +409,10 @@ function renderProject(projectKey) {
 
   if (projectKey === "procedural") {
     return renderProcedural(p);
+  }
+
+  if (projectKey === "multiplayer") {
+    return renderMultiplayer(p);
   }
 
   return renderStandardProject(p);
@@ -649,6 +683,66 @@ function renderProcedural(p) {
         </div>
       </section>
       
+    </div>
+  `;
+}
+
+function renderMultiplayer(p) {
+  return `
+    <div class="project-hero">
+      ${heroHTML(p.hero)}
+      <div class="project-hero-caption">
+        <h1 class="project-title">${p.title}</h1>
+        <p class="project-subtitle">${p.subtitle}</p>
+        ${pillsHTML(p.pills)}
+      </div>
+    </div>
+
+    <div class="project-sections">
+
+      <section class="project-section span-2">
+        <h2 class="section-title">Context</h2>
+        <div class="context-box">
+          ${p.context.map(c => `<p>${c}</p>`).join("")}
+        </div>
+      </section>
+
+      <section class="project-section span-2">
+        <div class="technical-grid">
+          <div class="tech-card">
+            <h3 class="how-title">${p.technicalNetcode.title}</h3>
+            <ul class="tech-list">
+              ${p.technicalNetcode.text.map(t => `<li>${t}</li>`).join("")}
+            </ul>
+          </div>
+          
+          <div class="tech-card">
+            <h3 class="how-title">${p.technicalArchitecture.title}</h3>
+            <ul class="tech-list">
+              ${p.technicalArchitecture.text.map(t => `<li>${t}</li>`).join("")}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="project-section span-2">
+        <h2 class="section-title">${p.designProcess.title}</h2>
+        <div class="design-context">
+          ${p.designProcess.text.map(t => `<p>${t}</p>`).join("")}
+        </div>
+        <div class="design-gallery">
+          ${p.designProcess.images.map(img => `<img src="${img}" alt="Design Process" class="gallery-img">`).join("")}
+        </div>
+      </section>
+
+      <section class="project-section span-2">
+        <h2 class="section-title">${p.fullDemo.title}</h2>
+        <p style="margin-bottom: 20px; color: var(--card-accent, #aaa);">${p.fullDemo.description}</p>
+        <div class="youtube-wrapper">
+          <iframe src="${p.fullDemo.src}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </section>
+
     </div>
   `;
 }

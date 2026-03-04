@@ -719,3 +719,65 @@ body {
 .api-context ul li:last-child {
   margin-bottom: 0;
 }
+
+/* ===== MULTIPLAYER LAYOUT ===== */
+
+/* Grid para las dos columnas técnicas */
+.technical-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-top: 20px;
+}
+
+.tech-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 30px;
+}
+
+.tech-list {
+  padding-left: 20px;
+  margin-top: 15px;
+}
+
+.tech-list li {
+  margin-bottom: 15px;
+  line-height: 1.6;
+  color: var(--text-color, #e0e0e0);
+}
+
+.tech-list li:last-child {
+  margin-bottom: 0;
+}
+
+/* Galería de imágenes del diseño */
+.design-context {
+  margin-bottom: 30px;
+}
+
+.design-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.gallery-img {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.gallery-img:hover {
+  transform: scale(1.02);
+}
+
+/* Responsivo para móviles */
+@media (max-width: 900px) {
+  .technical-grid {
+    grid-template-columns: 1fr;
+  }
+}
