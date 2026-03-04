@@ -273,7 +273,7 @@ const PROJECTS = {
     pills: ["Unity Netcode (NGO)", "Editor Scripting", "System Architecture"],
     hero: {
       type: "video",
-      src: "assets/videos/memberbot_hero3.mp4", 
+      src: "assets/videos/memberbot_hero.mp4", 
       poster: "assets/images/memberbot_poster.jpg",
     },
     context: {
