@@ -77,7 +77,7 @@ const PROJECTS = {
     pills: ["Unity", "C#", "Arduino", "API Integration"],
     hero: {
       type: "video",
-      src: "assets/videos/card_procedural.mp4",
+      src: "assets/videos/procedural_hero_slow.mp4",
       poster: "assets/images/biome_poster.jpg",
     },
     context: [
@@ -92,7 +92,7 @@ const PROJECTS = {
           "Custom Arduino controller using potentiometers to manipulate procedural terrain generation in real-time.",
           "Implemented deadzone filtering to handle sensor jitter and smooth out the interaction."
         ],
-        video: "assets/videos/arduino_video.mp4" // Tu video usando el Arduino
+        video: "assets/videos/procedural_arduino.mp4" // Tu video usando el Arduino
       },
       social: {
         title: "Cloud-Based Identity (Google Sheets)",
@@ -100,7 +100,7 @@ const PROJECTS = {
           "Integration with Google Sheets API to allow users to 'join' the biome.",
           "Entering a name in the sheet dynamically spawns a persistent avatar in the virtual ecosystem."
         ],
-        video: "assets/videos/sheets_video.mp4" // Tu video metiendo el nombre
+        video: "assets/videos/procedural_sheets.mp4" // Tu video metiendo el nombre
       },
       liveData: {
         title: "Live Environment (Weather API)",
