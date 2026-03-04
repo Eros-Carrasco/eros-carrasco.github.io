@@ -71,10 +71,10 @@ const PROJECTS = {
   },
 
   procedural: {
-    title: "IDM Biome: Experimental Ecosystem",
+    title: "Procedural Biome: Interactive Ecosystem",
     subtitle:
       "A proof-of-concept exploring the intersection of physical hardware, live data, and social interaction.",
-    pills: ["Unity", "C#", "Arduino", "API Integration"],
+    pills: ["Arduino", "Procedural Generation", "Live Data", "Unity"],
     hero: {
       type: "video",
       src: "assets/videos/procedural_hero_slow.mp4",
@@ -109,13 +109,12 @@ const PROJECTS = {
       src: "unity-webgl/index.html?v=5",
       title: "Technical Sandbox",
       // Esta es la instrucción que leerá la función de abajo
-      instructions: "Use the sliders to manipulate the terrain parameters (Seed, Scale, Strength) and vegetation density in real-time."
+      instructions: "Use the sliders to manipulate the terrain in real-time."
     },
 
     liveData: {
       title: "Live Environment (Weather API)",
       text: [
-        "Implemented an asynchronous polling system using UnityWebRequest in C#.",
         "Fetches live data from Downtown Brooklyn via the Open-Meteo API.",
       ]
     }
