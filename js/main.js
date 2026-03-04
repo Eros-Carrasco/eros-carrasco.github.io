@@ -268,37 +268,37 @@ const PROJECTS = {
   },
 
   multiplayer: {
-    title: "Member Bot: Arena",
-    subtitle: "A fast-paced multiplayer arena showcasing advanced network synchronization and scalable software architecture.",
+    title: "Member Bot Demo",
+    subtitle: "A fast-paced multiplayer arena showcasing network synchronization and scalable software architecture.",
     pills: ["Unity Netcode (NGO)", "Editor Scripting", "ScriptableObjects", "System Architecture"],
     hero: {
       type: "video",
-      src: "assets/videos/memberbot_hero.mp4", // Tu clip corto en loop
+      src: "assets/videos/memberbot_hero3.mp4", // Tu clip corto en loop
       poster: "assets/images/memberbot_poster.jpg",
     },
     context: [
-      "Acted as the sole programmer over a year-long development cycle, building the game from the ground up alongside a team of 3D artists and sound designers.",
-      "Focused heavily on creating a modular, designer-friendly codebase to integrate art and audio assets seamlessly into a synchronized online environment."
+      "Acted as the sole programmer over a year-long development cycle, building the game from the ground up alongside a team of 3D artists.",
+      "Focused heavily on creating a modular codebase to integrate art and audio assets seamlessly into a synchronized online environment."
     ],
     technicalNetcode: {
       title: "Multiplayer Implementation",
       text: [
-        "Implemented Unity Netcode for GameObjects (NGO), handling complex state synchronization across distributed clients.",
-        "Managed NetworkVariables and RPCs (Remote Procedure Calls) to ensure smooth server-authoritative movement and hit detection."
+        "Implemented Unity Netcode for GameObjects, handling complex state synchronization across distributed clients.",
+        "Managed NetworkVariables and RPCs to ensure server-authoritative movement and hit detection."
       ]
     },
     technicalArchitecture: {
       title: "Architecture & Editor Tooling",
       text: [
-        "Structured the core systems using the Observer design pattern and ScriptableObjects to broadcast events, keeping the codebase decoupled and SOLID.",
-        "Developed custom Editor scripts and Property Drawers (e.g., dynamic range sliders) to give designers direct control over SFX pitch variations and weapon mechanics.",
+        "Structured the core systems using the Observer design pattern with ScriptableObjects to broadcast events, keeping the codebase decoupled and SOLID.",
+        "Developed custom Editor scripts and Property Drawers, e.g.: ranged sliders to enrich a single SFX to have multiple pitch options.",
         "Engineered a highly modular WeaponData system nesting VFX, SFX, and physics configurations, alongside a custom Gizmo manager for runtime debugging."
       ]
     },
     designProcess: {
       title: "From Sketch to Server",
       text: [
-        "Collaborated directly with the art team, translating 2D conceptual designs into functional, network-synced 3D mechanics."
+        "Early designs were sketched focusing on core mechanics and flow before any code was written.",
       ],
       images: [
         // Coloca aquí las rutas de las capturas que tú elijas
