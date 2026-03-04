@@ -781,3 +781,34 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ===== SPLIT LAYOUT (Member Bot) ===== */
+.split-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .split-layout { grid-template-columns: 1fr; }
+}
+
+.split-image-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.split-img {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  object-fit: cover;
+}
+
+/* Responsivo: En móvil se pone el texto arriba y las fotos abajo */
+@media (max-width: 900px) {
+  .split-layout {
+    grid-template-columns: 1fr;
+  }
+}
