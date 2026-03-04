@@ -812,3 +812,14 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* Zoom específico para ocultar los bordes negros del video Procedural */
+.card[data-project="procedural"] .card-media video {
+  transform: scale(1.08); 
+  transform-origin: center center; 
+}
+
+/* Zoom extra al hacer HOVER solo en el video de Procedural */
+.card[data-project="procedural"]:hover .card-media video {
+  transform: scale(1.12); 
+}
