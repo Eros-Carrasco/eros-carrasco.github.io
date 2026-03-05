@@ -15,14 +15,12 @@ const PROJECTS = {
     pills: [
       "Unity Production",
       "XR Systems",
-      "Design Ownership",
-      "Accessibility",
-      "Localization"
+      "Design Ownership"
     ],
 
     hero: {
       type: "video",
-      src: "assets/videos/card_transfr_1.mp4",
+      src: "assets/videos/transfr_hero.mp4",
       title: "Transfr Showcase Reel"
     },
 
