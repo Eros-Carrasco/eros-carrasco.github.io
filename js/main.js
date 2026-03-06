@@ -14,8 +14,9 @@ const PROJECTS = {
 
     pills: [
       "Unity Production",
-      "XR Systems",
-      "Design Ownership"
+      "VR",
+      "Design",
+      "Localization"
     ],
 
     hero: {
@@ -72,7 +73,7 @@ const PROJECTS = {
     title: "Procedural Biome: Interactive Ecosystem",
     subtitle:
       "A proof-of-concept exploring the intersection of physical hardware, live data, and social interaction.",
-    pills: ["Arduino", "Procedural Generation", "Live Data", "Unity"],
+    pills: ["Arduino", "Procedural Generation", "Live Data", "Unity", "Hardware"],
     hero: {
       type: "video",
       src: "assets/videos/procedural_hero_slow.mp4",
@@ -174,7 +175,7 @@ const PROJECTS = {
     title: "Salsa AI",
     oneLiner:
       "Beat-synced salsa step sequencing in Unity, with pose-based transition weights for natural mixing in any order.",
-    pills: ["Python-in-Unity Pipeline", "Mocap Animation Set", "Beat-to-Motion Sync"],
+    pills: ["Python-in-Unity Pipeline", "Motion Capture", "Beat-to-Motion Sync"],
 
     hero: {
       type: "video",
@@ -268,7 +269,7 @@ const PROJECTS = {
   multiplayer: {
     title: "Member Bot Demo",
     subtitle: "A fast-paced multiplayer arena showcasing network synchronization and scalable software architecture.",
-    pills: ["Unity Netcode (NGO)", "Editor Scripting", "System Architecture"],
+    pills: ["Unity Netcode (NGO)", "Editor Scripting", "System Architecture", "Multiplayer Game"],
     hero: {
       type: "video",
       src: "assets/videos/memberbot_hero.mp4", 
