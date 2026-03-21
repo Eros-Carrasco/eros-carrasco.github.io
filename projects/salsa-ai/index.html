@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Salsa AI — Eros Carrasco</title>
+
+    <base href="/eros-carrasco.github.io/">
+
+    <!-- ahora SIN ../../ -->
+    <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="overlay-inner" style="padding: 40px 20px;">
+        <div id="project-root"></div>
+    </main>
+
+    <!-- 🔒 DUMMY OVERLAY (para que main.js no falle) -->
+    <div id="overlay" class="overlay" style="display: none;">
+        <div class="overlay-content"></div>
+        <button class="overlay-close"></button>
+    </div>
+
+    <!-- JS -->
+    <script src="js/main.js"></script>
+
+    <script>
+        // Render directo del proyecto
+        document.getElementById("project-root").innerHTML = renderProject("mocap");
+    </script>
+
+</body>
+
+</html>
