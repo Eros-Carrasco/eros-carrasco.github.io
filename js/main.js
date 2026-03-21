@@ -575,6 +575,16 @@ function renderMocap(p) {
     <div class="project-sections">
 
       <section class="project-section span-2">
+        <h2 class="section-title">Why salsa (and why it scales)</h2>
+        ${listHTML(p.whySalsa)}
+      </section>
+
+      <section class="project-section span-2">
+        <h2 class="section-title">What makes it hard / interesting</h2>
+        ${listHTML(p.interesting)}
+      </section>
+
+      <section class="project-section span-2">
         <h2 class="section-title">What it does</h2>
         <div class="what-grid">
           ${p.whatItDoes.map(line => `
@@ -606,15 +616,7 @@ function renderMocap(p) {
         </div>
       </section>
 
-      <section class="project-section span-2">
-        <h2 class="section-title">What makes it hard / interesting</h2>
-        ${listHTML(p.interesting)}
-      </section>
-
-      <section class="project-section span-2">
-        <h2 class="section-title">Why salsa (and why it scales)</h2>
-        ${listHTML(p.whySalsa)}
-      </section>
+      
 
     </div>
   `;
