@@ -1,3 +1,20 @@
+/* ===== BACK BUTTON (Project Pages) ===== */
+.project-page-back {
+  padding: 20px 22px 0;
+}
+
+.back-btn {
+  display: inline-block;
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s ease;
+}
+
+.back-btn:hover {
+  color: white;
+}
+
 /* ===== BASE ===== */
 body {
   margin: 0;
@@ -9,6 +26,13 @@ body {
   );
   color: white;
   font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Project pages use the spaceship image with a dark overlay */
+body.project-page {
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.82)),
+    url("../assets/images/background_spaceship.png") center / cover no-repeat fixed;
 }
 
 /* ===== GRID ===== */

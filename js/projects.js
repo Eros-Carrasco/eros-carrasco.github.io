@@ -1,0 +1,767 @@
+// BASE_URL is defined by each project page before this script loads.
+// e.g. for /projects/transfr/ → BASE_URL = "../../"
+//      for /about/            → BASE_URL = "../"
+// This lets asset paths work both locally and on GitHub Pages.
+
+// ===== PROJECT DATA =====
+const PROJECTS = {
+
+  transfr: {
+    title: "Career Exploration XR Simulations – Transfr",
+    subtitle:
+      "Designed and developed five VR career exploration simulations in Unity, deployed in real educational environments.",
+
+    pills: [
+      "Unity Production",
+      "VR",
+      "Design",
+      "Localization"
+    ],
+
+    hero: {
+      type: "video",
+      src: `${BASE_URL}assets/videos/transfr_hero.mp4`,
+      title: "Transfr Showcase Reel"
+    },
+
+    impactStats: [
+      {
+        value: "5",
+        title: "VR Simulations Developed",
+        description: "Career exploration experiences deployed in real classrooms."
+      },
+      {
+        value: "30+",
+        title: "Simulations Localized to Spanish",
+        description: "Formalized the company's localization workflow."
+      }
+    ],
+
+    ownership: [
+      "Led simulation design from initial research to final implementation.",
+      "Defined interaction systems, user flow, pacing, and required asset structure.",
+      "Implemented complex mechanics beyond standard SDK templates",
+      "Delivered production-ready simulations used at scale in classrooms."
+    ],
+
+    productionEnvironment: [
+      "Collaborated cross-functionally with SDK engineers, product managers, instructional designers, SMEs, and QA.",
+      "Presented and defended design decisions during stakeholder reviews.",
+      "Adapted systems and scope based on technical, timeline, and resource constraints."
+    ],
+
+    gameplayVideos: [
+      { title: "Assemble Components of an EV Battery", id: "xrnN0EvmYmY" },
+      { title: "Replace EV Battery", id: "MAn4C9F4Ub0" },
+      { title: "Repair Diesel Farm Equipment", id: "15ak7XKbooE" }
+    ],
+  },
+
+  procedural: {
+    title: "Procedural Biome: Interactive Ecosystem",
+    subtitle:
+      "A proof-of-concept exploring the intersection of physical hardware, live data, and social interaction.",
+    pills: ["Arduino", "Procedural Generation", "Live Data", "Unity", "Hardware"],
+    hero: {
+      type: "video",
+      src: `${BASE_URL}assets/videos/procedural_hero_slow.mp4`,
+      poster: `${BASE_URL}assets/images/biome_poster.jpg`,
+    },
+    context: [
+      "A series of prototypes designed to explore how a digital world can be shaped by its physical and social surroundings.",
+      "Developed locally as a technical foundation for a future interactive installation at the IDM space."
+    ],
+    experiments: {
+      hardware: {
+        title: "Physical Bridge (Arduino)",
+        text: [
+          "Custom Arduino controller using potentiometers to manipulate procedural terrain generation in real-time.",
+          "Implemented deadzone filtering to handle sensor jitter and smooth out the interaction."
+        ],
+        video: `${BASE_URL}assets/videos/procedural_arduino.mp4`
+      },
+      social: {
+        title: "Cloud-Based Identity (Google Sheets)",
+        text: [
+          "Integration with Google Sheets API to allow users to 'join' the biome.",
+          "Entering a name in the sheet dynamically spawns a persistent avatar in the virtual ecosystem."
+        ],
+        video: `${BASE_URL}assets/videos/procedural_sheets.mp4`
+      }
+    },
+
+    demo: {
+      type: "iframe",
+      src: `${BASE_URL}unity-webgl/index.html?v=5`,
+      title: "Technical Sandbox",
+      instructions: "Use the sliders to manipulate the terrain in real-time."
+    },
+
+    liveData: {
+      title: "Live Environment (Weather API)",
+      text: [
+        "Fetches live data from Downtown Brooklyn via the Open-Meteo API.",
+      ]
+    }
+  },
+
+  about: {
+    title: "Eros Carrasco",
+    subtitle:
+      "Creative Technologist at the intersection of XR and AI",
+    pills: ["NYU M.S.", "Production Experience"],
+    hero: {
+      type: "image",
+      src: `${BASE_URL}assets/images/card_about.jpg`,
+    },
+    overview: [
+      "Production-focused XR developer building interactive systems from concept to deployment.",
+      "I combine design ownership with strong technical execution, leading architecture decisions and complex interaction systems.",
+      "I aim to work where ambitious, complex technologies are being built and pushed forward — currently expanding into AI-integrated interactive systems at NYU."
+    ],
+    currentFocus: ["Building AI-integrated XR systems through deep learning coursework at NYU, developing advanced interactive projects under Ken Perlin."],
+    links: [
+      {
+        label: "Resume",
+        url: `${BASE_URL}assets/Eros Carrasco - Resume.pdf`,
+        type: "external"
+      },
+      {
+        label: "LinkedIn",
+        url: "https://www.linkedin.com/in/eros-carrasco/",
+        type: "external"
+      },
+      {
+        label: "GitHub",
+        url: "https://github.com/Eros-Carrasco",
+        type: "external"
+      },
+      {
+        label: "Email",
+        url: "mailto:ejj2059@nyu.edu",
+        type: "external"
+      }
+    ],
+
+    selectedRecognition: [{
+      title: "1st Place — NYU Data Science Bootcamp",
+      image: `${BASE_URL}assets/images/bootcampBadge.png`,
+      link: "https://credentials.engineering.nyu.edu/7844a2f4-ff71-4ea0-a2c7-48d8b27766f9#acc.gz582Yac"
+    }]
+  },
+
+  mocap: {
+    title: "Salsa AI",
+    oneLiner:
+      "Beat-synced salsa step sequencing in Unity, with pose-based transition weights for natural mixing in any order.",
+    pills: ["Python-in-Unity Pipeline", "Motion Capture", "Beat-to-Motion Sync"],
+
+    hero: {
+      type: "video",
+      src: `${BASE_URL}assets/videos/mocap_hero.mp4`,
+      poster: "",
+    },
+
+    whatItDoes: [
+      "Syncs salsa steps to any track (beat-accurate)",
+      "Generates endless routines from a mocap step library",
+      "Keeps transitions smooth in any step order"
+    ],
+
+    mocapSourceVideos: [
+      `${BASE_URL}assets/videos/mocap_1.mp4`,
+      `${BASE_URL}assets/videos/mocap_2.mp4`,
+      `${BASE_URL}assets/videos/mocap_3.mp4`,
+    ],
+
+    howItWorks: {
+      dataIngestion: {
+        title: "YouTube Audio Importer (Python → Unity)",
+        text: [
+          "Convert YouTube links to WAV files instantly in Unity, speeding up the music testing loop.",
+          "Built the download pipeline with yt-dlp and Editor scripting."
+        ],
+        video: `${BASE_URL}assets/videos/mocaptool_1.mp4`
+      },
+      musicAnalysis: {
+        title: "Music Analysis (Python → Unity)",
+        text: [
+          "Extract beat timestamps and measure beat intervals to capture tempo changes.",
+          "Unity editor tooling runs the pipeline and exports timing data as ScriptableObjects."
+        ],
+        video: `${BASE_URL}assets/videos/mocaptool_2.mp4`
+      },
+      poseAnalysis: {
+        title: "Animation Analysis (Unity)",
+        text: [
+          "Run clip analysis in a background scene.",
+          "Compare first and last frames for each step combination to measure pose distance (limbs + torso).",
+          "Generate custom transition weights for every step combination."
+        ],
+        video: `${BASE_URL}assets/videos/mocaptool_3.mp4`
+      },
+      runtime: {
+        title: "Runtime",
+        text: [
+          "Play steps in a chosen order or randomized.",
+          "Match playback speed to the song timing data.",
+          "Apply the precomputed weights to keep transitions smooth."
+        ],
+        video: `${BASE_URL}assets/videos/mocap_mushy.mp4`
+      }
+    },
+
+    interesting: [
+      "Salsa songs don't keep a single tempo, it shifts constantly. Measuring time between beats lets the system follow those changes and stay on time.",
+      "Any-order sequencing usually breaks transitions. I solve it by measuring start/end pose distances between clips.",
+      "Instead of one blend value, transitions use a specific weight for each body part to keep motion natural."
+    ],
+
+    whySalsa: [
+      "Salsa animations are almost non-existent. This project becomes a curated mocap library of 7 distinct salsa steps.",
+      "While I focused on salsa, the system already supports other dances and genres, expanding it is mainly adding more clips (including mixing steps across styles)."
+    ],
+
+    gallery: [],
+    demo: null,
+  },
+
+  ml: {
+    title: "Deep Learning for XR",
+    subtitle:
+      "Explorations at the intersection of ML and interactive media—focused on real-time, creative applications.",
+    pills: ["ML", "Interactive Media", "Prototyping"],
+    hero: {
+      type: "image",
+      src: `${BASE_URL}assets/images/card_ml_placeholder.jpg`,
+    },
+    context: ["Prototypes and experiments connecting ML ideas to interactive experiences."],
+    role: ["Research + prototypes + experiments."],
+    technical: ["Model experimentation", "Data pipelines", "Interactive integration"],
+    gallery: [],
+    demo: null,
+  },
+
+  multiplayer: {
+    title: "Member Bot Demo",
+    subtitle: "A fast-paced multiplayer arena showcasing network synchronization and scalable software architecture.",
+    pills: ["Unity Netcode (NGO)", "Editor Scripting", "System Architecture", "Multiplayer Game"],
+    hero: {
+      type: "video",
+      src: `${BASE_URL}assets/videos/memberbot_hero.mp4`,
+      poster: `${BASE_URL}assets/images/memberbot_poster.jpg`,
+    },
+    context: {
+      title: "Context",
+      text: [
+        "Acted as the sole programmer over a year-long development cycle, building the game from the ground up alongside a team of 3D artists.",
+        "Focused heavily on creating a modular codebase to integrate art and audio assets seamlessly into a synchronized online environment."
+      ]
+    },
+    technicalNetcode: {
+      title: "Multiplayer Implementation",
+      text: [
+        "Implemented Unity Netcode for GameObjects, handling complex state synchronization across distributed clients.",
+        "Managed NetworkVariables and RPCs to ensure server-authoritative movement and hit detection."
+      ]
+    },
+    technicalArchitecture: {
+      title: "Architecture & Editor Tooling",
+      text: [
+        "Structured the core systems using the Observer design pattern with ScriptableObjects to broadcast events, keeping the codebase decoupled and SOLID.",
+        "Developed custom Editor scripts and Property Drawers (e.g., custom range sliders to enrich a single SFX with multiple pitch variations).",
+        "Engineered a highly modular WeaponData system nesting VFX, SFX, and physics configurations, alongside a custom Gizmo manager for runtime debugging."
+      ]
+    },
+    designProcess: {
+      images: [
+        `${BASE_URL}assets/images/memberbot_1.png`,
+        `${BASE_URL}assets/images/memberbot_2.png`,
+        `${BASE_URL}assets/images/memberbot_3.png`,
+      ]
+    },
+    fullDemo: {
+      title: "Gameplay Video",
+      src: "https://player.vimeo.com/video/1164528040",
+      description: ""
+    }
+  },
+};
+
+
+// ===== HELPER FUNCTIONS =====
+
+function heroHTML(hero) {
+  if (!hero) return "";
+
+  if (hero.type === "video") {
+    const posterAttr = hero.poster ? `poster="${hero.poster}"` : "";
+    return `
+      <div class="project-hero-media">
+        <video src="${hero.src}" ${posterAttr} autoplay muted loop playsinline controls></video>
+      </div>
+    `;
+  }
+
+  if (hero.type === "image") {
+    return `
+      <div class="project-hero-media">
+        <img src="${hero.src}" alt="" />
+      </div>
+    `;
+  }
+
+  if (hero.type === "iframe") {
+    return `
+      <div class="project-hero-media">
+        <iframe src="${hero.src}" title="${hero.title || "Demo"}" loading="lazy"></iframe>
+      </div>
+    `;
+  }
+
+  return "";
+}
+
+function listHTML(items = []) {
+  if (!items.length) return `<p style="margin:0;opacity:0.8;">(Add content)</p>`;
+  return `<ul>${items.map((x) => `<li>${x}</li>`).join("")}</ul>`;
+}
+
+function pillsHTML(pills = []) {
+  if (!pills.length) return "";
+  return `
+    <div class="project-meta">
+      ${pills.map((p) => `<span class="pill">${p}</span>`).join("")}
+    </div>
+  `;
+}
+
+function galleryHTML(gallery = []) {
+  if (!gallery.length) return `<p style="margin:0;opacity:0.8;">(Gallery coming soon)</p>`;
+  return `
+    <div class="gallery">
+      ${gallery.map((img) => `
+        <a href="${img.full}" target="_blank" rel="noopener">
+          <img src="${img.thumb}" alt="${img.alt || ""}">
+        </a>
+      `).join("")}
+    </div>
+  `;
+}
+
+function demoHTML(demo) {
+  if (!demo) return "";
+  if (demo.type === "iframe") {
+    return `
+      <div class="embed">
+        <iframe src="${demo.src}" title="${demo.title || "Demo"}" loading="lazy"></iframe>
+      </div>
+    `;
+  }
+  return "";
+}
+
+function linksHTML(links = []) {
+  if (!links.length) return "";
+  return `
+    <ul class="links-list">
+      ${links.map((link) => `
+        <li>
+          <a href="${link.url}" target="_blank" rel="noopener">
+            ${link.label}
+          </a>
+        </li>
+      `).join("")}
+    </ul>
+  `;
+}
+
+function recognitionHTML(items = []) {
+  if (!items.length) return "";
+  return `
+    <div class="recognition-list">
+      ${items.map(item => `
+        <a href="${item.link}" target="_blank" class="recognition-item">
+          <img src="${item.image}" alt="${item.title}" />
+          <span>${item.title}</span>
+        </a>
+      `).join("")}
+    </div>
+  `;
+}
+
+function statsHTML(stats = []) {
+  return `
+    <div class="stats-grid">
+      ${stats.map(stat => `
+        <div class="stat-card">
+          <div class="stat-value">${stat.value}</div>
+          <div class="stat-content">
+            <div class="stat-title">${stat.title}</div>
+            <div class="stat-desc">${stat.description}</div>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function youtubeGalleryHTML(videos = []) {
+  if (!videos.length) return "";
+  return `
+    <div class="youtube-grid">
+      ${videos.map(v => `
+        <div class="youtube-card">
+          <div class="youtube-wrapper">
+            <iframe
+              src="https://www.youtube.com/embed/${v.id}"
+              title="${v.title}"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen>
+            </iframe>
+          </div>
+          <h3 class="youtube-title">${v.title}</h3>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+
+// ===== RENDER FUNCTIONS =====
+
+function renderProject(projectKey) {
+  const p = PROJECTS[projectKey];
+  if (!p) return `<p>Project not found.</p>`;
+
+  if (projectKey === "about")       return renderAbout(p);
+  if (projectKey === "transfr")     return renderTransfr(p);
+  if (projectKey === "mocap")       return renderMocap(p);
+  if (projectKey === "procedural")  return renderProcedural(p);
+  if (projectKey === "multiplayer") return renderMultiplayer(p);
+
+  return renderStandardProject(p);
+}
+
+function renderStandardProject(p) {
+  return `
+    <div class="project-hero">
+      ${heroHTML(p.hero)}
+      <div class="project-hero-caption">
+        <h1 class="project-title">${p.title}</h1>
+        <p class="project-subtitle">${p.subtitle}</p>
+        ${pillsHTML(p.pills)}
+      </div>
+    </div>
+
+    <div class="project-sections">
+      <section class="project-section">
+        <h2 class="section-title">Context</h2>
+        ${listHTML(p.context)}
+      </section>
+
+      <section class="project-section">
+        <h2 class="section-title">My Role</h2>
+        ${listHTML(p.role)}
+      </section>
+
+      <section class="project-section span-2">
+        <h2 class="section-title">Technical Focus</h2>
+        ${listHTML(p.technical)}
+      </section>
+
+      <section class="project-section span-2">
+        <h2 class="section-title">Visual Gallery</h2>
+        ${galleryHTML(p.gallery)}
+      </section>
+
+      ${p.demo ? `
+        <section class="project-section span-2">
+          <h2 class="section-title">Interactive Demo</h2>
+          ${demoHTML(p.demo)}
+        </section>
+      ` : ""}
+    </div>
+  `;
+}
+
+function renderAbout(p) {
+  return `
+    <div class="project-hero">
+      ${heroHTML(p.hero)}
+      <div class="project-hero-caption">
+        <h1 class="project-title">${p.title}</h1>
+        <p class="project-subtitle">${p.subtitle}</p>
+        ${pillsHTML(p.pills)}
+      </div>
+    </div>
+
+    <div class="project-sections">
+
+      <section class="project-section span-2">
+        <h2 class="section-title">Overview</h2>
+        ${listHTML(p.overview)}
+      </section>
+
+      <section class="project-section">
+        <h2 class="section-title">Current Focus</h2>
+        ${listHTML(p.currentFocus)}
+      </section>
+
+      ${p.links?.length ? `
+        <section class="project-section">
+          <h2 class="section-title">Links</h2>
+          ${linksHTML(p.links)}
+        </section>
+
+        ${p.selectedRecognition?.length ? `
+          <section class="project-section span-2">
+            <h2 class="section-title">Selected Recognition</h2>
+            ${recognitionHTML(p.selectedRecognition)}
+          </section>
+        ` : ""}
+      ` : ""}
+    </div>
+  `;
+}
+
+function renderTransfr(p) {
+  return `
+    <div class="project-hero">
+      ${heroHTML(p.hero)}
+      <div class="project-hero-caption">
+        <h1 class="project-title">${p.title}</h1>
+        <p class="project-subtitle">${p.subtitle}</p>
+        ${pillsHTML(p.pills)}
+      </div>
+    </div>
+
+    <div class="project-sections">
+
+      <section class="project-section span-2">
+        <h2 class="section-title">Impact</h2>
+        ${statsHTML(p.impactStats)}
+      </section>
+
+      <section class="project-section span-2">
+        <h2 class="section-title">Responsibility</h2>
+        ${listHTML(p.ownership)}
+      </section>
+
+      <section class="project-section span-2">
+        <h2 class="section-title">Production Environment</h2>
+        ${listHTML(p.productionEnvironment)}
+      </section>
+
+      ${p.gameplayVideos?.length ? `
+        <section class="project-section span-2">
+          <h2 class="section-title">Gameplay & Playthroughs</h2>
+          ${youtubeGalleryHTML(p.gameplayVideos)}
+        </section>
+      ` : ""}
+
+    </div>
+  `;
+}
+
+function renderMocap(p) {
+  const renderHowBlock = (blockData) => {
+    if (!blockData) return "";
+    return `
+      <div class="how-block how-block-with-video">
+        <div class="how-text">
+          <h3 class="how-title">${blockData.title}</h3>
+          ${listHTML(blockData.text)}
+        </div>
+        ${blockData.video ? `
+          <div class="how-video">
+            <video src="${blockData.video}" autoplay muted loop playsinline controls></video>
+          </div>
+        ` : ""}
+      </div>
+    `;
+  };
+
+  return `
+    <div class="project-hero">
+      ${heroHTML(p.hero)}
+      <div class="project-hero-caption">
+        <h1 class="project-title">${p.title}</h1>
+        <p class="project-subtitle">${p.oneLiner}</p>
+        ${pillsHTML(p.pills)}
+      </div>
+    </div>
+
+    <div class="project-sections">
+
+      <section class="project-section span-2">
+        <h2 class="section-title">Why salsa (and why it scales)</h2>
+        ${listHTML(p.whySalsa)}
+      </section>
+
+      <section class="project-section span-2">
+        <h2 class="section-title">What makes it hard / interesting</h2>
+        ${listHTML(p.interesting)}
+      </section>
+
+      <section class="project-section span-2">
+        <h2 class="section-title">What it does</h2>
+        <div class="what-grid">
+          ${p.whatItDoes.map(line => `
+            <div class="what-block">
+              <p>${line}</p>
+            </div>
+          `).join("")}
+        </div>
+      </section>
+
+      ${p.mocapSourceVideos?.length ? `
+        <section class="project-section span-2">
+          <h2 class="section-title">The Origin of the Data (Mocap)</h2>
+          <div class="mocap-grid">
+            ${p.mocapSourceVideos.map(vid => `
+              <video src="${vid}" autoplay muted loop playsinline></video>
+            `).join("")}
+          </div>
+        </section>
+      ` : ""}
+
+      <section class="project-section span-2">
+        <h2 class="section-title">How it works</h2>
+        <div class="how-stack">
+          ${renderHowBlock(p.howItWorks?.dataIngestion)}
+          ${renderHowBlock(p.howItWorks?.musicAnalysis)}
+          ${renderHowBlock(p.howItWorks?.poseAnalysis)}
+          ${renderHowBlock(p.howItWorks?.runtime)}
+        </div>
+      </section>
+
+    </div>
+  `;
+}
+
+function renderProcedural(p) {
+  const renderExperiment = (blockData) => {
+    if (!blockData) return "";
+    return `
+      <div class="how-block how-block-with-video">
+        <div class="how-text">
+          <h3 class="how-title">${blockData.title}</h3>
+          ${listHTML(blockData.text)}
+        </div>
+        ${blockData.video ? `
+          <div class="how-video">
+            <video src="${blockData.video}" autoplay muted loop playsinline controls></video>
+          </div>
+        ` : ""}
+      </div>
+    `;
+  };
+
+  return `
+    <div class="project-hero">
+      ${heroHTML(p.hero)}
+      <div class="project-hero-caption">
+        <h1 class="project-title">${p.title}</h1>
+        <p class="project-subtitle">${p.subtitle}</p>
+        ${pillsHTML(p.pills)}
+      </div>
+    </div>
+
+    <div class="project-sections">
+
+      <section class="project-section span-2">
+        <h2 class="section-title">Context & Goal</h2>
+        ${listHTML(p.context)}
+      </section>
+
+      <section class="project-section span-2">
+        <h2 class="section-title">The Experiments</h2>
+        <div class="how-stack">
+          ${renderExperiment(p.experiments?.hardware)}
+          ${renderExperiment(p.experiments?.social)}
+        </div>
+      </section>
+
+      <section class="project-section span-2">
+        <h2 class="section-title">Live Sandbox & API Integration</h2>
+        <div class="sandbox-api-layout">
+
+          <div class="sandbox-container">
+            ${demoHTML(p.demo)}
+          </div>
+
+          <div class="api-context">
+            <h3 class="how-title" style="margin-top: 0;">${p.liveData.title}</h3>
+            ${listHTML(p.liveData.text)}
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+  `;
+}
+
+function renderMultiplayer(p) {
+  return `
+    <div class="project-hero">
+      ${heroHTML(p.hero)}
+      <div class="project-hero-caption">
+        <h1 class="project-title">${p.title}</h1>
+        <p class="project-subtitle">${p.subtitle}</p>
+        ${pillsHTML(p.pills)}
+      </div>
+    </div>
+
+    <div class="project-sections">
+
+      <section class="project-section span-2">
+        <div class="split-layout">
+
+          <div class="split-text-column">
+
+            <div class="tech-card" style="margin-bottom: 30px;">
+              <h3 class="how-title">${p.context.title}</h3>
+              <ul class="tech-list">
+                ${p.context.text.map(t => `<li>${t}</li>`).join("")}
+              </ul>
+            </div>
+
+            <div class="tech-card" style="margin-bottom: 30px;">
+              <h3 class="how-title">${p.technicalNetcode.title}</h3>
+              <ul class="tech-list">
+                ${p.technicalNetcode.text.map(t => `<li>${t}</li>`).join("")}
+              </ul>
+            </div>
+
+            <div class="tech-card">
+              <h3 class="how-title">${p.technicalArchitecture.title}</h3>
+              <ul class="tech-list">
+                ${p.technicalArchitecture.text.map(t => `<li>${t}</li>`).join("")}
+              </ul>
+            </div>
+
+          </div>
+
+          <div class="split-image-column">
+            ${p.designProcess.images.map(img => `
+              <img src="${img}" alt="" class="split-img" style="width: 100%; border-radius: 8px; margin-bottom: 15px; border: 1px solid rgba(255, 255, 255, 0.1);">
+            `).join("")}
+          </div>
+
+        </div>
+      </section>
+
+      <section class="project-section span-2">
+        <h2 class="section-title">${p.fullDemo.title}</h2>
+        <p style="margin-bottom: 20px; color: var(--card-accent, #aaa);">${p.fullDemo.description}</p>
+        <div class="youtube-wrapper">
+          <iframe src="${p.fullDemo.src}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </section>
+
+    </div>
+  `;
+}
