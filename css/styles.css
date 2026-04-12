@@ -31,8 +31,8 @@ body {
 /* Project pages use the spaceship image with a dark overlay */
 body.project-page {
   background:
-    linear-gradient(rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.82)),
-    url("../assets/images/background_spaceship.png") center / cover no-repeat fixed;
+    linear-gradient(rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.90)),
+    url("../assets/images/background_spaceship.png") center / cover no-repeat;
 }
 
 /* ===== GRID ===== */
