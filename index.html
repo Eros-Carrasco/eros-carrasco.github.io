@@ -12,122 +12,103 @@
 
 <body>
 
-  <main class="grid">
+  <main class="homepage-grid">
 
-    <!-- TRANSFR CARD -->
-    <div class="card" data-project="transfr">
-      <div class="card-media">
-        <!-- video coming soon -->
-        <video src="assets/videos/transfr_hero.mp4" poster="assets/images/poster_transfr.jpg" muted loop playsinline preload="metadata">
-        </video>
-      </div>
-
-      <div class="card-info">
-        <h3>Transfr</h3>
-        <div class="tags">
-          <span>VR Training</span>
-          <span>Industry Production</span>
-        </div>
-      </div>
-
-      <div class="card-overlay-icon">⤢</div>
-    </div>
-
-
-    <!-- MOTION CAPTURE CARD -->
-    <div class="card" data-project="mocap">
-      <div class="card-media">
-        <!-- video coming soon -->
-        <video src="assets/videos/card_motionCapture.mp4" poster="assets/images/poster_mocap.jpg" muted loop playsinline preload="metadata">
-        </video>
-      </div>
-
-      <div class="card-info">
-        <h3>Salsa AI</h3>
-        <div class="tags">
-          <span>Motion Capture</span>
-          <span>Unity Tooling</span>
-        </div>
-      </div>
-
-      <div class="card-overlay-icon">⤢</div>
-    </div>
-
-
-
-    <!-- PROCEDURAL WORLD GENERATION CARD -->
-    <div class="card" data-project="procedural">
-      <div class="card-media">
-        <video src="assets/videos/procedural_hero_slow.mp4" poster="assets/images/poster_procedural.jpg" muted loop playsinline preload="metadata">
-        </video>
-      </div>
-
-      <div class="card-info">
-        <h3>IDM Biome</h3>
-        <div class="tags">
-          <span>Arduino</span>
-          <span>Procedural World Generation</span>
-        </div>
-      </div>
-
-      <div class="card-overlay-icon">⤢</div>
-    </div>
-
-    <!-- DL FOR XR CARD -->
-    <!-- 
-    <div class="card" data-project="ml">
-      <div class="card-media">
-      </div>
-
-      <div class="card-info">
-        <h3>Deep Learning for XR</h3>
-        <div class="tags">
-          <span>Deep Learning</span>
-          <span>WebXR</span>
-        </div>
-      </div>
-
-      <div class="card-overlay-icon">⤢</div>
-    </div>
-    -->
-
-    <!-- MULTIPLAYER CARD -->
-    <div class="card" data-project="multiplayer">
-      <div class="card-media">
-        <video src="assets/videos/memberbot_hero.mp4" poster="assets/images/poster_multiplayer.jpg" muted loop playsinline preload="metadata">
-        </video>
-      </div>
-
-      <div class="card-info">
-        <h3>Member Bot</h3>
-        <div class="tags">
-          <span>Unity Netcode</span>
-        </div>
-      </div>
-
-      <div class="card-overlay-icon">⤢</div>
-    </div>
-
-
-    <!-- ABOUT ME CARD -->
-    <div class="card" data-project="about">
+    <!-- ABOUT CARD (left column) -->
+    <div class="card card-about" data-project="about">
       <div class="card-media">
         <img src="assets/images/card_about.jpg" alt="Eros Carrasco" />
       </div>
 
-      <div class="card-info">
-        <h3>About Eros Carrasco</h3>
+      <div class="card-about-caption">
+        <h3 class="card-about-name">Eros Carrasco</h3>
         <div class="tags">
           <span>Creative Technologist</span>
-          <span>NYU</span>
+          <span>XR</span>
+          <span>NYU M.S.</span>
         </div>
       </div>
 
       <div class="card-overlay-icon">⤢</div>
     </div>
 
-  </main>
+    <!-- PROJECT CARDS (right column, 2x2) -->
+    <div class="projects-grid">
 
+      <!-- TRANSFR CARD -->
+      <div class="card" data-project="transfr">
+        <div class="card-media">
+          <video src="assets/videos/transfr_hero.mp4" poster="assets/images/poster_transfr.jpg" muted loop playsinline preload="metadata">
+          </video>
+        </div>
+
+        <div class="card-info">
+          <h3>Transfr</h3>
+          <div class="tags">
+            <span>VR Training</span>
+            <span>Industry Production</span>
+          </div>
+        </div>
+
+        <div class="card-overlay-icon">⤢</div>
+      </div>
+
+      <!-- MOTION CAPTURE CARD -->
+      <div class="card" data-project="mocap">
+        <div class="card-media">
+          <video src="assets/videos/card_motionCapture.mp4" poster="assets/images/poster_mocap.jpg" muted loop playsinline preload="metadata">
+          </video>
+        </div>
+
+        <div class="card-info">
+          <h3>Salsa AI</h3>
+          <div class="tags">
+            <span>Motion Capture</span>
+            <span>Unity Tooling</span>
+          </div>
+        </div>
+
+        <div class="card-overlay-icon">⤢</div>
+      </div>
+
+      <!-- PROCEDURAL WORLD GENERATION CARD -->
+      <div class="card" data-project="procedural">
+        <div class="card-media">
+          <video src="assets/videos/procedural_hero_slow.mp4" poster="assets/images/poster_procedural.jpg" muted loop playsinline preload="metadata">
+          </video>
+        </div>
+
+        <div class="card-info">
+          <h3>IDM Biome</h3>
+          <div class="tags">
+            <span>Arduino</span>
+            <span>Procedural World Generation</span>
+          </div>
+        </div>
+
+        <div class="card-overlay-icon">⤢</div>
+      </div>
+
+      <!-- MULTIPLAYER CARD -->
+      <div class="card" data-project="multiplayer">
+        <div class="card-media">
+          <video src="assets/videos/memberbot_hero.mp4" poster="assets/images/poster_multiplayer.jpg" muted loop playsinline preload="metadata">
+          </video>
+        </div>
+
+        <div class="card-info">
+          <h3>Member Bot</h3>
+          <div class="tags">
+            <span>Unity Netcode</span>
+          </div>
+        </div>
+
+        <div class="card-overlay-icon">⤢</div>
+      </div>
+
+    </div><!-- /projects-grid -->
+
+  </main>
 
   <script src="js/main.js"></script>
 </body>
