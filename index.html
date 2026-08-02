@@ -4,9 +4,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Eros Carrasco</title>
-  <link rel="stylesheet" href="css/styles.css" />
 
+  <title>Eros Carrasco — Creative Technologist, XR & AI</title>
+  <meta name="description"
+    content="Production-focused XR developer building interactive systems from concept to deployment. VR training simulations at Transfr, motion capture tooling, procedural worlds, and Unity multiplayer. NYU M.S." />
+  <link rel="canonical" href="https://eros-carrasco.github.io/" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Eros Carrasco" />
+  <meta property="og:url" content="https://eros-carrasco.github.io/" />
+  <meta property="og:title" content="Eros Carrasco — Creative Technologist, XR & AI" />
+  <meta property="og:description"
+    content="Production-focused XR developer building interactive systems from concept to deployment. VR training, motion capture tooling, procedural worlds, Unity multiplayer." />
+  <meta property="og:image" content="https://eros-carrasco.github.io/assets/images/og-default.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="stylesheet" href="css/styles.css" />
   <link rel="icon" type="image/png" href="assets/images/favicon_0.png" />
 </head>
 
@@ -15,9 +30,9 @@
   <main class="homepage-grid">
 
     <!-- ABOUT CARD (left column) -->
-    <div class="card card-about" data-project="about">
+    <a class="card card-about" href="about/" data-project="about">
       <div class="card-media">
-        <img src="assets/images/card_about.jpg" alt="Eros Carrasco" />
+        <img src="assets/images/card_about.jpg" alt="Portrait of Eros Carrasco" width="1200" height="1355" />
       </div>
 
       <div class="card-about-caption">
@@ -29,17 +44,17 @@
         </div>
       </div>
 
-      <div class="card-overlay-icon">⤢</div>
-    </div>
+      <div class="card-overlay-icon" aria-hidden="true">↗</div>
+    </a>
 
     <!-- PROJECT CARDS (right column, 2x2) -->
     <div class="projects-grid">
 
       <!-- TRANSFR CARD -->
-      <div class="card" data-project="transfr">
+      <a class="card" href="projects/transfr/" data-project="transfr">
         <div class="card-media">
-          <video src="assets/videos/transfr_hero.mp4" poster="assets/images/poster_transfr.jpg" muted loop playsinline preload="metadata">
-          </video>
+          <video src="assets/videos/transfr_hero.mp4" poster="assets/images/poster_transfr.jpg" muted loop playsinline
+            preload="none" tabindex="-1" aria-hidden="true"></video>
         </div>
 
         <div class="card-info">
@@ -50,14 +65,14 @@
           </div>
         </div>
 
-        <div class="card-overlay-icon">⤢</div>
-      </div>
+        <div class="card-overlay-icon" aria-hidden="true">↗</div>
+      </a>
 
       <!-- MOTION CAPTURE CARD -->
-      <div class="card" data-project="mocap">
+      <a class="card" href="projects/salsa-ai/" data-project="mocap">
         <div class="card-media">
-          <video src="assets/videos/card_motionCapture.mp4" poster="assets/images/poster_mocap.jpg" muted loop playsinline preload="metadata">
-          </video>
+          <video src="assets/videos/card_motionCapture.mp4" poster="assets/images/poster_mocap.jpg" muted loop
+            playsinline preload="none" tabindex="-1" aria-hidden="true"></video>
         </div>
 
         <div class="card-info">
@@ -68,14 +83,14 @@
           </div>
         </div>
 
-        <div class="card-overlay-icon">⤢</div>
-      </div>
+        <div class="card-overlay-icon" aria-hidden="true">↗</div>
+      </a>
 
       <!-- PROCEDURAL WORLD GENERATION CARD -->
-      <div class="card" data-project="procedural">
+      <a class="card" href="projects/idm-biome/" data-project="procedural">
         <div class="card-media">
-          <video src="assets/videos/procedural_hero_slow.mp4" poster="assets/images/poster_procedural.jpg" muted loop playsinline preload="metadata">
-          </video>
+          <video src="assets/videos/procedural_hero_slow.mp4" poster="assets/images/poster_procedural.jpg" muted loop
+            playsinline preload="none" tabindex="-1" aria-hidden="true"></video>
         </div>
 
         <div class="card-info">
@@ -86,14 +101,14 @@
           </div>
         </div>
 
-        <div class="card-overlay-icon">⤢</div>
-      </div>
+        <div class="card-overlay-icon" aria-hidden="true">↗</div>
+      </a>
 
       <!-- MULTIPLAYER CARD -->
-      <div class="card" data-project="multiplayer">
+      <a class="card" href="projects/member-bot/" data-project="multiplayer">
         <div class="card-media">
-          <video src="assets/videos/memberbot_hero.mp4" poster="assets/images/poster_multiplayer.jpg" muted loop playsinline preload="metadata">
-          </video>
+          <video src="assets/videos/memberbot_hero.mp4" poster="assets/images/poster_multiplayer.jpg" muted loop
+            playsinline preload="none" tabindex="-1" aria-hidden="true"></video>
         </div>
 
         <div class="card-info">
@@ -103,8 +118,8 @@
           </div>
         </div>
 
-        <div class="card-overlay-icon">⤢</div>
-      </div>
+        <div class="card-overlay-icon" aria-hidden="true">↗</div>
+      </a>
 
     </div><!-- /projects-grid -->
 

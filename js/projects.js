@@ -65,7 +65,7 @@ const PROJECTS = {
     hero: {
       type: "video",
       src: `${BASE_URL}assets/videos/procedural_hero_slow.mp4`,
-      poster: `${BASE_URL}assets/images/biome_poster.jpg`,
+      poster: `${BASE_URL}assets/images/poster_procedural.jpg`,
     },
     context: [
       "A series of prototypes designed to explore how a digital world can be shaped by its physical and social surroundings.",
@@ -275,9 +275,9 @@ const PROJECTS = {
     },
     designProcess: {
       images: [
-        `${BASE_URL}assets/images/memberbot_1.png`,
-        `${BASE_URL}assets/images/memberbot_2.png`,
-        `${BASE_URL}assets/images/memberbot_3.png`,
+        `${BASE_URL}assets/images/memberbot_1.jpg`,
+        `${BASE_URL}assets/images/memberbot_2.jpg`,
+        `${BASE_URL}assets/images/memberbot_3.jpg`,
       ]
     },
     fullDemo: {

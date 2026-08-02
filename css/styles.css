@@ -21,7 +21,7 @@ body {
   min-height: 100vh;
   background:
     linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)),
-    url("../assets/images/background_spaceship.png") center 65% / cover no-repeat fixed;
+    url("../assets/images/background_spaceship.jpg") center 65% / cover no-repeat fixed;
   color: white;
   font-family: system-ui, -apple-system, sans-serif;
 }
@@ -30,15 +30,25 @@ body {
 body.project-page {
   background:
     linear-gradient(rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.90)),
-    url("../assets/images/background_spaceship.png") center / cover no-repeat;
+    url("../assets/images/background_spaceship.jpg") center / cover no-repeat;
+}
+
+/* ===== PROJECT / ABOUT PAGE CONTAINER ===== */
+.page-inner {
+  width: min(1080px, 100%);
+  margin: 0 auto;
+  padding: 20px 22px 60px;
+  box-sizing: border-box;
 }
 
 /* ===== HOMEPAGE LAYOUT ===== */
+/* Both tracks and the gap shrink with the viewport, so every width between the
+   900px breakpoint and the 1350px max stays inside the screen. */
 .homepage-grid {
   display: grid;
-  grid-template-columns: 300px 828px;
+  grid-template-columns: clamp(240px, 24vw, 300px) minmax(0, 828px);
   justify-content: center;
-  gap: 110px;
+  gap: clamp(32px, 6vw, 110px);
   padding: 40px;
   box-sizing: border-box;
   max-width: 1350px;
@@ -53,23 +63,12 @@ body.project-page {
   gap: 28px;
 }
 
-/* Project cards: fixed to original size */
-.projects-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 28px;
-}
-
 .projects-grid .card {
-  width: auto;
-  min-width: 0;
   height: 320px;
 }
 
 /* About card — portrait, taller than project cards, centered vertically */
 .card-about {
-  width: auto;
-  min-width: 0;
   height: 500px;
   align-self: center;
 }
@@ -117,13 +116,13 @@ body.project-page {
 }
 
 /* ===== CARD ===== */
+/* Cards are <a> elements: the whole tile is one real link. */
 .card {
   position: relative;
   border-radius: 16px;
   overflow: hidden;
-  cursor: pointer;
 
-  --card-accent: #888;
+  --card-accent: #5ddcff;
 
   display: flex;
   flex-direction: column;
@@ -131,24 +130,43 @@ body.project-page {
   height: 320px;
 
   background: #0f141b;
+  color: inherit;
+  text-decoration: none;
 
-  box-shadow: 
+  box-shadow:
     0 10px 25px rgba(0,0,0,0.35);
 
-  transition: 
+  transition:
     transform 0.3s ease,
     box-shadow 0.3s ease;
-
-    width: calc(33.333% - 19px); /* Fuerza a que ocupen un tercio del espacio exacto */
-  min-width: 310px; /* Si la pantalla es pequeña (celular/tablet), saltan a la siguiente línea */
 }
 
-/* ===== HOVER ===== */
-.card:hover {
+/* ===== HOVER / FOCUS ===== */
+.card:hover,
+.card:focus-visible {
   transform: translateY(-6px) scale(1.02);
   box-shadow:
     0 0 0 1.6px var(--card-accent),
     0 20px 45px rgba(0,0,0,0.5);
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--card-accent);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .card-media video,
+  .card-media img,
+  .card-overlay-icon {
+    transition: none;
+  }
+
+  .card:hover,
+  .card:focus-visible {
+    transform: none;
+  }
 }
 
 /* ===== CARD MEDIA ===== */
@@ -170,7 +188,9 @@ body.project-page {
 }
 
 .card:hover .card-media video,
-.card:hover .card-media img {
+.card:hover .card-media img,
+.card:focus-visible .card-media video,
+.card:focus-visible .card-media img {
   transform: scale(1.05);
 }
 
@@ -208,132 +228,26 @@ body.project-page {
   margin: 0 6px;
 }
 
-/* ===== OVERLAY ICON ===== */
+/* ===== CARD CORNER ICON ===== */
 .card-overlay-icon {
   position: absolute;
   top: 14px;
   right: 14px;
   opacity: 0;
   font-size: 14px;
-  transition: 
+  transition:
     opacity 0.25s ease,
     transform 0.25s ease;
 }
 
-.card:hover .card-overlay-icon {
+.card:hover .card-overlay-icon,
+.card:focus-visible .card-overlay-icon {
   opacity: 1;
   transform: scale(1.4);
 }
 
-/* ===== OVERLAY FULLSCREEN ===== */
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.95);
-  z-index: 100;
-}
-
-.hidden {
-  display: none;
-}
-
-/* ===== PROJECT ACCENTS ===== */
-.card[data-project="transfr"] {
-  --card-accent: #5ddcff;
-}
-
-.card[data-project="about"] {
-  --card-accent: #5ddcff;
-}
-
-.card[data-project="procedural"] {
-  --card-accent: #5ddcff;
-}
-
-.card[data-project="mocap"] {
-  --card-accent: #5ddcff;
-}
-
-.card[data-project="ml"] {
-  --card-accent: #5ddcff;
-}
-
-.card[data-project="multiplayer"] {
-  --card-accent: #5ddcff;
-}
-
-/* ===== OVERLAY (FULLSCREEN PROJECT) ===== */
-.overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-
-  /* fade */
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-
-  /* background */
-  background: rgba(0, 0, 0, 0.88);
-  backdrop-filter: blur(10px);
-}
-
-.overlay.is-open {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* page container */
-.overlay-page {
-  height: 100%;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-
-  /* spacing */
-  padding: 28px 22px 60px;
-  box-sizing: border-box;
-}
-
-/* inner width */
-.overlay-inner {
-  width: min(1080px, 100%);
-  margin: 0 auto;
-}
-
-/* top bar */
-.overlay-topbar {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-
-  display: flex;
-  justify-content: flex-end;
-  padding: 10px 0;
-
-  /* subtle fade so button stays readable on hero */
-  background: linear-gradient(
-    to bottom,
-    rgba(0,0,0,0.65) 0%,
-    rgba(0,0,0,0) 0%
-  );
-}
-
-.overlay-close {
-  border: 1.5px solid rgba(109, 168, 192, 0.2);
-  background: rgba(10, 17, 23, 0.55);
-  color: white;
-  border-radius: 999px;
-  padding: 10px 12px;
-  cursor: pointer;
-
-  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
-}
-
-.overlay-close:hover {
-  transform: scale(1.05);
-  background: rgba(10, 17, 23, 0.75);
-  border-color: rgba(255,255,255,0.35);
-}
+/* Per-project accent. Every card currently shares the default set on .card;
+   override here to give a project its own colour. */
 
 /* hero */
 .project-hero {
@@ -568,7 +482,7 @@ body.project-page {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   gap: 16px;
 }
 
@@ -722,7 +636,7 @@ body.project-page {
 .youtube-grid {
   display: grid;
   gap: 18px;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   margin-top: 14px;
 }
 
@@ -839,7 +753,7 @@ body.project-page {
 
 .design-gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
   gap: 20px;
 }
 
@@ -886,13 +800,6 @@ body.project-page {
   object-fit: cover;
 }
 
-/* Responsivo: En móvil se pone el texto arriba y las fotos abajo */
-@media (max-width: 900px) {
-  .split-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
 /* Zoom específico para ocultar los bordes negros del video Procedural */
 .card[data-project="procedural"] .card-media video {
   transform: scale(1.08);
@@ -900,6 +807,7 @@ body.project-page {
 }
 
 /* Zoom extra al hacer HOVER solo en el video de Procedural */
-.card[data-project="procedural"]:hover .card-media video {
+.card[data-project="procedural"]:hover .card-media video,
+.card[data-project="procedural"]:focus-visible .card-media video {
   transform: scale(1.12);
 }
