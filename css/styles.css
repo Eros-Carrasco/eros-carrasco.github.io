@@ -57,20 +57,36 @@ body.project-page {
   align-items: start;
 }
 
+/* Rows keep a comfortable height instead of being squeezed to fit the viewport.
+   At eight cards, forcing everything on screen made each card 2.3:1 and cropped the
+   media badly. The about card is sticky, so it follows while this column scrolls. */
 .projects-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 28px;
+  grid-template-rows: repeat(4, clamp(200px, 22vh, 260px));
+  gap: 24px;
 }
 
 .projects-grid .card {
-  height: 320px;
+  height: auto;
 }
 
-/* About card — portrait, taller than project cards, centered vertically */
+/* About card — portrait, taller than project cards. Also viewport-bound so it
+   never forces a scroll on a short window. */
 .card-about {
-  height: 500px;
+  height: min(500px, calc(100vh - 80px));
   align-self: center;
+}
+
+/* The projects column is now three rows tall, so a vertically centred about
+   card would sit in a pool of dead space. Pin it to the top instead and let it
+   ride along while the grid scrolls. */
+@media (min-width: 901px) {
+  .card-about {
+    position: sticky;
+    top: 40px;
+    align-self: start;
+  }
 }
 
 /* About card: image fills top, caption is a solid bar at the bottom */
@@ -488,7 +504,10 @@ body.project-page {
 
 .stat-card {
   display: flex;
-  gap: 20px;
+  /* Stacked, not side by side: a value can be a word ("Once", "Free") and a
+     48px word beside a paragraph squeezes the paragraph into a ribbon. */
+  flex-direction: column;
+  gap: 10px;
   padding: 20px;
   border-radius: 18px;
   background: rgba(14, 165, 233, 0.364);
@@ -496,9 +515,10 @@ body.project-page {
 }
 
 .stat-value {
-  font-size: 48px;
+  font-size: clamp(30px, 3.4vw, 44px);
   font-weight: 600;
-  line-height: 1;
+  line-height: 1.05;
+  text-wrap: balance;
 }
 
 .stat-title {
@@ -800,14 +820,246 @@ body.project-page {
   object-fit: cover;
 }
 
-/* Zoom específico para ocultar los bordes negros del video Procedural */
-.card[data-project="procedural"] .card-media video {
-  transform: scale(1.08);
-  transform-origin: center center;
+/* The procedural video used to carry a baked-in pillarbox that was hidden with
+   a scale() hack. The source is now cropped to 836x720, so the hack is gone and
+   this card uses the same hover zoom as every other one. */
+/* ===== PROSE, FIGURES AND DATA TABLES (case-study pages) ===== */
+.prose {
+  margin: 0 0 12px 0;
+  line-height: 1.65;
+  opacity: 0.9;
+  max-width: 68ch;
 }
 
-/* Zoom extra al hacer HOVER solo en el video de Procedural */
-.card[data-project="procedural"]:hover .card-media video,
-.card[data-project="procedural"]:focus-visible .card-media video {
-  transform: scale(1.12);
+.prose:last-child {
+  margin-bottom: 0;
+}
+
+.fig {
+  margin: 18px 0;
+}
+
+.fig img {
+  width: auto;
+  max-width: 100%;
+  /* Tall portrait figures would otherwise run 2000px down the page. Cap the
+     height and let the wrapping link open the full-size original. */
+  max-height: 520px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.fig figcaption {
+  margin-top: 8px;
+  /* Centred text under a figure goes ragged on two or three lines. Centre the
+     block, left-align the words. */
+  margin-inline: auto;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.5;
+  opacity: 0.65;
+  max-width: 68ch;
+}
+
+/* Wide tables scroll inside their own box rather than widening the page. */
+.table-scroll {
+  overflow-x: auto;
+  margin: 18px 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.data-table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 360px;
+  font-size: 14px;
+}
+
+.data-table th,
+.data-table td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+.data-table th {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.7;
+  font-weight: 600;
+}
+
+.data-table td:not(:first-child) {
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.data-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* ---- slope chart ---- */
+.slope-figure {
+  margin: 28px 0 8px;
+}
+.slope {
+  --fall: #d95926;   /* validated on #0f141b, dark categorical slot 2 */
+  --rise: #3987e5;   /* slot 1 */
+  --quiet: rgba(255, 255, 255, 0.28);
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  display: block;
+  margin-inline: auto;
+  overflow: visible;
+}
+.slope-axis {
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 1;
+}
+.slope-head {
+  fill: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+.slope-line {
+  stroke: var(--quiet);
+  stroke-width: 2;
+  fill: none;
+}
+.slope-dot {
+  fill: var(--quiet);
+  stroke: #0f141b;      /* 2px surface ring so crossing marks stay separate */
+  stroke-width: 2;
+}
+.slope-line.accent-fall,
+.slope-dot.accent-fall {
+  stroke: var(--fall);
+}
+.slope-dot.accent-fall {
+  fill: var(--fall);
+  stroke: #0f141b;
+}
+.slope-line.accent-rise,
+.slope-dot.accent-rise {
+  stroke: var(--rise);
+}
+.slope-dot.accent-rise {
+  fill: var(--rise);
+  stroke: #0f141b;
+}
+.slope-name {
+  fill: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+}
+.slope-val {
+  fill: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.is-accent .slope-name {
+  fill: #fff;
+  font-weight: 600;
+}
+.is-accent .slope-val {
+  fill: rgba(255, 255, 255, 0.75);
+}
+.slope-hit {
+  stroke: transparent;
+  stroke-width: 20;   /* generous hit target; the visible line is only 2px */
+  fill: none;
+}
+.slope-series {
+  transition: opacity 0.15s ease;
+}
+.slope:hover .slope-series:not(:hover) {
+  opacity: 0.35;
+}
+.slope-figure figcaption {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 6px;
+}
+details.numbers {
+  margin: 4px 0 8px;
+}
+details.numbers summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 6px 0;
+}
+details.numbers summary:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+details.numbers[open] summary {
+  margin-bottom: 8px;
+}
+@media (max-width: 640px) {
+  .slope-name { font-size: 17px; }
+  .slope-val  { font-size: 16px; }
+  .slope-head { font-size: 14px; }
+}
+
+/* Named parts of a system, the way the older project pages read. */
+.part-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin: 30px 0 10px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.project-section .part-title:first-of-type {
+  margin-top: 6px;
+  padding-top: 0;
+  border-top: 0;
+}
+.part-list {
+  margin: 0 0 14px;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.part-list li {
+  font-size: 15px;
+  line-height: 1.55;
+  opacity: 0.88;
+}
+.fig-video video {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #000;
+}
+.fig-video + .fig-video {
+  margin-top: 14px;
+}
+/* Text left, media right, the way the Salsa AI blocks read. */
+.part-block-media {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 36px;
+  align-items: center;
+}
+.part-block-media .part-list { margin-bottom: 0; }
+.part-media { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.part-media .fig img { max-height: 260px; }
+.part-media figcaption { max-width: none; }
+@media (max-width: 760px) {
+  .part-block-media { grid-template-columns: 1fr; gap: 14px; }
 }

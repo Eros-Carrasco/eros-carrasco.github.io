@@ -9,3 +9,13 @@
 
 # OS generated files
 Thumbs.db
+
+# Working notes and raw source material — never published
+_notes/
+# Source media. Far over GitHub's 100 MB per-file limit; these live outside the
+# repo and only compressed cuts of them belong in assets/.
+*.ecz
+*.ecm
+Relighting Splats*.mp4
+/*.mp4
+/*.mov

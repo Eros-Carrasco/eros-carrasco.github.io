@@ -1,6 +1,6 @@
 # eros-carrasco.github.io
 
-Personal portfolio of **Eros Carrasco** — Creative Technologist working at the
+Personal portfolio of **Eros Carrasco**, Creative Technologist working at the
 intersection of XR and AI. NYU M.S.
 
 **Live site → <https://eros-carrasco.github.io/>**
@@ -17,7 +17,7 @@ intersection of XR and AI. NYU M.S.
 ## Tech
 
 Hand-written static HTML, CSS, and vanilla JavaScript. No framework, no build
-step, no dependencies — clone it and open `index.html`.
+step, no dependencies. Clone it and open `index.html`.
 
 ## Structure
 
@@ -62,5 +62,5 @@ ffmpeg -i in.mp4 -c:v libx264 -preset slow -crf 30 -r 30 \
   -an out.mp4
 ```
 
-Keep raw screen-recorder exports out of the repo — they run ~20 Mbps, which is
+Keep raw screen-recorder exports out of the repo. They run ~20 Mbps, which is
 roughly 30x heavier than these settings for no visible gain.
