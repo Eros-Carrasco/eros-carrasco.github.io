@@ -6,6 +6,213 @@
 // ===== PROJECT DATA =====
 const PROJECTS = {
 
+  mrandarin: {
+    title: "MRandarin",
+    subtitle:
+      "A mixed reality app that reads Chinese characters as you write them on a real whiteboard, tells you what they mean, and keeps them in a pokedex you can practice from.",
+
+    pills: ["Computer Vision", "OCR", "WebXR", "Meta Quest 3", "Python"],
+
+    hero: {
+      type: "video",
+      src: `${BASE_URL}assets/videos/mrandarin_hero.mp4`,
+      poster: `${BASE_URL}assets/images/poster_mrandarin.jpg`,
+    },
+
+    impactStats: [
+      { value: "5", title: "OCR Models Tested", description: "On clean data and on real captures from the headset." },
+      { value: "151", title: "Real Captures", description: "Pulled from the running app, not from a dataset." },
+      { value: "59.6%", title: "Best on Real Data", description: "CnOCR, which came last on the dataset." }
+    ],
+
+    context: [
+      "You write a character with a marker and the headset answers around it: meaning, pinyin, an image, a sentence to make it stick. Every character lands in a pokedex. Tap one to replay its stroke order, or ask for a new one and the app teaches it, then accepts nothing else until you get it right.",
+      "WebXR gives an app no access to the headset cameras, so the headset casts what it sees to a PC and the PC does the reading. Unity and Unreal have no such restriction."
+    ],
+
+    evaluation: {
+      title: "Picking a Recognizer",
+      intro: [
+        "Apple Vision does the reading, picked because it installed fastest. Five of us benchmarked it against four other models on CASIA, a standard handwriting dataset. I built the nine distortions we tested against, each modeled on what a headset does to an image: motion blur, lens glare, low resolution passthrough. Then I collected 151 real captures from the app and ran all five on those."
+      ],
+      slope: {
+        left: "CLEAN DATASET",
+        right: "REAL CAPTURES",
+        alt: "Accuracy of five OCR models on the CASIA dataset and on 151 real captures from the headset. ANCHOR falls from 58.1 percent to zero. CnOCR rises from 15.2 percent to 59.6 percent. The two lines cross.",
+        caption: "Same five models, two test sets. The two lines that cross are the whole story.",
+        series: [
+          { name: "ANCHOR", a: 58.1, b: 0.0, accent: "fall" },
+          { name: "PaddleOCR", a: 40.5, b: 34.4 },
+          { name: "Apple Vision", a: 39.7, b: 23.2 },
+          { name: "EasyOCR", a: 26.9, b: 1.3 },
+          { name: "CnOCR", a: 15.2, b: 59.6, accent: "rise" }
+        ]
+      },
+
+      table: {
+        headers: ["Model", "Clean data", "Real captures"],
+        rows: [
+          ["ANCHOR", "58.1%", "0.0%"],
+          ["PaddleOCR", "40.5%", "34.4%"],
+          ["Apple Vision", "39.7%", "23.2%"],
+          ["EasyOCR", "26.9%", "1.3%"],
+          ["CnOCR", "15.2%", "59.6%"]
+        ]
+      },
+      takeaway: [
+        "The zero was my pipeline, not the model. I crop to the whiteboard, so the character sits small inside a big rectangle, and ANCHOR has no stage that finds the character before reading it. It read the rectangle: nearly every guess came back 日 or 口, the two characters shaped like a panel.",
+        "So ANCHOR is not ruled out, it just never got a crop it could use. The next thing to try is two stage: let CnOCR find the character, let ANCHOR read it."
+      ]
+    },
+
+    gallery: [
+      {
+        src: `${BASE_URL}assets/images/mrandarin_passthrough.jpg`,
+        alt: "The whiteboard seen through the headset, with a character recognized",
+        caption: "Through the headset. The markers at the corners are drawn by the headset itself, so your hand never covers them while you write."
+      }
+    ],
+
+    credits: {
+      title: "Credits",
+      text: [
+        "Coursework for two NYU classes, combined into one project: Virtual Reality with Ken Perlin, and Deep Learning for Media. Built on clay.js, the Future Reality Lab's WebXR framework.",
+        "The OCR study was group work with Kaylie Stuteville, Kezia Widjaja, Jasmine Zhang and Lia Cociorva."
+      ]
+    },
+  },
+
+  splatlab: {
+    title: "SplatLab",
+    subtitle:
+      "Gaussian splat research: spatial analysis, object recognition, relighting and transitions, in an Unreal integration and a renderer of my own.",
+
+    pills: ["Gaussian Splatting", "Unreal Engine", "HLSL", "CUDA"],
+
+    hero: {
+      type: "video",
+      src: `${BASE_URL}assets/videos/splatlab_hero.mp4`,
+      poster: `${BASE_URL}assets/images/poster_splatlab.jpg`
+    },
+
+    impactStats: [
+      { value: "Relighting", title: "Lighting a capture that has no surfaces", description: "A photographed room can be put under a different light, in real time." },
+      { value: "Transitions", title: "Moving between worlds without a cut", description: "Costs less to draw than the world it replaces, because it draws fewer gaussians." }
+    ],
+
+    work: {
+      title: "The System",
+      items: [
+        {
+          heading: "Relighting (HLSL, inside the renderer's shader)",
+          text: [
+            "Recover a surface direction for every gaussian from its own shape, live.",
+            "Closed form. No preprocessing, no retraining, no stored normals.",
+            "Multiply the captured colour, never add, so the original light survives."
+          ],
+          figs: [{
+            src: `${BASE_URL}assets/images/splatlab_normals.jpg`,
+            alt: "A colonnade with every surface coloured according to the direction it faces",
+            caption: "Colour is which way each blob faces."
+          }]
+        },
+        {
+          text: ["The light it was captured under cannot be removed. This works on top of it."],
+          figs: [{
+            src: `${BASE_URL}assets/images/splatlab_relight.jpg`,
+            alt: "The same hall twice, once under a warm light and once under a cold one",
+            caption: "The same world under a warm key and a cold key."
+          }]
+        },
+        {
+          heading: "Transitions (HLSL)",
+          text: [
+            "Drop the draw budget and the whole room is described with a few thousand points, not cropped.",
+            "The next world fills in from those same points.",
+            "Runs per gaussian in the raster shader, on the GPU."
+          ],
+          clips: [
+            { src: `${BASE_URL}assets/videos/splatlab_tr_breakroom.mp4`, alt: "A breakroom dissolving as a magenta band sweeps through it" },
+            { src: `${BASE_URL}assets/videos/splatlab_tr_temple.mp4`, alt: "A temple crumbling into golden particles" },
+            { src: `${BASE_URL}assets/videos/splatlab_tr_cabin.mp4`, alt: "A cabin breaking into points behind a cyan sweep" }
+          ]
+        },
+        {
+          heading: "Spatial Analysis (Python)",
+          text: [
+            "Measure floor, ceiling, walls, and clear distance in every direction.",
+            "Write it once to a manifest everything downstream reads.",
+            "Return nothing when nothing is there. The confidence measure this replaced went up as the data ran out."
+          ],
+          figs: [{
+            src: `${BASE_URL}assets/images/splatlab_plan.jpg`,
+            alt: "Top down plan of a room, with coloured lines measuring the distance from a point to every wall",
+            caption: "Distance to a surface, coloured by height."
+          }]
+        },
+        {
+          heading: "Object Understanding (Local Vision Model)",
+          text: [
+            "Geometry separates the objects and sets their boundaries.",
+            "A vision model reads eight views. Only what two of them agree on survives: chair went from 78,663 gaussians to 877.",
+            "The model supplies the noun. A measurement decides the category."
+          ],
+          figs: [{
+            src: `${BASE_URL}assets/images/splatlab_named.jpg`,
+            alt: "Two spaces with objects highlighted in red and labelled, the chairs in one and the columns in the other",
+            caption: "Two worlds, asked for a thing by name."
+          }]
+        },
+        {
+          heading: "Unreal Integration (C++)",
+          text: [
+            "Patched six runtime setters into the plugin so anything could be animated.",
+            "Worlds travel to the player, because motion capture overwrites the player every frame."
+          ]
+        },
+        {
+          heading: "Renderer (CUDA, gsplat, Python)",
+          text: [
+            "Second implementation outside Unreal, on a Grace Blackwell machine.",
+            "Every gaussian stays a tensor, so an effect is tensor maths, not a shader rewrite."
+          ]
+        }
+      ]
+    },
+
+  },
+
+  frl: {
+    title: "Future Reality Lab",
+    subtitle:
+      "Research with Ken Perlin's group at NYU, building software for the lab's VR platform.",
+
+    pills: ["Computer Vision", "Pose Estimation", "WebXR", "Research"],
+
+    hero: {
+      type: "video",
+      src: `${BASE_URL}assets/videos/frl_hero.mp4`,
+      poster: `${BASE_URL}assets/images/poster_frl.jpg`,
+    },
+
+    labProject: {
+      title: "The Lab's Project",
+      text: [
+        "The lab is building a way for two people in different cities to work together in mixed reality, over their own desks rather than instead of them. You draw in the air, the drawing becomes a widget, and you both edit the same thing at once.",
+        "It is a team project. The video calling layer is Ken Perlin's, and the drawing system comes from Chalktalk. My part is below."
+      ]
+    },
+
+    contribution: {
+      title: "What I Built",
+      text: [
+        "A system that connects the headset to your computer, so the machine you are working on becomes part of the VR space instead of something you take the headset off to use.",
+        "The headset cannot see for itself, because WebXR blocks camera access. So it sends what it sees to the computer, and the computer works out where the screen is from markers shown on it. Everything else anchors to that.",
+        "I also contribute to the group's research work, including an NSF funding proposal in preparation."
+      ]
+    },
+  },
+
   transfr: {
     title: "Career Exploration XR Simulations – Transfr",
     subtitle:
@@ -100,7 +307,7 @@ const PROJECTS = {
     liveData: {
       title: "Live Environment (Weather API)",
       text: [
-        "Fetches live data from Downtown Brooklyn via the Open-Meteo API.",
+        "Fetches live data from Downtown Brooklyn via the Open-Meteo API."
       ]
     }
   },
@@ -109,7 +316,7 @@ const PROJECTS = {
     title: "Eros Carrasco",
     subtitle:
       "Creative Technologist at the intersection of XR and AI",
-    pills: ["NYU M.S.", "Production Experience"],
+    pills: ["NYU M.S.", "Real-Time Graphics", "Mixed Reality", "Production Experience"],
     hero: {
       type: "image",
       src: `${BASE_URL}assets/images/card_about.jpg`,
@@ -117,9 +324,12 @@ const PROJECTS = {
     overview: [
       "Production-focused XR developer building interactive systems from concept to deployment.",
       "I combine design ownership with strong technical execution, leading architecture decisions and complex interaction systems.",
-      "I aim to work where ambitious, complex technologies are being built and pushed forward — currently expanding into AI-integrated interactive systems at NYU."
+      "I aim to work where ambitious, complex technologies are being built and pushed forward. Right now that means real-time graphics and mixed reality research at NYU."
     ],
-    currentFocus: ["Building AI-integrated XR systems through deep learning coursework at NYU, developing advanced interactive projects under Ken Perlin."],
+    currentFocus: [
+      "Graduate Researcher at NYU Tandon School of Engineering, working on 3D Gaussian Splatting: making photoreal 3D scans render well in VR, respond to light, and be editable by speech.",
+      "Graduate Researcher at the Future Reality Lab with Ken Perlin, building software for the lab's mixed reality platform."
+    ],
     links: [
       {
         label: "Resume",
@@ -144,7 +354,7 @@ const PROJECTS = {
     ],
 
     selectedRecognition: [{
-      title: "1st Place — NYU Data Science Bootcamp",
+      title: "1st Place, NYU Data Science Bootcamp",
       image: `${BASE_URL}assets/images/bootcampBadge.png`,
       link: "https://credentials.engineering.nyu.edu/7844a2f4-ff71-4ea0-a2c7-48d8b27766f9#acc.gz582Yac"
     }]
@@ -171,7 +381,7 @@ const PROJECTS = {
     mocapSourceVideos: [
       `${BASE_URL}assets/videos/mocap_1.mp4`,
       `${BASE_URL}assets/videos/mocap_2.mp4`,
-      `${BASE_URL}assets/videos/mocap_3.mp4`,
+      `${BASE_URL}assets/videos/mocap_3.mp4`
     ],
 
     howItWorks: {
@@ -229,7 +439,7 @@ const PROJECTS = {
   ml: {
     title: "Deep Learning for XR",
     subtitle:
-      "Explorations at the intersection of ML and interactive media—focused on real-time, creative applications.",
+      "Explorations at the intersection of ML and interactive media, focused on real-time, creative applications.",
     pills: ["ML", "Interactive Media", "Prototyping"],
     hero: {
       type: "image",
@@ -277,7 +487,7 @@ const PROJECTS = {
       images: [
         `${BASE_URL}assets/images/memberbot_1.jpg`,
         `${BASE_URL}assets/images/memberbot_2.jpg`,
-        `${BASE_URL}assets/images/memberbot_3.jpg`,
+        `${BASE_URL}assets/images/memberbot_3.jpg`
       ]
     },
     fullDemo: {
@@ -436,6 +646,9 @@ function renderProject(projectKey) {
   if (!p) return `<p>Project not found.</p>`;
 
   if (projectKey === "about")       return renderAbout(p);
+  if (projectKey === "mrandarin")   return renderMRandarin(p);
+  if (projectKey === "frl")         return renderFRL(p);
+  if (projectKey === "splatlab")    return renderSplatLab(p);
   if (projectKey === "transfr")     return renderTransfr(p);
   if (projectKey === "mocap")       return renderMocap(p);
   if (projectKey === "procedural")  return renderProcedural(p);
@@ -522,6 +735,219 @@ function renderAbout(p) {
           </section>
         ` : ""}
       ` : ""}
+    </div>
+  `;
+}
+
+// A labelled figure with a caption underneath. Used for the evaluation charts,
+// which need to be read rather than glanced at, so they run full width.
+function videoFigureHTML(fig) {
+  return `
+    <figure class="fig fig-video">
+      <video src="${fig.src}" poster="${fig.poster}" muted loop playsinline
+             preload="none" controls aria-label="${fig.alt || ""}"></video>
+      ${fig.caption ? `<figcaption>${fig.caption}</figcaption>` : ""}
+    </figure>
+  `;
+}
+
+function figureHTML(fig) {
+  return `
+    <figure class="fig">
+      <a href="${fig.src}" target="_blank" rel="noopener">
+        <img src="${fig.src}" alt="${fig.alt || ""}" loading="lazy">
+      </a>
+      ${fig.caption ? `<figcaption>${fig.caption}</figcaption>` : ""}
+    </figure>
+  `;
+}
+
+function slopeChartHTML(spec) {
+  if (!spec?.series?.length) return "";
+  const W = 620, H = 340;
+  const X1 = 196, X2 = 424;          // the two columns
+  const TOP = 56, BOT = 292;         // plot band
+  const max = Math.max(...spec.series.flatMap((s) => [s.a, s.b])) * 1.06;
+  const y = (v) => BOT - (v / max) * (BOT - TOP);
+
+  // push labels apart so none collide, keeping their order
+  const spread = (key) => {
+    const pts = spec.series
+      .map((s, i) => ({ i, y: y(s[key]) }))
+      .sort((m, n) => m.y - n.y);
+    for (let k = 1; k < pts.length; k++) {
+      if (pts[k].y - pts[k - 1].y < 18) pts[k].y = pts[k - 1].y + 18;
+    }
+    const out = [];
+    pts.forEach((pt) => (out[pt.i] = pt.y));
+    return out;
+  };
+  const la = spread("a"), lb = spread("b");
+  const fmt = (v) => `${v.toFixed(1)}%`;
+
+  const rows = spec.series
+    .map((s, i) => {
+      const cls = s.accent ? `slope-line accent-${s.accent}` : "slope-line";
+      return `
+      <g class="slope-series${s.accent ? " is-accent" : ""}">
+        <line class="slope-hit" x1="${X1}" y1="${y(s.a)}" x2="${X2}" y2="${y(s.b)}" />
+        <line class="${cls}" x1="${X1}" y1="${y(s.a)}" x2="${X2}" y2="${y(s.b)}" />
+        <circle class="slope-dot ${cls}" cx="${X1}" cy="${y(s.a)}" r="4" />
+        <circle class="slope-dot ${cls}" cx="${X2}" cy="${y(s.b)}" r="4" />
+        <text class="slope-name" x="126" y="${la[i] + 4}" text-anchor="end">${s.name}</text>
+        <text class="slope-val"  x="178" y="${la[i] + 4}" text-anchor="end">${fmt(s.a)}</text>
+        <text class="slope-val"  x="442" y="${lb[i] + 4}">${fmt(s.b)}</text>
+      </g>`;
+    })
+    .join("");
+
+  return `
+    <figure class="slope-figure">
+      <svg class="slope" viewBox="36 8 458 316" role="img"
+           aria-label="${spec.alt}">
+        <line class="slope-axis" x1="${X1}" y1="${TOP - 14}" x2="${X1}" y2="${BOT + 14}" />
+        <line class="slope-axis" x1="${X2}" y1="${TOP - 14}" x2="${X2}" y2="${BOT + 14}" />
+        <text class="slope-head" x="${X1}" y="30" text-anchor="middle">${spec.left}</text>
+        <text class="slope-head" x="${X2}" y="30" text-anchor="middle">${spec.right}</text>
+        ${rows}
+      </svg>
+      ${spec.caption ? `<figcaption>${spec.caption}</figcaption>` : ""}
+    </figure>`;
+}
+
+function dataTableHTML(table) {
+  if (!table?.rows?.length) return "";
+  return `
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>${table.headers.map((h) => `<th>${h}</th>`).join("")}</tr>
+        </thead>
+        <tbody>
+          ${table.rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// Prose section: paragraphs rather than bullets, for the parts of the page
+// that carry an argument instead of a list of facts.
+function proseSection(block, extra = "") {
+  if (!block) return "";
+  return `
+    <section class="project-section span-2">
+      <h2 class="section-title">${block.title}</h2>
+      ${block.text.map((t) => `<p class="prose">${t}</p>`).join("")}
+      ${extra}
+    </section>
+  `;
+}
+
+function renderMRandarin(p) {
+  const ev = p.evaluation;
+  return `
+    <div class="project-hero">
+      ${heroHTML(p.hero)}
+      <div class="project-hero-caption">
+        <h1 class="project-title">${p.title}</h1>
+        <p class="project-subtitle">${p.subtitle}</p>
+        ${pillsHTML(p.pills)}
+      </div>
+    </div>
+
+    <div class="project-sections">
+
+      <section class="project-section span-2">
+        <h2 class="section-title">By the Numbers</h2>
+        ${statsHTML(p.impactStats)}
+      </section>
+
+      <section class="project-section span-2">
+        <h2 class="section-title">What It Is</h2>
+        ${p.context.map((t) => `<p class="prose">${t}</p>`).join("")}
+      </section>
+
+      ${proseSection(p.constraint)}
+      ${proseSection(p.pipeline)}
+
+      <section class="project-section span-2">
+        <h2 class="section-title">${ev.title}</h2>
+        ${ev.intro.map((t) => `<p class="prose">${t}</p>`).join("")}
+        ${slopeChartHTML(ev.slope)}
+        <details class="numbers">
+          <summary>Show the numbers</summary>
+          ${dataTableHTML(ev.table)}
+        </details>
+        ${ev.takeaway.map((t) => `<p class="prose">${t}</p>`).join("")}
+      </section>
+
+      ${proseSection(p.errorAnalysis)}
+
+      <section class="project-section span-2">
+        <h2 class="section-title">In Use</h2>
+        ${p.gallery.map(figureHTML).join("")}
+      </section>
+
+      ${proseSection(p.nextSteps)}
+      ${proseSection(p.credits)}
+
+    </div>
+  `;
+}
+
+function renderSplatLab(p) {
+  return `
+    <div class="project-hero">
+      ${heroHTML(p.hero)}
+      <div class="project-hero-caption">
+        <h1 class="project-title">${p.title}</h1>
+        <p class="project-subtitle">${p.subtitle}</p>
+        ${pillsHTML(p.pills)}
+      </div>
+    </div>
+
+    <div class="project-sections">
+      <section class="project-section span-2">
+        <h2 class="section-title">In Short</h2>
+        ${statsHTML(p.impactStats)}
+      </section>
+
+      <section class="project-section span-2">
+        <h2 class="section-title">${p.work.title}</h2>
+        ${p.work.items.map((it) => `
+          ${it.heading ? `<h3 class="part-title">${it.heading}</h3>` : ""}
+          ${it.clips
+            ? `<ul class="part-list">${it.text.map((t) => `<li>${t}</li>`).join("")}</ul>
+               <div class="mocap-grid">${it.clips.map((c) => `<video src="${c.src}" aria-label="${c.alt}" autoplay muted loop playsinline></video>`).join("")}</div>`
+            : `<div class="part-block${(it.figs || []).length ? " part-block-media" : ""}">
+                 <ul class="part-list">${it.text.map((t) => `<li>${t}</li>`).join("")}</ul>
+                 ${(it.figs || []).length ? `<div class="part-media">${it.figs.map(figureHTML).join("")}</div>` : ""}
+               </div>`}
+        `).join("")}
+      </section>
+
+    </div>
+  `;
+}
+
+function renderFRL(p) {
+  return `
+    <div class="project-hero">
+      ${heroHTML(p.hero)}
+      <div class="project-hero-caption">
+        <h1 class="project-title">${p.title}</h1>
+        <p class="project-subtitle">${p.subtitle}</p>
+        ${pillsHTML(p.pills)}
+      </div>
+    </div>
+
+    <div class="project-sections">
+      ${proseSection(p.labProject)}
+      ${proseSection(p.contribution)}
+      ${proseSection(p.howItWorks)}
+      ${proseSection(p.throughLine)}
+      ${proseSection(p.role)}
     </div>
   `;
 }

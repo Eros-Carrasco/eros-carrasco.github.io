@@ -10,7 +10,7 @@ if (!reduceMotion) {
     if (!video) return;
 
     // Videos are preload="none", so the first play() also triggers the download.
-    // play() rejects if the pointer leaves before it resolves — ignore that.
+    // play() rejects if the pointer leaves before it resolves, so ignore that.
     const start = () => {
       video.currentTime = 0;
       video.play().catch(() => {});
@@ -26,4 +26,19 @@ if (!reduceMotion) {
     card.addEventListener("focus", start);
     card.addEventListener("blur", stop);
   });
+}
+
+// Inline transition clips: load and play only while on screen, pause when not.
+if (!reduceMotion && "IntersectionObserver" in window) {
+  const clips = document.querySelectorAll(".fig-video video");
+  if (clips.length) {
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => {
+        if (e.isIntersecting) e.target.play().catch(() => {});
+        else e.target.pause();
+      }),
+      { threshold: 0.4 }
+    );
+    clips.forEach((v) => io.observe(v));
+  }
 }
