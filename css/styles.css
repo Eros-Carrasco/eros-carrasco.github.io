@@ -74,8 +74,9 @@ body.project-page {
 /* About card — portrait, taller than project cards. Also viewport-bound so it
    never forces a scroll on a short window. */
 .card-about {
-  height: min(500px, calc(100vh - 80px));
-  align-self: center;
+  /* Sized to its own content now; the splat below it takes the rest of the
+     column, and both line up with the top of the project grid. */
+  flex: 0 0 auto;
 }
 
 /* The projects column is now three rows tall, so a vertically centred about
@@ -84,7 +85,7 @@ body.project-page {
 @media (min-width: 901px) {
   .card-about {
     position: sticky;
-    top: 40px;
+    top: 0;
     align-self: start;
   }
 }
@@ -1063,3 +1064,40 @@ details.numbers[open] summary {
 @media (max-width: 760px) {
   .part-block-media { grid-template-columns: 1fr; gap: 14px; }
 }
+
+/* The splat under the about card. */
+.left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+.splat-stage {
+  position: relative;
+  width: 100%;
+  flex: 0 0 auto;
+  aspect-ratio: 1 / 1;
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  opacity: 0.35;
+  transition: opacity 0.6s ease;
+}
+.splat-stage.is-ready { opacity: 1; }
+.splat-stage canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+  cursor: grab;
+}
+.splat-stage canvas:active { cursor: grabbing; }
+/* The backdrop sits behind the splat; both fill the stage. */
+.splat-stage #backdrop-canvas,
+.splat-stage #splat-canvas {
+  position: absolute;
+  inset: 0;
+}
+.splat-stage #backdrop-canvas { z-index: 0; pointer-events: none; }
+.splat-stage #splat-canvas { z-index: 1; }

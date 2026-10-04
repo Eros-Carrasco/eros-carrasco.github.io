@@ -29,7 +29,10 @@
 
   <main class="homepage-grid">
 
-    <!-- ABOUT CARD (left column) -->
+    <!-- LEFT COLUMN -->
+    <div class="left-column">
+
+    <!-- ABOUT CARD -->
     <a class="card card-about" href="about/" data-project="about">
       <div class="card-media">
         <img src="assets/images/card_about.jpg" alt="Portrait of Eros Carrasco" width="1200" height="1355" />
@@ -47,13 +50,20 @@
       <div class="card-overlay-icon" aria-hidden="true">↗</div>
     </a>
 
+    <div class="splat-stage" id="splat-stage">
+      <canvas id="backdrop-canvas"></canvas>
+      <canvas id="splat-canvas"></canvas>
+    </div>
+
+    </div><!-- /left-column -->
+
     <!-- PROJECT CARDS (right column, 2x3) -->
     <div class="projects-grid">
 
       <!-- SPLATLAB -->
       <a class="card" href="projects/splatlab/" data-project="splatlab">
         <div class="card-media">
-          <video src="assets/videos/card_splatlab.mp4" poster="assets/images/poster_splatlab.jpg" muted loop
+          <video src="assets/videos/card_splatlab.mp4" poster="assets/images/poster_splatlab_card.jpg" muted loop
             playsinline preload="none" tabindex="-1" aria-hidden="true"></video>
         </div>
 
@@ -180,6 +190,9 @@
   </main>
 
   <script src="js/main.js"></script>
+  <script src="js/vendor/playcanvas.min.js"></script>
+  <script src="js/backdrop.js"></script>
+  <script src="js/splat-stage.js"></script>
 </body>
 
 </html>

@@ -9,37 +9,68 @@ const PROJECTS = {
   mrandarin: {
     title: "MRandarin",
     subtitle:
-      "A mixed reality app that reads Chinese characters as you write them on a real whiteboard, tells you what they mean, and keeps them in a pokedex you can practice from.",
+      "A mixed reality Chinese handwriting tutor for the Quest 3: marker based registration in WebXR, OCR on a paired PC, and an evaluation of five recognisers against real headset captures.",
 
-    pills: ["Computer Vision", "OCR", "WebXR", "Meta Quest 3", "Python"],
+    pills: ["WebXR", "Computer Vision", "Meta Quest 3", "Python"],
 
     hero: {
       type: "video",
       src: `${BASE_URL}assets/videos/mrandarin_hero.mp4`,
-      poster: `${BASE_URL}assets/images/poster_mrandarin.jpg`,
+      poster: `${BASE_URL}assets/images/poster_mrandarin.jpg`
     },
 
     impactStats: [
-      { value: "5", title: "OCR Models Tested", description: "On clean data and on real captures from the headset." },
-      { value: "151", title: "Real Captures", description: "Pulled from the running app, not from a dataset." },
-      { value: "59.6%", title: "Best on Real Data", description: "CnOCR, which came last on the dataset." }
+      { value: "151", title: "Real Captures, Five Models", description: "Pulled from the running app, not from a dataset." },
+      { value: "0%", title: "The Model That Should Have Won", description: "Its zero was my preprocessing, not the model." }
     ],
 
-    context: [
-      "You write a character with a marker and the headset answers around it: meaning, pinyin, an image, a sentence to make it stick. Every character lands in a pokedex. Tap one to replay its stroke order, or ask for a new one and the app teaches it, then accepts nothing else until you get it right.",
-      "WebXR gives an app no access to the headset cameras, so the headset casts what it sees to a PC and the PC does the reading. Unity and Unreal have no such restriction."
-    ],
+    work: {
+      title: "The System",
+      items: [
+        {
+          heading: "Capture and Registration (WebXR, ArUco)",
+          text: [
+            "WebXR gives an app no access to the headset cameras, so the headset casts what it sees to a PC and the PC does the reading.",
+            "The headset draws the four markers itself, as holograms on the board, so the writing hand never covers them.",
+            "Correct the perspective from those markers and crop to the board.",
+            "The registration I built for this is now part of the Future Reality Lab's framework, used by the rest of the lab."
+          ],
+          figs: [{
+            src: `${BASE_URL}assets/images/mrandarin_passthrough.jpg`,
+            alt: "A whiteboard seen through the headset with a Chinese character recognised and markers at the corners",
+            caption: "The corner markers are drawn by the headset, not stuck to the wall."
+          }]
+        },
+        {
+          heading: "Recognition and Feedback (Apple Vision, Python)",
+          text: [
+            "Read the character and answer around it: meaning above, pinyin beside it, an image, and a sentence to make it stick."
+          ]
+        },
+        {
+          heading: "Learning Layer (HanziWriter)",
+          text: [
+            "Every character written lands in a pokedex. Tap one to replay its stroke order.",
+            "Ask for a new one and the app teaches it, then accepts nothing else until you write it."
+          ]
+        },
+        {
+          heading: "Model Evaluation (PyTorch, CASIA)",
+          text: [
+            "Apple Vision does the reading, picked because it installed fastest. Five of us benchmarked it against four other recognisers.",
+            "I built the nine distortions we tested against, each modelled on what a headset does to an image: motion blur, lens glare, low resolution passthrough.",
+            "I collected 151 captures from the running app and ran all five models on those instead."
+          ]
+        }
+      ]
+    },
 
     evaluation: {
-      title: "Picking a Recognizer",
-      intro: [
-        "Apple Vision does the reading, picked because it installed fastest. Five of us benchmarked it against four other models on CASIA, a standard handwriting dataset. I built the nine distortions we tested against, each modeled on what a headset does to an image: motion blur, lens glare, low resolution passthrough. Then I collected 151 real captures from the app and ran all five on those."
-      ],
       slope: {
         left: "CLEAN DATASET",
         right: "REAL CAPTURES",
         alt: "Accuracy of five OCR models on the CASIA dataset and on 151 real captures from the headset. ANCHOR falls from 58.1 percent to zero. CnOCR rises from 15.2 percent to 59.6 percent. The two lines cross.",
-        caption: "Same five models, two test sets. The two lines that cross are the whole story.",
+        caption: "Same five models, two test sets.",
         series: [
           { name: "ANCHOR", a: 58.1, b: 0.0, accent: "fall" },
           { name: "PaddleOCR", a: 40.5, b: 34.4 },
@@ -48,7 +79,6 @@ const PROJECTS = {
           { name: "CnOCR", a: 15.2, b: 59.6, accent: "rise" }
         ]
       },
-
       table: {
         headers: ["Model", "Clean data", "Real captures"],
         rows: [
@@ -60,24 +90,16 @@ const PROJECTS = {
         ]
       },
       takeaway: [
-        "The zero was my pipeline, not the model. I crop to the whiteboard, so the character sits small inside a big rectangle, and ANCHOR has no stage that finds the character before reading it. It read the rectangle: nearly every guess came back 日 or 口, the two characters shaped like a panel.",
-        "So ANCHOR is not ruled out, it just never got a crop it could use. The next thing to try is two stage: let CnOCR find the character, let ANCHOR read it."
+        "The zero was my preprocessing: I crop to the whiteboard, so the character sits small in a big rectangle and ANCHOR has no stage that finds it first. Nearly every guess came back 日 or 口.",
+        "ANCHOR is not ruled out. Next: let CnOCR find the character, let ANCHOR read it."
       ]
     },
-
-    gallery: [
-      {
-        src: `${BASE_URL}assets/images/mrandarin_passthrough.jpg`,
-        alt: "The whiteboard seen through the headset, with a character recognized",
-        caption: "Through the headset. The markers at the corners are drawn by the headset itself, so your hand never covers them while you write."
-      }
-    ],
 
     credits: {
       title: "Credits",
       text: [
-        "Coursework for two NYU classes, combined into one project: Virtual Reality with Ken Perlin, and Deep Learning for Media. Built on clay.js, the Future Reality Lab's WebXR framework.",
-        "The OCR study was group work with Kaylie Stuteville, Kezia Widjaja, Jasmine Zhang and Lia Cociorva."
+        "Coursework for Virtual Reality with Ken Perlin and Deep Learning for Media at NYU.",
+        "The app is mine. The evaluation was group work with Kaylie Stuteville, Kezia Widjaja and Jasmine Zhang; my part was the nine distortions, the CnOCR and Apple Vision integrations, the capture app and the run on real captures."
       ]
     },
   },
@@ -857,41 +879,29 @@ function renderMRandarin(p) {
     </div>
 
     <div class="project-sections">
-
       <section class="project-section span-2">
-        <h2 class="section-title">By the Numbers</h2>
+        <h2 class="section-title">In Short</h2>
         ${statsHTML(p.impactStats)}
       </section>
 
       <section class="project-section span-2">
-        <h2 class="section-title">What It Is</h2>
-        ${p.context.map((t) => `<p class="prose">${t}</p>`).join("")}
-      </section>
-
-      ${proseSection(p.constraint)}
-      ${proseSection(p.pipeline)}
-
-      <section class="project-section span-2">
-        <h2 class="section-title">${ev.title}</h2>
-        ${ev.intro.map((t) => `<p class="prose">${t}</p>`).join("")}
+        <h2 class="section-title">${p.work.title}</h2>
+        ${p.work.items.map((it) => `
+          ${it.heading ? `<h3 class="part-title">${it.heading}</h3>` : ""}
+          <div class="part-block${(it.figs || []).length ? " part-block-media" : ""}">
+            <ul class="part-list">${it.text.map((t) => `<li>${t}</li>`).join("")}</ul>
+            ${(it.figs || []).length ? `<div class="part-media">${it.figs.map(figureHTML).join("")}</div>` : ""}
+          </div>
+        `).join("")}
         ${slopeChartHTML(ev.slope)}
         <details class="numbers">
           <summary>Show the numbers</summary>
           ${dataTableHTML(ev.table)}
         </details>
-        ${ev.takeaway.map((t) => `<p class="prose">${t}</p>`).join("")}
+        <ul class="part-list">${ev.takeaway.map((t) => `<li>${t}</li>`).join("")}</ul>
       </section>
 
-      ${proseSection(p.errorAnalysis)}
-
-      <section class="project-section span-2">
-        <h2 class="section-title">In Use</h2>
-        ${p.gallery.map(figureHTML).join("")}
-      </section>
-
-      ${proseSection(p.nextSteps)}
       ${proseSection(p.credits)}
-
     </div>
   `;
 }
