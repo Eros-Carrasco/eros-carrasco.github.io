@@ -20,7 +20,7 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)),
+    linear-gradient(rgba(0, 0, 0, 0.40), rgba(0, 0, 0, 0.35)),
     url("../assets/images/background_spaceship.jpg") center 65% / cover no-repeat fixed;
   color: white;
   font-family: system-ui, -apple-system, sans-serif;
@@ -64,7 +64,7 @@ body.project-page {
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: repeat(4, clamp(200px, 22vh, 260px));
-  gap: 24px;
+  gap: 48px;
 }
 
 .projects-grid .card {
@@ -136,7 +136,7 @@ body.project-page {
 /* Cards are <a> elements: the whole tile is one real link. */
 .card {
   position: relative;
-  border-radius: 16px;
+  border-radius: 20px;
   overflow: hidden;
 
   --card-accent: #5ddcff;
@@ -1076,7 +1076,7 @@ details.numbers[open] summary {
 .left-column {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 48px;
   min-width: 0;
 }
 .splat-stage {
@@ -1084,9 +1084,9 @@ details.numbers[open] summary {
   width: 100%;
   flex: 0 0 auto;
   aspect-ratio: 1 / 1;
-  border-radius: 18px;
+  border-radius: 20px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.08);
   opacity: 0.35;
   transition: opacity 0.6s ease;
