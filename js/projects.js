@@ -243,8 +243,8 @@ const PROJECTS = {
     pills: [
       "Unity Production",
       "VR",
-      "Design",
-      "Localization"
+      "Simulation Design",
+      "User Experience"
     ],
 
     hero: {
@@ -267,8 +267,8 @@ const PROJECTS = {
     ],
 
     ownership: [
-      "Led simulation design from initial research to final implementation.",
-      "Defined interaction systems, user flow, pacing, and required asset structure.",
+      "Researched each occupation first, then led the simulation design from that research through to final implementation.",
+      "Defined the learner's experience: interaction systems, user flow, pacing, and required asset structure.",
       "Implemented complex mechanics beyond standard SDK templates",
       "Delivered production-ready simulations used at scale in classrooms."
     ],
@@ -337,20 +337,20 @@ const PROJECTS = {
   about: {
     title: "Eros Carrasco",
     subtitle:
-      "Creative Technologist at the intersection of XR and AI",
-    pills: ["NYU M.S.", "Real-Time Graphics", "Mixed Reality", "Production Experience"],
+      "Pipeline and tools engineer, working in XR and gaussian splatting",
+    pills: ["NYU M.S.", "Real-Time Graphics", "Mixed Reality", "Gaussian Splatting"],
     hero: {
       type: "image",
       src: `${BASE_URL}assets/images/card_about.jpg`,
     },
     overview: [
-      "Production-focused XR developer building interactive systems from concept to deployment.",
-      "I combine design ownership with strong technical execution, leading architecture decisions and complex interaction systems.",
-      "I aim to work where ambitious, complex technologies are being built and pushed forward. Right now that means real-time graphics and mixed reality research at NYU."
+      "Graduate Researcher at NYU, working in two labs on how captured places and real-time graphics behave in front of people.",
+      "Before NYU I was an XR Designer at Transfr, where five VR training simulations I researched, designed and built run in real classrooms.",
+      "Twice, something I built became the way a team works: the Spanish localization process at Transfr, and the review system the Future Reality Lab now runs on its own submissions."
     ],
     currentFocus: [
-      "Graduate Researcher at NYU Tandon School of Engineering, working on 3D Gaussian Splatting: making photoreal 3D scans render well in VR, respond to light, and be editable by speech.",
-      "Graduate Researcher at the Future Reality Lab with Ken Perlin, building software for the lab's mixed reality platform."
+      "Graduate Researcher at the Future Reality Lab with Ken Perlin, building software for the lab's mixed reality platform.",
+      "Graduate Researcher at The Yard, working on 3D Gaussian Splatting: making photoreal scans render well in VR, respond to light, and be editable by speech."
     ],
     links: [
       {
