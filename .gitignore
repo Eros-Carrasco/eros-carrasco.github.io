@@ -19,3 +19,6 @@ _notes/
 Relighting Splats*.mp4
 /*.mp4
 /*.mov
+
+# Session transcripts exported to the repo root
+/20??-??-??-*.txt
