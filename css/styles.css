@@ -245,6 +245,17 @@ body.project-page {
   margin: 0 6px;
 }
 
+/* About card: tags are long now, so they stack with no dangling separator */
+.card-about .tags {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.card-about .tags span:not(:last-child)::after {
+  content: none;
+}
+
 /* ===== CARD CORNER ICON ===== */
 .card-overlay-icon {
   position: absolute;
