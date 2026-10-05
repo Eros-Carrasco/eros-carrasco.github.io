@@ -1,7 +1,8 @@
 # eros-carrasco.github.io
 
-Personal portfolio of **Eros Carrasco**, Creative Technologist working at the
-intersection of XR and AI. NYU M.S.
+Personal portfolio of **Eros Carrasco**, Pipeline & Tools Engineer. Graduate
+Researcher at NYU's Future Reality Lab and The Yard, working in XR and gaussian
+splatting.
 
 **Live site → <https://eros-carrasco.github.io/>**
 
