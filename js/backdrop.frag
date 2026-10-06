@@ -143,8 +143,8 @@ void main() {
   vec2  sp2  = p - vec2(.0, .46);
   float sr   = length(sp2);
   float sang = atan(sp2.x, sp2.y);
-  float sCore = (exp(-sr * sr * 120.) + exp(-sr * 6.5) * .16) * star;
-  float sRing = exp(-pow((sr - .150) / .075, 2.0)) * star;
+  float sCore = (exp(-sr * sr * 420.) + exp(-sr * 9.0) * .07) * star;
+  float sRing = exp(-pow((sr - .120) / .030, 2.0)) * star * .35;
 
   // Two layers. Underneath, fire: tendrils that bend, reach and die back,
   // never still for a frame. On top of that, and only on top, the thin flash
@@ -160,8 +160,8 @@ void main() {
 
   // Most angles carry a short tongue and only a few throw a long one, which
   // is what keeps it from closing into a disc.
-  float reach = .085 + .62 * pow(lob, 2.2);
-  float fire  = pow(clamp((reach - sr) / max(reach, .0001), 0., 1.), 1.7);
+  float reach = .060 + 1.05 * pow(lob, 1.8);
+  float fire  = pow(clamp((reach - sr) / max(reach, .0001), 0., 1.), 2.4);
   fire *= .30 + .70 * lob;
   // Licked away at the tips, so the tongues end ragged instead of rounded.
   fire *= .55 + .45 * noise(vec2(aw * 9.0 + sr * 11.0, t * .38));
@@ -175,7 +175,7 @@ void main() {
   float line = pow(1. - abs(t01 * 2. - 1.), 22. + h2 * 30.);
   line *= exp(-sr / (.11 + .44 * h1 * h1)) * step(.45, h1);
 
-  float sRay = (fire * 1.9 + line * .45) * smoothstep(.010, .090, sr) * star;
+  float sRay = (fire * 2.6 + line * .40) * smoothstep(.008, .050, sr) * star;
 
   // ---- the cold breath: the room empties out and the stars come through ----
   // Sparse and soft. One cell in fifty holds a star, placed somewhere inside
@@ -227,8 +227,8 @@ void main() {
   col += vec3(1., .94, .84) * cloud * .78;
   col += C_LIGHT * halo * .16;
   col += vec3(1., .90, .74) * bloom * .22;
-  col += vec3(1.00, .98, .92) * sCore * 1.5;
-  col += vec3(1.00, .80, .30) * sRing * 1.6;
+  col += vec3(1.00, .98, .92) * sCore * 1.1;
+  col += vec3(1.00, .80, .30) * sRing * .8;
   col += mix(vec3(1.00, .92, .74), vec3(1.00, .66, .44), smoothstep(.06, .52, sr)) * sRay * 1.9;
   // The light wraps under him too, so the floor of the frame is not a hole.
   col += C_LIGHT * g * .09 * smoothstep(.10, -.90, p.y) * air;

@@ -168,7 +168,7 @@
       // The rim keeps all of its weight and the expanded part gives up almost
       // all of its own, so what spreads out is something you see the page
       // through rather than a pale solid standing beside him.
-      float a = uFade * (0.025 + 1.05 * near);
+      float a = uFade * (0.004 + 1.10 * near);
       // White where it touches him, cooling as it thins out.
       vec3 tint = mix(uTint * 0.82, vec3(1.0), near);
       color = vec4(tint, color.a * a);

@@ -178,19 +178,22 @@
       } else if (t >= T_BURST && t < T_WHITE) {
         const u = ease(norm(t, T_BURST, T_WHITE));
         fs = .27 + u * 2.9;
-        fo = 1;
+        fo = u * .92;
       } else if (t >= T_WHITE && t < T_LIFT) {
         // Held full. The reference sits on the blown out frame for more than
         // a second before anything opens, and that hold is most of what makes
         // the burst land.
+        // Never a lid. In the reference the blown out frame still has the
+        // burst radiating through it the whole time it is up, so this stops
+        // short of covering and lets the fire underneath show.
         fs = 3.17 + norm(t, T_WHITE, T_LIFT) * .25;
-        fo = 1;
+        fo = .90;
       } else if (t >= T_LIFT && t < T_STAR) {
         const u = ease(norm(t, T_LIFT, T_STAR));
         fs = 3.42 - u * 3.20;          // drawn back down to a point
         // It has to clear almost entirely, or the fire it collapses into is
         // still behind a white sheet and nobody sees it.
-        fo = 1 - .93 * u;
+        fo = .90 - .86 * u;
       } else if (t >= T_STAR && t < T_WARM) {
         const u = norm(t, T_STAR, T_WARM);
         fs = .22 + u * .10;
