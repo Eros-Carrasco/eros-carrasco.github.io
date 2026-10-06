@@ -107,15 +107,22 @@ void main() {
   core += exp(-r * r * mix(300., 52., c)) * c * c * c * .9;
 
   // ---- after it: the warm volume it leaves behind ----
+  // Wide and soft. The reference is not a sunburst with hard spokes in it,
+  // it is a volume of pale light with broad blurred shafts through it, so
+  // these run at a third of the count and nothing like the contrast.
   float rang = atan(q.x, q.y);
-  float rayN = noise(vec2(rang * 2.4, t * .05));
-  float rays = pow(max(0., .5 + .5 * sin(rang * 13. + rayN * 10. + t * .09)), 3.0) * .70;
-  rays += pow(max(0., .5 + .5 * sin(rang * 5. - rayN * 4. - t * .06)), 2.0) * .70;
-  rays *= smoothstep(.02, .40, r) * smoothstep(2.00, .30, r) * g;
+  float rayN = noise(vec2(rang * 1.6, t * .04));
+  float rays = pow(max(0., .5 + .5 * sin(rang * 4.5 + rayN * 5. + t * .07)), 1.5) * .55;
+  rays += pow(max(0., .5 + .5 * sin(rang * 2.2 - rayN * 2.5 - t * .05)), 1.2) * .45;
+  rays *= smoothstep(.02, .55, r) * smoothstep(2.20, .35, r) * g;
 
   // Cloud drifting through the light, which is what keeps it from reading flat.
-  float cloud = fbm(p * vec2(1.05, 1.5) + vec2(-t * .050, t * .018) + 6.2);
-  cloud = smoothstep(.34, .86, cloud) * smoothstep(.20, .95, r) * g;
+  // Cloud banks, which is most of what makes the reference read as weather
+  // rather than as a lamp. They sit out at the sides and drift.
+  float cloud = fbm(p * vec2(.85, 1.25) + vec2(-t * .040, t * .014) + 6.2);
+  cloud = smoothstep(.30, .78, cloud);
+  cloud *= smoothstep(.22, .85, abs(p.x)) * .85 + .15;
+  cloud *= g;
 
   // A ring standing behind the figure once everything has come to rest.
   float halo = exp(-pow((r - .95) / .30, 2.0)) * g;
@@ -192,7 +199,7 @@ void main() {
   // it goes colder and closer as the air gathers. After it, the capture is
   // standing inside the light, so the air carries the colour and the rays open
   // up behind it.
-  vec3 haze = mix(mix(C_AIR, C_COLD, c), C_WARM, g);
+  vec3 haze = mix(mix(C_AIR, C_COLD, c), mix(C_WARM, vec3(.62, .58, .50), .55), g);
 
   // The room the gathering happens in is cold. In the reference it is a blue
   // grey canyon at night, and ours was reading warm brown the whole way
@@ -207,13 +214,17 @@ void main() {
   vec3 col = floorC * (1. - cold0);
 
   col = mix(col, haze, smoothstep(1.25, .05, length(p * vec2(1.0, .85))) * HAZE * air * (1. + g * 1.4) * (1. - .80 * cold0));
-  col += lampC * lit * (.85 + g * 1.60) * (1. - .45 * c);
+  // The lamp itself goes pale as the volume opens, or the whole beat sits
+  // under an orange cast the reference does not have.
+  col += mix(lampC, vec3(1.00, .96, .90), g * .80) * lit * (.85 + g * 1.60) * (1. - .45 * c);
 
   col += C_SPARK * stream * 2.30 * air;
   col += mix(C_SPARK, vec3(1., .96, .86), smoothstep(.70, 1., c)) * core * .80;
 
-  col += C_LIGHT * rays * (.30 + .85 * g) * air * (1. - .55 * cloud);
-  col += vec3(1., .88, .66) * cloud * .20;
+  // Cream, not orange. The volume is almost colourless at its centre.
+  vec3 pale = mix(C_LIGHT, vec3(1.00, .97, .92), .82);
+  col += pale * rays * (.24 + .46 * g) * air * (1. - .35 * cloud);
+  col += vec3(1., .97, .93) * cloud * 1.15;
   col += C_LIGHT * halo * .16;
   col += vec3(1., .88, .70) * bloom * .55;
   col += vec3(1.00, .98, .92) * sCore * 1.5;
@@ -253,7 +264,7 @@ void main() {
 
   // Nothing touches the border, so the box reads as a window. It closes in as
   // the air gathers and opens back up once the light is out.
-  float edge = (.55 + .12 * c - .22 * g - .18 * field) * (1. - .55 * cold0);
+  float edge = (.55 + .12 * c - .44 * g - .18 * field) * (1. - .55 * cold0);
   col *= 1. - edge * smoothstep(.72 - .08 * c, 1.48 - .16 * c, length(p));
 
   // The box is a window, not a canvas. Everything above is light, so what it

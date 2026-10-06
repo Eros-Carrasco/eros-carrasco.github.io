@@ -142,6 +142,12 @@
 
       if (t < 0) return;
       if (isNaN(HOLD_AT)) t += dt;
+      // Where the piece has got to, for anything watching from outside. A
+      // recorder running on software rendering gets a handful of frames a
+      // second and the engine caps the step it will take, so a recording runs
+      // at a fraction of the real pace. Without this, every preview lies
+      // about the timing.
+      window.__auraClock = t;
 
       // ---- the charge: the cloud tightens, then rushes, then shivers ----
       const k = clamp(norm(t, T_BUILD, T_BURST), 0, 1);
