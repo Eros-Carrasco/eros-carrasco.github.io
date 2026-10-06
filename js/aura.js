@@ -22,15 +22,33 @@
   const FOLLOW = 2.40;  // how fast it swings round to the camera. lower lags more
 
   // ---- the beats, in seconds from the moment the idle pose lands ----
-  const T_BUILD = 0.70;  // the air starts to charge
-  const T_SPARK = 3.20;  // a point of light at the chest
-  const T_BURST = 3.90;  // it lets go
-  const T_PEAK  = 4.25;  // the frame is white
-  const T_SWAP  = 4.45;  // the pose changes, under the white
-  const T_CLEAR = 5.60;  // the flash has gone
-  const T_OPEN  = 5.00;  // the figure starts to condense
-  const T_SET   = 7.20;  // it is all there
-  const T_FAN   = 7.90;  // the arms have finished opening
+  //
+  // The reference tells this in five shots and we have one camera, so every
+  // cut has to become something that happens inside the same frame. Two of
+  // them do. The wide shot of the burst seen from across the valley becomes
+  // the white collapsing back down into a compact star behind the capture,
+  // which also gives the figure somewhere to come from. The quiet shot of him
+  // on the lotus under a flat halo becomes the whole room cooling to violet
+  // for a moment, with stars, before the warmth comes back.
+  const T_BUILD = 0.60;  // the air starts to charge, cold and white
+  const T_RUSH  = 3.00;  // the gathering turns into a rush
+  const T_SPARK = 4.00;  // a point of gold at the chest, the first in the piece
+  const T_BURST = 4.70;  // it lets go
+  const T_WHITE = 5.00;  // the frame is white, and it is quick
+  const T_SWAP  = 5.15;  // the pose changes, under the white
+  const T_STAR  = 6.00;  // the white has drawn back into a star behind him
+  const T_WARM  = 7.20;  // the star opens into a volume he is standing inside
+  const T_COOL  = 9.20;  // the room cools, stars come out, the halo ring
+  const T_HELD  = 12.40; // and it stays cold. The reference holds this beat
+  const T_FIELD = 13.40; // warmth returns and the light flattens into a field
+  const T_DEITY = 13.80; // the figure starts coming out of the blur
+  const T_SET   = 15.80; // it has resolved
+  const T_FAN   = 16.40; // the arms have finished opening
+
+  // How much light the room keeps once the flash is gone. The backdrop reads
+  // this as its resting state, so he is left standing in light rather than in
+  // the dark room he started in.
+  const SETTLED = 0.58;
 
   function build(scene) {
     const { app, camera, el } = scene;
@@ -56,16 +74,25 @@
     const dot = dotTexture(app.graphicsDevice, 64);
     const drift = makeParticles(app, dot, {
       numParticles: 140, lifetime: 3.4, rate: .022, rate2: .05,
-      size: .05, radius: .45, rise: [.10, .40], loop: true, autoPlay: true,
+      size: .05, radius: .45, rise: [.10, .40], loop: true, autoPlay: false,
       colour: [[0, 1], [0, .80], [0, .42]],
     });
     // The charge is cold and pulls inward, so the burst reads as a change of
     // temperature and not only of brightness.
     const charge = makeParticles(app, dot, {
-      numParticles: 240, lifetime: 1.5, rate: .004, rate2: .010,
-      size: .07, radius: 1.30, rise: [-.05, .10], radial: [-1.9, -.30],
+      numParticles: 300, lifetime: 1.5, rate: .003, rate2: .008,
+      size: .045, radius: 1.30, rise: [-.05, .10], radial: [-1.9, -.30],
       loop: true, autoPlay: false,
       colour: [[0, .86, 1, 1], [0, .92, 1, .78], [0, 1.0, 1, .38]],
+    });
+    // The last stretch is a rush. These come in from further out, move about
+    // twice as fast and are gone the moment they arrive, so the gathering ends
+    // up going somewhere instead of hanging there.
+    const rush = makeParticles(app, dot, {
+      numParticles: 160, lifetime: 0.9, rate: .0035, rate2: .009,
+      size: .055, radius: 1.75, rise: [-.12, .16], radial: [-3.6, -.70],
+      loop: true, autoPlay: false,
+      colour: [[0, .62, 1, 1.0], [0, .86, 1, .94], [0, 1.0, 1, .80]],
     });
 
     // ---- the flash ----
@@ -76,7 +103,7 @@
 
     // ---- the clock ----
     let t = -1;                  // seconds since the idle pose landed
-    let charging = false, swapped = false;
+    let charging = false, rushing = false, swapped = false, drifting = false;
     let yaw = 0, aimed = false;
     const pos = new pc.Vec3();
 
@@ -115,45 +142,87 @@
       drift.setPosition(pivot.x, pivot.y, pivot.z);
       drift.setLocalScale(h, h, h);
       charge.setPosition(pivot.x, pivot.y, pivot.z);
+      rush.setPosition(pivot.x, pivot.y, pivot.z);
+      rush.setLocalScale(h, h, h);
 
       if (t < 0) return;
       t += dt;
 
-      // ---- the charge: the cloud tightens as it builds ----
+      // ---- the charge: the cloud tightens, then rushes, then shivers ----
+      const k = clamp(norm(t, T_BUILD, T_BURST), 0, 1);
       if (!charging && t >= T_BUILD) { charging = true; charge.particlesystem.play(); }
       if (charging && t >= T_BURST) { charging = false; charge.particlesystem.stop(); }
-      const tight = 1 - .55 * clamp(norm(t, T_BUILD, T_BURST), 0, 1);
-      charge.setLocalScale(h * tight, h * tight, h * tight);
-      el.dataset.charge = clamp(norm(t, T_BUILD, T_BURST), 0, 1).toFixed(3);
+      if (!rushing && t >= T_RUSH && t < T_BURST) { rushing = true; rush.particlesystem.play(); }
+      if (rushing && t >= T_BURST) { rushing = false; rush.particlesystem.stop(); }
 
-      // ---- the flash: a point of light, then the whole frame ----
+      // It closes slowly and then all at once, and by the end the whole cloud
+      // is shaking, so there is pressure in the second before it lets go.
+      const tight = 1 - .66 * Math.pow(k, 1.8);
+      const sh = Math.pow(k, 5) * h * .030;
+      const jx = Math.sin(t * 61) * sh, jy = Math.cos(t * 47) * sh;
+      charge.setPosition(pivot.x + jx, pivot.y + jy, pivot.z);
+      charge.setLocalScale(h * tight, h * tight, h * tight);
+      rush.setPosition(pivot.x + jx, pivot.y + jy, pivot.z);
+      const wide = 1 - .22 * k;
+      rush.setLocalScale(h * wide, h * wide, h * wide);
+
+      // The warm motes are drawn in with everything else, until they are a
+      // knot at his chest and the room is cold and empty before it goes.
+      const pull = 1 - .80 * Math.pow(k, 1.5);
+      drift.setLocalScale(h * pull, h * pull, h * pull);
+      el.dataset.charge = k.toFixed(3);
+
+      // ---- the flash: a point, then the frame, then back to a point ----
+      // The last stretch is the one that stands in for the cut to the wide
+      // shot: the white does not fade where it is, it draws back down into
+      // itself until all that is left is a star behind him.
       let fs = 0, fo = 0;
       if (t >= T_SPARK && t < T_BURST) {
-        const k = norm(t, T_SPARK, T_BURST);
-        fs = .03 + k * k * .26;
-        fo = k * .9;
-      } else if (t >= T_BURST && t < T_PEAK) {
-        const k = ease(norm(t, T_BURST, T_PEAK));
-        fs = .29 + k * 2.5;
+        const u = norm(t, T_SPARK, T_BURST);
+        fs = .03 + u * u * .24;
+        // The point is not steady. It gutters, the way the reference does.
+        fo = u * .92 * (.80 + .20 * Math.sin(t * 34));
+      } else if (t >= T_BURST && t < T_WHITE) {
+        const u = ease(norm(t, T_BURST, T_WHITE));
+        fs = .27 + u * 2.9;
         fo = 1;
-      } else if (t >= T_PEAK && t < T_CLEAR) {
-        const k = norm(t, T_PEAK, T_CLEAR);
-        fs = 2.79 + k * .9;
-        fo = 1 - k * k;
+      } else if (t >= T_WHITE && t < T_STAR) {
+        const u = ease(norm(t, T_WHITE, T_STAR));
+        fs = 3.17 - u * 2.95;          // drawn back down to a point
+        fo = 1 - .45 * u;
+      } else if (t >= T_STAR && t < T_WARM) {
+        const u = norm(t, T_STAR, T_WARM);
+        fs = .22 + u * .10;
+        fo = .55 * Math.pow(1 - u, 1.6);
       }
       flash.style.transform = "translate(-50%, -50%) scale(" + fs.toFixed(3) + ")";
       flash.style.opacity = fo.toFixed(3);
 
-      // The room warms up under the flash, so when the light clears the world
-      // behind the capture is already a different one.
-      el.dataset.glow = clamp(norm(t, T_BURST, T_PEAK), 0, 1).toFixed(3);
+      // ---- what the air is doing, one named signal per beat ----
+      const sig = el.dataset;
+      sig.charge = clamp(norm(t, T_BUILD, T_BURST), 0, 1).toFixed(3);
+      // The star is lit by the collapse and goes out as the volume opens.
+      sig.star = (ease(clamp(norm(t, T_WHITE, T_STAR), 0, 1))
+              * (1 - ease(clamp(norm(t, T_WARM - .4, T_WARM + 1.1), 0, 1)))).toFixed(3);
+      sig.warm = ease(clamp(norm(t, T_STAR, T_WARM), 0, 1)).toFixed(3);
+      // The cold has to hold, not touch and leave. Ramping it up and starting
+      // the fade in the same instant is what kept it from ever arriving.
+      sig.cool = (ease(clamp(norm(t, T_COOL, T_COOL + 1.3), 0, 1))
+              * (1 - ease(clamp(norm(t, T_HELD, T_FIELD + .5), 0, 1)))).toFixed(3);
+      sig.field = ease(clamp(norm(t, T_FIELD, T_DEITY + .9), 0, 1)).toFixed(3);
+      // Kept for anything still reading the old single channel.
+      sig.glow = sig.warm;
+
+      // The warm motes only exist after the light is out. Before that the
+      // whole room is cold, which is what makes the spark land.
+      if (!drifting && t >= T_WHITE) { drifting = true; drift.particlesystem.play(); }
 
       // ---- the pose changes while nobody can see ----
-      if (!swapped && t >= T_SWAP) { swapped = scene.swap() || t > T_CLEAR; }
+      if (!swapped && t >= T_SWAP) { swapped = scene.swap() || t > T_STAR; }
 
-      // ---- the figure condenses ----
-      deity.reveal(clamp(norm(t, T_OPEN, T_SET), 0, 1));
-      deity.spread(clamp(norm(t, T_SET - .6, T_FAN), 0, 1));
+      // ---- the figure comes out of the blur ----
+      deity.reveal(clamp(norm(t, T_DEITY, T_SET), 0, 1));
+      deity.spread(clamp(norm(t, T_SET - .8, T_FAN), 0, 1));
       deity.heat(1 - clamp(norm(t, T_SET, T_SET + 1.8), 0, 1));
     });
   }
