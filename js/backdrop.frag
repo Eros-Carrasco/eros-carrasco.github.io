@@ -158,9 +158,21 @@ void main() {
              + noise(vec2(aw * 12.0, -t * .33)) * .30
              + noise(vec2(aw * 26.0, t * .46)) * .15;
 
-  // Most angles carry a short tongue and only a few throw a long one, which
-  // is what keeps it from closing into a disc.
-  float reach = .060 + 1.05 * pow(lob, 1.8);
+  // Each tongue gets its own length, not one blended with its neighbours.
+  // Reading the reach straight off smooth noise made every spike almost the
+  // length of the one beside it, which is why they came out as an even crown.
+  // Cutting the circle into tongues first and hashing each one gives lengths
+  // that jump from one to the next, the way the reference does.
+  float tcnt = 26.0;
+  float ti   = floor(aw / 6.2831853 * tcnt + 40.0);
+  float tlen = hash(vec2(ti, 11.3));
+  float twid = hash(vec2(ti, 27.9));
+  float tgap = step(.22, hash(vec2(ti, 5.1)));   // and some do not fire at all
+  float tfr  = fract(aw / 6.2831853 * tcnt + 40.0);
+  float taper = pow(1. - abs(tfr * 2. - 1.), 1.2 + twid * 3.4);
+
+  float reach = (.055 + 1.30 * pow(tlen, 2.1)) * taper * tgap;
+  reach = max(reach, .050 + .22 * lob);          // a low collar under them all
   float fire  = pow(clamp((reach - sr) / max(reach, .0001), 0., 1.), 2.4);
   fire *= .30 + .70 * lob;
   // Licked away at the tips, so the tongues end ragged instead of rounded.
