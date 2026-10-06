@@ -165,7 +165,10 @@
     void modifySplatColor(vec3 center, inout vec4 color) {
       float d = frill(center);
       float near = pow(1.0 - d, 2.4);           // 1 on the skin, 0 way out
-      float a = uFade * (0.10 + 0.95 * near);
+      // The rim keeps all of its weight and the expanded part gives up almost
+      // all of its own, so what spreads out is something you see the page
+      // through rather than a pale solid standing beside him.
+      float a = uFade * (0.025 + 1.05 * near);
       // White where it touches him, cooling as it thins out.
       vec3 tint = mix(uTint * 0.82, vec3(1.0), near);
       color = vec4(tint, color.a * a);
