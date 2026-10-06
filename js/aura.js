@@ -182,7 +182,12 @@
 
       // ---- what the air is doing, one named signal per beat ----
       const sig = el.dataset;
-      sig.charge = clamp(norm(t, T_BUILD, T_BURST), 0, 1).toFixed(3);
+      // It has to let go as well as build. Leaving it pinned at one after the
+      // burst left the frame shivering for the rest of the piece, which is
+      // only noticeable once everything else has gone still.
+      const chg = clamp(norm(t, T_BUILD, T_BURST), 0, 1)
+                * (1 - clamp(norm(t, T_BURST, T_BURST + .22), 0, 1));
+      sig.charge = chg.toFixed(3);
 
       // The contour on the capture's own outline. It stands further off and
       // burns harder as the air gathers, flickering, and it is gone the
