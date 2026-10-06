@@ -201,40 +201,11 @@ void main() {
   vec3 floorC = mix(C_FLOOR, vec3(.030, .040, .062), c);
   vec3 lampC  = mix(C_LIGHT, vec3(.62, .76, 1.00), c * .85);
 
-  // The world it all happens in. The reference is not a void: it is a cold
-  // canyon at night, blue grey, with cloud banks moving and a few stars
-  // through them. An empty gradient was most of why our frames and theirs did
-  // not look alike, before anything in them was even compared.
-  float sky1 = fbm(p * vec2(1.05, 1.9) + vec2(t * .012, .0));
-  float sky2 = fbm(p * vec2(2.30, 3.4) + vec2(-t * .020, t * .006) + 4.0);
-  float band = smoothstep(-.30, .95, p.y);
-  vec3 world = mix(vec3(.130, .158, .200), vec3(.260, .310, .385), band);
-  world += vec3(.215, .255, .315) * smoothstep(.30, .82, sky1) * band;
-  world += vec3(.085, .105, .140) * smoothstep(.44, .90, sky2);
-  // The ground is darker and heavier than the air above it.
-  world = mix(vec3(.052, .058, .072), world, smoothstep(-.95, -.25, p.y));
-
-  vec2  stc  = floor(p * 70.);
-  float star0 = step(.988, hash(stc + 5.5));
-  star0 *= exp(-pow(length(fract(p * 70.) - vec2(hash(stc), hash(stc + 2.2))), 2.0) * 60.);
-  world += vec3(.70, .78, .95) * star0 * .55 * band;
-
-  // Rock. The reference frames him between two dark masses, and without them
-  // ours was a figure floating in an empty sky. They are only silhouettes:
-  // a ragged edge coming in from each side, darker than anything behind.
-  float ridgeL = -.50 + fbm(vec2(p.y * 2.2, 1.7)) * .50 + fbm(vec2(p.y * 6.0, 4.3)) * .16;
-  float ridgeR =  .50 - fbm(vec2(p.y * 2.0, 8.1)) * .50 - fbm(vec2(p.y * 5.4, 2.9)) * .16;
-  float rock = smoothstep(ridgeL + .02, ridgeL - .02, p.x)
-             + smoothstep(ridgeR - .02, ridgeR + .02, p.x);
-  rock *= smoothstep(1.05, .35, p.y);          // they do not reach the top
-  float ground = smoothstep(-.52, -.78, p.y);  // and the floor comes up to meet them
-  rock = clamp(rock + ground, 0., 1.);
-  world = mix(world, vec3(.020, .024, .034) * (.5 + .9 * fbm(p * 5.0)), rock * .96);
-
   // It belongs to the cold half of the piece and gives way to the warmth.
   float cold0 = clamp(1. - g - field, 0., 1.);
 
-  vec3 col = mix(floorC, world, cold0);
+  vec3 col = floorC * (1. - cold0);
+
   col = mix(col, haze, smoothstep(1.25, .05, length(p * vec2(1.0, .85))) * HAZE * air * (1. + g * 1.4) * (1. - .80 * cold0));
   col += lampC * lit * (.85 + g * 1.60) * (1. - .45 * c);
 
@@ -285,5 +256,14 @@ void main() {
   float edge = (.55 + .12 * c - .22 * g - .18 * field) * (1. - .55 * cold0);
   col *= 1. - edge * smoothstep(.72 - .08 * c, 1.48 - .16 * c, length(p));
 
-  fragColor = vec4(col, 1.0);
+  // The box is a window, not a canvas. Everything above is light, so what it
+  // is worth is also what covers: where nothing is lit, the page shows
+  // through. The two beats that are a whole field rather than a light in a
+  // room, the cold one and the flat warm one, are the exceptions and they
+  // close the window while they last.
+  float a = clamp(max(max(col.r, col.g), col.b) * 2.1, 0., 1.);
+  a = max(a, cool * .96);
+  a = max(a, field * .90);
+
+  fragColor = vec4(col, a);
 }

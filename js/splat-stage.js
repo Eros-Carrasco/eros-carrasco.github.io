@@ -236,6 +236,14 @@
         index = 1;
         show(pending);
         pending = null;
+        // Face front again. The pose that comes out of the light is the one
+        // the piece settles on, so it should be met head on and start its
+        // turn from there rather than from wherever the first one left off.
+        yaw = 0;
+        pitch = -5;
+        spinning = true;
+        resumeAt = 0;
+        place();
         return true;
       },
     },
