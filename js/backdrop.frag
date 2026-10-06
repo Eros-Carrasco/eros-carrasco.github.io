@@ -112,9 +112,9 @@ void main() {
   // these run at a third of the count and nothing like the contrast.
   float rang = atan(q.x, q.y);
   float rayN = noise(vec2(rang * 1.6, t * .04));
-  float rays = pow(max(0., .5 + .5 * sin(rang * 4.5 + rayN * 5. + t * .07)), 1.5) * .55;
-  rays += pow(max(0., .5 + .5 * sin(rang * 2.2 - rayN * 2.5 - t * .05)), 1.2) * .45;
-  rays *= smoothstep(.02, .55, r) * smoothstep(2.20, .35, r) * g;
+  float rays = pow(max(0., .5 + .5 * sin(rang * 5.5 + rayN * 5. + t * .13)), 2.4) * .72;
+  rays += pow(max(0., .5 + .5 * sin(rang * 2.6 - rayN * 2.5 - t * .09)), 1.8) * .55;
+  rays *= smoothstep(.02, .22, r) * smoothstep(1.90, .22, r) * g;
 
   // Cloud drifting through the light, which is what keeps it from reading flat.
   // Cloud banks, which is most of what makes the reference read as weather
@@ -216,17 +216,17 @@ void main() {
   col = mix(col, haze, smoothstep(1.25, .05, length(p * vec2(1.0, .85))) * HAZE * air * (1. + g * 1.4) * (1. - .80 * cold0));
   // The lamp itself goes pale as the volume opens, or the whole beat sits
   // under an orange cast the reference does not have.
-  col += mix(lampC, vec3(1.00, .96, .90), g * .80) * lit * (.85 + g * 1.60) * (1. - .45 * c);
+  col += mix(lampC, vec3(1.00, .92, .76), g * .55) * lit * (.85 + g * .62) * (1. - .45 * c);
 
   col += C_SPARK * stream * 2.30 * air;
   col += mix(C_SPARK, vec3(1., .96, .86), smoothstep(.70, 1., c)) * core * .80;
 
   // Cream, not orange. The volume is almost colourless at its centre.
-  vec3 pale = mix(C_LIGHT, vec3(1.00, .97, .92), .82);
-  col += pale * rays * (.24 + .46 * g) * air * (1. - .35 * cloud);
-  col += vec3(1., .97, .93) * cloud * 1.15;
+  vec3 pale = mix(C_LIGHT, vec3(1.00, .93, .76), .40);
+  col += pale * rays * (.22 + 1.35 * g) * air * (1. - .25 * cloud);
+  col += vec3(1., .94, .84) * cloud * .78;
   col += C_LIGHT * halo * .16;
-  col += vec3(1., .88, .70) * bloom * .55;
+  col += vec3(1., .90, .74) * bloom * .22;
   col += vec3(1.00, .98, .92) * sCore * 1.5;
   col += vec3(1.00, .80, .30) * sRing * 1.6;
   col += mix(vec3(1.00, .92, .74), vec3(1.00, .66, .44), smoothstep(.06, .52, sr)) * sRay * 1.9;
