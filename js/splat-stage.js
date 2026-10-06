@@ -146,18 +146,29 @@
            + sn(q * 2.6 + vec3(uWind * 1.1, -uWind * 2.4, 0.0)) * 0.32;
     }
 
+    // How far out this splat is sent decides everything else about it. The
+    // ones that stay close make a near solid white rim sitting on the edge of
+    // the body, small and crisp. The ones sent furthest are large, faint and
+    // barely there, so what they add is a glow with the body still showing
+    // through it. Sending the far ones out at full strength, which is what
+    // this did before, gave one even cloud with no rim in it at all.
     void modifySplatCenter(inout vec3 center) {
-      float f = frill(center);
-      // Pulled up as well as out, so the fringe lifts off him like heat.
+      float d = frill(center);
+      // Lifted as well as pushed out, so the fringe rises off him like heat.
       vec3 dir = normalize(center - uHeart) + vec3(0.0, 0.55, 0.0);
-      center += normalize(dir) * uPush * (0.35 + 2.10 * f);
+      center += normalize(dir) * uPush * (0.10 + 1.25 * d * d);
     }
     void modifySplatRotationScale(vec3 oc, vec3 mc, inout vec4 rotation, inout vec3 scale) {
-      scale *= 5.0 + 7.0 * frill(oc);
+      float d = frill(oc);
+      scale *= 1.3 + 7.5 * d * d;
     }
     void modifySplatColor(vec3 center, inout vec4 color) {
-      float f = frill(center);
-      color = vec4(uTint, color.a * uFade * 0.55 * smoothstep(0.02, 0.46, f));
+      float d = frill(center);
+      float near = pow(1.0 - d, 2.4);           // 1 on the skin, 0 way out
+      float a = uFade * (0.10 + 0.95 * near);
+      // White where it touches him, cooling as it thins out.
+      vec3 tint = mix(uTint * 0.82, vec3(1.0), near);
+      color = vec4(tint, color.a * a);
     }`;
 
   let shellMat = null;

@@ -196,8 +196,10 @@
         Math.min(1, Math.pow(k2, 1.0) * 1.25) * flick * out,
         null
       );
-      // The star is lit by the collapse and goes out as the volume opens.
-      sig.star = (ease(clamp(norm(t, T_WHITE, T_STAR), 0, 1))
+      // The fire reaches full size under the white, not after it. When the
+      // sheet lifts it is already out to its full reach, which is what makes
+      // the burst feel like it happened rather than like it is still happening.
+      sig.star = (ease(clamp(norm(t, T_BURST, T_WHITE), 0, 1))
               * (1 - ease(clamp(norm(t, T_WARM - .4, T_WARM + 1.1), 0, 1)))).toFixed(3);
       sig.warm = ease(clamp(norm(t, T_STAR, T_WARM), 0, 1)).toFixed(3);
       // The cold has to hold, not touch and leave. Ramping it up and starting
@@ -213,7 +215,12 @@
       if (!drifting && t >= T_WHITE) { drifting = true; drift.particlesystem.play(); }
 
       // ---- the pose changes while nobody can see ----
-      if (!swapped && t >= T_SWAP) { swapped = scene.swap() || t > T_STAR; }
+      // Keep asking until it takes. The second pose is six megabytes, so on a
+      // slow line it will not be ready at the stroke of T_SWAP, and giving up
+      // after one try left the capture standing in the idle pose for good.
+      // A swap that lands late is visible for a moment; a swap that never
+      // lands loses the whole point of the burst.
+      if (!swapped && t >= T_SWAP) swapped = scene.swap();
 
       // ---- the figure comes out of the blur ----
       deity.reveal(clamp(norm(t, T_DEITY, T_SET), 0, 1));
