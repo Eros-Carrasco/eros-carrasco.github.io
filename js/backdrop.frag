@@ -127,10 +127,32 @@ void main() {
   // It stands in for the cut to the wide shot. The whole frame of light
   // becomes one point behind him with long thin rays, and that point is where
   // the figure comes from, so the beat is a cause and not only a pause.
-  float sCore = exp(-r * r * 90.) * star;
-  float sRay  = pow(max(0., .5 + .5 * sin(rang * 6. + rayN * 3.)), 9.0)
-              + pow(max(0., .5 + .5 * sin(rang * 14. - rayN * 5. + 2.1)), 14.0) * .6;
-  sRay *= exp(-r * 2.6) * smoothstep(.015, .10, r) * star;
+  // A white hot core with a gold collar, and a crown of thin needles at every
+  // length. Six fat spokes read as a sparkle; the reference is closer to a
+  // dandelion, dozens of fine spikes with nothing regular about them.
+  // The star sits behind his head rather than at the chest, where his own
+  // body would swallow it. It stands in for the cut to the wide shot, so it
+  // has to be seen.
+  vec2  sp2  = p - vec2(.0, .46);
+  float sr   = length(sp2);
+  float sang = atan(sp2.x, sp2.y);
+  float sCore = (exp(-sr * sr * 190.) + exp(-sr * 11.0) * .22) * star;
+  float sRing = exp(-pow((sr - .075) / .040, 2.0)) * star;
+
+  float a01 = sang / 6.2831853 + .5;
+  float sRay = 0.;
+  for (int k = 0; k < 2; k++) {
+    float cnt = k == 0 ? 76. : 44.;
+    float off = k == 0 ? 0. : .37;
+    float idx = floor(a01 * cnt + off);
+    float h1  = hash(vec2(idx, float(k) * 7.3 + 1.));
+    float h2  = hash(vec2(idx, float(k) * 3.1 + 9.));
+    float t01 = fract(a01 * cnt + off);
+    float thin = pow(1. - abs(t01 * 2. - 1.), 9. + h2 * 16.);
+    float reach = .060 + .210 * h1 * h1;
+    sRay += thin * exp(-sr / reach) * (.55 + .45 * h2);
+  }
+  sRay *= smoothstep(.012, .09, sr) * star;
 
   // ---- the cold breath: the room empties out and the stars come through ----
   // Sparse and soft. One cell in fifty holds a star, placed somewhere inside
@@ -174,7 +196,9 @@ void main() {
   col += vec3(1., .88, .66) * cloud * .20;
   col += C_LIGHT * halo * .16;
   col += vec3(1., .88, .70) * bloom * .55;
-  col += vec3(1., .95, .80) * (sCore * 1.5 + sRay * .75);
+  col += vec3(1.00, .98, .92) * sCore * 2.6;
+  col += vec3(1.00, .80, .30) * sRing * 1.6;
+  col += mix(vec3(1.00, .92, .74), vec3(1.00, .70, .52), smoothstep(.05, .40, sr)) * sRay * 3.2;
   // The light wraps under him too, so the floor of the frame is not a hole.
   col += C_LIGHT * g * .09 * smoothstep(.10, -.90, p.y) * air;
 
