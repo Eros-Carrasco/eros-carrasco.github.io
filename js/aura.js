@@ -92,6 +92,11 @@
     flash.setAttribute("aria-hidden", "true");
     el.appendChild(flash);
 
+    const spark = document.createElement("div");
+    spark.className = "splat-spark";
+    spark.setAttribute("aria-hidden", "true");
+    el.appendChild(spark);
+
     // ---- the clock ----
     let t = -1;                  // seconds since the idle pose landed
     let swapped = false, drifting = false;
@@ -172,9 +177,10 @@
       let fs = 0, fo = 0;
       if (t >= T_SPARK && t < T_BURST) {
         const u = norm(t, T_SPARK, T_BURST);
-        fs = .03 + u * u * .24;
-        // The point is not steady. It gutters, the way the reference does.
-        fo = u * .92 * (.80 + .20 * Math.sin(t * 34));
+        fs = .03 + u * u * .34;
+        // The point itself is drawn in the shader so it can have points on it.
+        // This is only the haze around it, and it gutters.
+        fo = u * .45 * (.80 + .20 * Math.sin(t * 34));
       } else if (t >= T_BURST && t < T_WHITE) {
         const u = ease(norm(t, T_BURST, T_WHITE));
         fs = .27 + u * 2.9;
@@ -210,6 +216,12 @@
       const chg = clamp(norm(t, T_BUILD, T_BURST), 0, 1)
                 * (1 - clamp(norm(t, T_BURST, T_BURST + .22), 0, 1));
       sig.charge = chg.toFixed(3);
+      // The spark, in front of the capture where it can be seen. It grows,
+      // it gutters, and it is gone the instant the light lets go.
+      const sk = clamp(norm(t, T_SPARK, T_BURST), 0, 1);
+      const alive = sk > 0 && t < T_BURST + .05;
+      spark.style.transform = "translate(-50%, -50%) scale(" + (.10 + sk * sk * 1.25).toFixed(3) + ")";
+      spark.style.opacity = alive ? (Math.pow(sk, .7) * (.72 + .28 * Math.sin(t * 29))).toFixed(3) : "0";
 
       // The contour on the capture's own outline. It stands further off and
       // burns harder as the air gathers, flickering, and it is gone the

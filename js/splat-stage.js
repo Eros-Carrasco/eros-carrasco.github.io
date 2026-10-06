@@ -152,27 +152,33 @@
     // barely there, so what they add is a glow with the body still showing
     // through it. Sending the far ones out at full strength, which is what
     // this did before, gave one even cloud with no rim in it at all.
+    // Vapour is many small faint things, not a few large ones. Sending only
+    // the tail outward made blobs, because one big gaussian always reads as a
+    // patch however little weight it carries. Sending everything outward at
+    // full size made a solid wall, because what is nearly invisible alone is
+    // opaque forty deep. So all of them travel, none of them grow much, and
+    // what is out in the air carries about a two hundredth of the skin.
     void modifySplatCenter(inout vec3 center) {
       float d = frill(center);
       // Lifted as well as pushed out, so the fringe rises off him like heat.
       vec3 dir = normalize(center - uHeart) + vec3(0.0, 0.55, 0.0);
-      center += normalize(dir) * uPush * (0.10 + 1.25 * d * d);
+      center += normalize(dir) * uPush * (0.07 + 2.40 * d * d);
     }
     void modifySplatRotationScale(vec3 oc, vec3 mc, inout vec4 rotation, inout vec3 scale) {
       float d = frill(oc);
-      scale *= 1.3 + 7.5 * d * d;
+      scale *= 1.2 + 2.6 * d;
     }
     void modifySplatColor(vec3 center, inout vec4 color) {
       float d = frill(center);
-      float near = pow(1.0 - d, 2.4);           // 1 on the skin, 0 way out
-      // The rim keeps all of its weight and the expanded part gives up almost
-      // all of its own, so what spreads out is something you see the page
-      // through rather than a pale solid standing beside him.
-      float a = uFade * (0.004 + 1.10 * near);
-      // White where it touches him, cooling as it thins out.
-      vec3 tint = mix(uTint * 0.82, vec3(1.0), near);
+      float near = pow(1.0 - d, 3.4);          // 1 on the skin, 0 way out
+      // Two hundred and twenty eight thousand splats, hundreds of them
+      // stacked on any one pixel, so what looks like nothing on its own is
+      // still a wall when it is summed. The air gets under a thousandth.
+      float a = uFade * (0.0008 + 1.05 * near);
+      vec3 tint = mix(uTint * 0.86, vec3(1.0), near);
       color = vec4(tint, color.a * a);
-    }`;
+    }
+`;
 
   let shellMat = null;
 
