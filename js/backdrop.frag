@@ -89,19 +89,7 @@ void main() {
 
   // Vapour running inward in uneven spokes, dying as it reaches the chest.
   // Two passes at different speeds, so it never reads as one rotating wheel.
-  // Vapour standing in a column around him and running upward. Radial spokes
-  // read as a starburst, which is the one thing the gathering must not be.
-  float lane   = noise(vec2(p.x * 7.0, t * .20));
-  float band   = fract(p.y * 1.9 - t * .85 + lane * 2.2);
-  float stream = pow(1. - band, 6.0);
-  stream *= pow(max(0., .5 + .5 * sin(p.x * 26. + lane * 12.)), 2.0);
-  float band2  = fract(p.y * 3.1 - t * 1.60 + lane * 4.4);
-  float fine   = pow(1. - band2, 10.0);
-  fine *= pow(max(0., .5 + .5 * sin(p.x * 51. - lane * 19.)), 3.0);
-  stream = (stream + fine * .65);
-  // Only near him, and never out at the border, so the room stays readable.
-  stream *= exp(-p.x * p.x * 9.0) * smoothstep(-1.0, -.35, p.y) * smoothstep(1.05, .45, p.y);
-  stream *= c * (.35 + .65 * c);
+  float stream = 0.0;   // the gathering is drawn on the capture's own outline now
 
   // The air itself is uneven, and everything below is cut by it.
   float torn = noise(vec2(ang * 1.9, t * .35)) * .70

@@ -72,7 +72,6 @@
 
     // ---- the motes ----
     const dot = dotTexture(app.graphicsDevice, 64);
-    const streak = streakTexture(app.graphicsDevice, 64);
     const drift = makeParticles(app, dot, {
       numParticles: 140, lifetime: 3.4, rate: .022, rate2: .05,
       size: .05, radius: .45, rise: [.10, .40], loop: true, autoPlay: false,
@@ -80,28 +79,6 @@
     });
     // The charge is cold and pulls inward, so the burst reads as a change of
     // temperature and not only of brightness.
-    // In the reference the gathering is a column of vapour standing around him
-    // and rising, not a starburst converging on his chest. It hugs the body,
-    // it leaves the rest of the frame alone, and it stays quiet until the very
-    // end. So these are emitted in a tall thin box around the capture and sent
-    // straight up, with no inward pull at all.
-    const charge = makeParticles(app, streak, {
-      numParticles: 420, lifetime: 1.7, rate: .0022, rate2: .006,
-      size: .055, box: [.30, .46, .30], rise: [.30, .85],
-      loop: true, autoPlay: false, along: true, alpha: .62,
-      colour: [[0, .86, 1, 1], [0, .92, 1, .82], [0, 1.0, 1, .60]],
-    });
-    // The last stretch is a rush. These come in from further out, move about
-    // twice as fast and are gone the moment they arrive, so the gathering ends
-    // up going somewhere instead of hanging there.
-    // The same column, faster and taller, for the last stretch before it goes.
-    const rush = makeParticles(app, streak, {
-      numParticles: 240, lifetime: 1.0, rate: .0030, rate2: .008,
-      size: .075, box: [.24, .50, .24], rise: [.90, 1.90],
-      loop: true, autoPlay: false, along: true, alpha: .52,
-      colour: [[0, .78, 1, 1.0], [0, .90, 1, .96], [0, 1.0, 1, .86]],
-    });
-
     // ---- the flash ----
     const flash = document.createElement("div");
     flash.className = "splat-flash";
@@ -110,7 +87,7 @@
 
     // ---- the clock ----
     let t = -1;                  // seconds since the idle pose landed
-    let charging = false, rushing = false, swapped = false, drifting = false;
+    let swapped = false, drifting = false;
     let yaw = 0, aimed = false;
     const pos = new pc.Vec3();
 
@@ -148,30 +125,19 @@
       warm.setPosition(pos.x, pos.y, pos.z);
       drift.setPosition(pivot.x, pivot.y, pivot.z);
       drift.setLocalScale(h, h, h);
-      charge.setPosition(pivot.x, pivot.y, pivot.z);
-      rush.setPosition(pivot.x, pivot.y, pivot.z);
-      rush.setLocalScale(h, h, h);
 
       if (t < 0) return;
       t += dt;
 
       // ---- the charge: the cloud tightens, then rushes, then shivers ----
       const k = clamp(norm(t, T_BUILD, T_BURST), 0, 1);
-      if (!charging && t >= T_BUILD) { charging = true; charge.particlesystem.play(); }
-      if (charging && t >= T_BURST) { charging = false; charge.particlesystem.stop(); }
-      if (!rushing && t >= T_RUSH && t < T_BURST) { rushing = true; rush.particlesystem.play(); }
-      if (rushing && t >= T_BURST) { rushing = false; rush.particlesystem.stop(); }
 
       // It closes slowly and then all at once, and by the end the whole cloud
       // is shaking, so there is pressure in the second before it lets go.
       const tight = 1 - .18 * Math.pow(k, 1.8);
       const sh = Math.pow(k, 5) * h * .030;
       const jx = Math.sin(t * 61) * sh, jy = Math.cos(t * 47) * sh;
-      charge.setPosition(pivot.x + jx, pivot.y + jy, pivot.z);
-      charge.setLocalScale(h * tight, h * tight, h * tight);
-      rush.setPosition(pivot.x + jx, pivot.y + jy, pivot.z);
       const wide = 1 - .10 * k;
-      rush.setLocalScale(h * wide, h * wide, h * wide);
 
       // The warm motes are drawn in with everything else, until they are a
       // knot at his chest and the room is cold and empty before it goes.
@@ -217,8 +183,8 @@
       const out = 1 - clamp(norm(t, T_BURST, T_WHITE), 0, 1);
       const flick = .86 + .14 * Math.sin(t * 17.3) * Math.sin(t * 6.1);
       scene.aura(
-        (.004 + .016 * Math.pow(k2, .8)) * out,
-        Math.pow(k2, 1.3) * flick * out,
+        (.010 + .055 * Math.pow(k2, .8)) * out,
+        Math.min(1, Math.pow(k2, .9) * 1.9) * flick * out,
         null
       );
       // The star is lit by the collapse and goes out as the volume opens.
@@ -283,31 +249,6 @@
     e.addComponent("particlesystem", cfg);
     app.root.addChild(e);
     return e;
-  }
-
-  // A long soft smear. Aligned to the direction it is travelling, this is a
-  // streak of vapour; the round dot the warm motes use would be a firefly, and
-  // the reference has no fireflies anywhere in the gathering.
-  function streakTexture(device, s) {
-    const cv = document.createElement("canvas");
-    cv.width = cv.height = s;
-    const ctx = cv.getContext("2d");
-    ctx.clearRect(0, 0, s, s);
-    ctx.save();
-    ctx.translate(s / 2, s / 2);
-    ctx.scale(.16, 1);
-    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, s / 2);
-    g.addColorStop(0, "rgba(255,255,255,1)");
-    g.addColorStop(.35, "rgba(255,255,255,0.45)");
-    g.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(0, 0, s / 2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-    const t = new pc.Texture(device, { width: s, height: s, format: pc.PIXELFORMAT_RGBA8, mipmaps: true });
-    t.setSource(cv);
-    return t;
   }
 
   function dotTexture(device, s) {

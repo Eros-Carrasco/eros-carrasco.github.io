@@ -124,15 +124,40 @@
     uniform vec3  uHeart;
     uniform float uPush;
     uniform float uFade;
+    uniform float uWind;
     uniform vec3  uTint;
+
+    float sh(vec3 p) { return fract(sin(dot(p, vec3(12.99, 78.23, 37.71))) * 43758.5453); }
+    float sn(vec3 p) {
+      vec3 i = floor(p), f = fract(p);
+      f = f * f * (3.0 - 2.0 * f);
+      float a = mix(mix(sh(i), sh(i + vec3(1,0,0)), f.x), mix(sh(i + vec3(0,1,0)), sh(i + vec3(1,1,0)), f.x), f.y);
+      float b = mix(mix(sh(i + vec3(0,0,1)), sh(i + vec3(1,0,1)), f.x), mix(sh(i + vec3(0,1,1)), sh(i + vec3(1,1,1)), f.x), f.y);
+      return mix(a, b, f.z);
+    }
+
+    // How far out this one splat sits and how bright it is. Varying both with
+    // noise is what frays the contour; pushing every splat by the same amount
+    // gives an even line, and an even line reads as a sticker cut round the
+    // figure rather than as light coming off it.
+    float frill(vec3 c) {
+      vec3 q = c * 9.0;
+      return sn(q + vec3(0.0, -uWind * 1.6, uWind * 0.5)) * 0.68
+           + sn(q * 2.6 + vec3(uWind * 1.1, -uWind * 2.4, 0.0)) * 0.32;
+    }
+
     void modifySplatCenter(inout vec3 center) {
-      center += normalize(center - uHeart) * uPush;
+      float f = frill(center);
+      // Pulled up as well as out, so the fringe lifts off him like heat.
+      vec3 dir = normalize(center - uHeart) + vec3(0.0, 0.55, 0.0);
+      center += normalize(dir) * uPush * (0.35 + 2.10 * f);
     }
     void modifySplatRotationScale(vec3 oc, vec3 mc, inout vec4 rotation, inout vec3 scale) {
-      scale *= 2.0;
+      scale *= 5.0 + 7.0 * frill(oc);
     }
     void modifySplatColor(vec3 center, inout vec4 color) {
-      color = vec4(uTint, color.a * uFade);
+      float f = frill(center);
+      color = vec4(uTint, color.a * uFade * 0.55 * smoothstep(0.02, 0.46, f));
     }`;
 
   let shellMat = null;
@@ -151,6 +176,7 @@
     }
     mat.setParameter("uHeart", [pivot.x, pivot.y, pivot.z]);
     mat.setParameter("uPush", 0);
+    mat.setParameter("uWind", 0);
     mat.setParameter("uFade", 0);
     mat.setParameter("uTint", [.84, .94, 1.0]);
     mat.update();
@@ -189,6 +215,7 @@
         shellMat.setParameter("uHeart", [pivot.x, pivot.y, pivot.z]);
         shellMat.setParameter("uPush", push * subjectHeight);
         shellMat.setParameter("uFade", fade);
+        shellMat.setParameter("uWind", performance.now() / 1000);
         if (tint) shellMat.setParameter("uTint", tint);
       },
       // Called from inside the flash. Nothing happens if the second pose has
