@@ -30,20 +30,27 @@
   // which also gives the figure somewhere to come from. The quiet shot of him
   // on the lotus under a flat halo becomes the whole room cooling to violet
   // for a moment, with stars, before the warmth comes back.
-  const T_BUILD = 0.50;  // the air starts to charge, cold and white
-  const T_SPARK = 5.30;  // a point of gold at the chest, the first in the piece
-  const T_BURST = 6.00;  // it lets go
-  const T_WHITE = 6.25;  // the frame is white, and it is quick
-  const T_SWAP  = 6.45;  // the pose changes, under the white
-  const T_LIFT  = 7.55;  // the white has been held full, and starts to open
-  const T_STAR  = 8.60;  // it has drawn back into the fire behind him
-  const T_WARM  = 9.70;  // which opens into a volume he is standing inside
-  const T_COOL  = 11.40; // the room cools, stars come out, the halo ring
-  const T_HELD  = 14.60; // and it stays cold. The reference holds this beat
-  const T_FIELD = 15.60; // warmth returns and the light flattens into a field
-  const T_DEITY = 16.00; // the figure starts coming out of the blur
-  const T_SET   = 18.00; // it has resolved
-  const T_FAN   = 18.60; // the arms have finished opening
+  // Taken off the reference measured as one continuous run of 39.77 seconds,
+  // which is what it is: five files played one after the other with no gap.
+  // Its share of the whole goes: gathering 12.6, spark 2.3, blow 0.4, white
+  // held 3.5, the fire seen whole 2.8, inside the light 1.6, the cold beat
+  // 38.5, the figure 38.2. The first five beats take under a quarter of it
+  // and the back half takes three quarters, which is the opposite of how this
+  // was built. Scaled here to about sixteen seconds, keeping those shares.
+  const T_BUILD = 0.30;  // the air starts to charge, cold and white
+  const T_SPARK = 2.30;  // a point of gold at the chest, the first in the piece
+  const T_BURST = 2.67;  // it lets go, and the fire is already at full reach
+  const T_WHITE = 2.79;  // the frame is white, and it is very quick
+  const T_SWAP  = 2.95;  // the pose changes, under the white
+  const T_LIFT  = 3.36;  // the white has been held full, and starts to open
+  const T_STAR  = 3.81;  // the fire stands alone, brightening as it is seen
+  const T_WARM  = 4.07;  // which opens into a volume he is standing inside
+  const T_COOL  = 4.35;  // the room cools, stars come out, the halo ring
+  const T_HELD  = 9.20;  // and it stays cold. This is the long beat
+  const T_FIELD = 10.30; // warmth returns and the light flattens into a field
+  const T_DEITY = 10.60; // the figure starts coming out of the blur
+  const T_SET   = 17.00; // it has resolved
+  const T_FAN   = 17.80; // the arms have finished opening
 
   // How much light the room keeps once the flash is gone. The backdrop reads
   // this as its resting state, so he is left standing in light rather than in
@@ -210,8 +217,8 @@
       // The fire reaches full size under the white, not after it. When the
       // sheet lifts it is already out to its full reach, which is what makes
       // the burst feel like it happened rather than like it is still happening.
-      sig.star = (ease(clamp(norm(t, T_BURST, T_WHITE), 0, 1))
-              * (1 - ease(clamp(norm(t, T_WARM - .4, T_WARM + 1.1), 0, 1)))).toFixed(3);
+      sig.star = (ease(clamp(norm(t, T_BURST - .14, T_BURST), 0, 1))
+              * (1 - ease(clamp(norm(t, T_WARM - .15, T_WARM + .55), 0, 1)))).toFixed(3);
       sig.warm = ease(clamp(norm(t, T_STAR, T_WARM), 0, 1)).toFixed(3);
       // The cold has to hold, not touch and leave. Ramping it up and starting
       // the fade in the same instant is what kept it from ever arriving.
