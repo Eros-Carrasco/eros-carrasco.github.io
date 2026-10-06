@@ -85,6 +85,7 @@
   ];
 
   let current = null;          // the entity on screen
+  let shell = null;            // the aura copy standing behind it
   let pending = null;          // the next pose, loaded and waiting for its cue
   let index = -1;
   let subjectHeight = 1;       // how tall the captured figure is, in world units
@@ -112,8 +113,55 @@
     app.assets.load(a);
   });
 
+  // The aura that traces the capture is a second copy of it, drawn first so it
+  // sits behind, with every splat pushed out from the middle and forced to one
+  // colour. That is the only way to get a contour of the real silhouette:
+  // this engine draws splats through one shared renderer that sits outside the
+  // normal material and post processing path, so the figure cannot be read
+  // back after it is drawn and cannot be tinted from outside. Turning that
+  // shared renderer off for this one copy gives it a material of its own.
+  const SHELL_CHUNK = `
+    uniform vec3  uHeart;
+    uniform float uPush;
+    uniform float uFade;
+    uniform vec3  uTint;
+    void modifySplatCenter(inout vec3 center) {
+      center += normalize(center - uHeart) * uPush;
+    }
+    void modifySplatRotationScale(vec3 oc, vec3 mc, inout vec4 rotation, inout vec3 scale) {
+      scale *= 2.0;
+    }
+    void modifySplatColor(vec3 center, inout vec4 color) {
+      color = vec4(uTint, color.a * uFade);
+    }`;
+
+  let shellMat = null;
+
+  const addShell = (asset) => {
+    const e = new pc.Entity("aura-shell");
+    e.addComponent("gsplat", { asset, unified: false });
+    app.root.addChild(e);
+    const mat = e.gsplat.material;
+    if (!mat) return e;
+    if (mat.shaderChunks && mat.shaderChunks.glsl && mat.shaderChunks.glsl.set) {
+      mat.shaderChunks.glsl.set("gsplatModifyVS", SHELL_CHUNK);
+    } else {
+      mat.chunks = mat.chunks || {};
+      mat.chunks.gsplatModifyVS = SHELL_CHUNK;
+    }
+    mat.setParameter("uHeart", [pivot.x, pivot.y, pivot.z]);
+    mat.setParameter("uPush", 0);
+    mat.setParameter("uFade", 0);
+    mat.setParameter("uTint", [.84, .94, 1.0]);
+    mat.update();
+    shellMat = mat;
+    return e;
+  };
+
   const show = (asset) => {
     if (current) { current.destroy(); current = null; }
+    if (shell) { shell.destroy(); shell = null; shellMat = null; }
+    shell = addShell(asset);
     const e = new pc.Entity();
     e.addComponent("gsplat", { asset });
     app.root.addChild(e);
@@ -134,6 +182,15 @@
       height: () => subjectHeight,
       onPiece: (fn) => watchers.push(fn),
       onReady: (fn) => ready.push(fn),
+      // How far the aura stands off the silhouette, how strong it is, and what
+      // colour it runs. js/aura.js drives all three.
+      aura: (push, fade, tint) => {
+        if (!shellMat) return;
+        shellMat.setParameter("uHeart", [pivot.x, pivot.y, pivot.z]);
+        shellMat.setParameter("uPush", push * subjectHeight);
+        shellMat.setParameter("uFade", fade);
+        if (tint) shellMat.setParameter("uTint", tint);
+      },
       // Called from inside the flash. Nothing happens if the second pose has
       // not finished downloading, which keeps a slow line from showing a cut.
       swap: () => {

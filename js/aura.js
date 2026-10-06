@@ -72,6 +72,7 @@
 
     // ---- the motes ----
     const dot = dotTexture(app.graphicsDevice, 64);
+    const streak = streakTexture(app.graphicsDevice, 64);
     const drift = makeParticles(app, dot, {
       numParticles: 140, lifetime: 3.4, rate: .022, rate2: .05,
       size: .05, radius: .45, rise: [.10, .40], loop: true, autoPlay: false,
@@ -79,20 +80,26 @@
     });
     // The charge is cold and pulls inward, so the burst reads as a change of
     // temperature and not only of brightness.
-    const charge = makeParticles(app, dot, {
-      numParticles: 300, lifetime: 1.5, rate: .003, rate2: .008,
-      size: .045, radius: 1.30, rise: [-.05, .10], radial: [-1.9, -.30],
-      loop: true, autoPlay: false,
-      colour: [[0, .86, 1, 1], [0, .92, 1, .78], [0, 1.0, 1, .38]],
+    // In the reference the gathering is a column of vapour standing around him
+    // and rising, not a starburst converging on his chest. It hugs the body,
+    // it leaves the rest of the frame alone, and it stays quiet until the very
+    // end. So these are emitted in a tall thin box around the capture and sent
+    // straight up, with no inward pull at all.
+    const charge = makeParticles(app, streak, {
+      numParticles: 420, lifetime: 1.7, rate: .0022, rate2: .006,
+      size: .055, box: [.30, .46, .30], rise: [.30, .85],
+      loop: true, autoPlay: false, along: true, alpha: .62,
+      colour: [[0, .86, 1, 1], [0, .92, 1, .82], [0, 1.0, 1, .60]],
     });
     // The last stretch is a rush. These come in from further out, move about
     // twice as fast and are gone the moment they arrive, so the gathering ends
     // up going somewhere instead of hanging there.
-    const rush = makeParticles(app, dot, {
-      numParticles: 160, lifetime: 0.9, rate: .0035, rate2: .009,
-      size: .055, radius: 1.75, rise: [-.12, .16], radial: [-3.6, -.70],
-      loop: true, autoPlay: false,
-      colour: [[0, .62, 1, 1.0], [0, .86, 1, .94], [0, 1.0, 1, .80]],
+    // The same column, faster and taller, for the last stretch before it goes.
+    const rush = makeParticles(app, streak, {
+      numParticles: 240, lifetime: 1.0, rate: .0030, rate2: .008,
+      size: .075, box: [.24, .50, .24], rise: [.90, 1.90],
+      loop: true, autoPlay: false, along: true, alpha: .52,
+      colour: [[0, .78, 1, 1.0], [0, .90, 1, .96], [0, 1.0, 1, .86]],
     });
 
     // ---- the flash ----
@@ -157,13 +164,13 @@
 
       // It closes slowly and then all at once, and by the end the whole cloud
       // is shaking, so there is pressure in the second before it lets go.
-      const tight = 1 - .66 * Math.pow(k, 1.8);
+      const tight = 1 - .18 * Math.pow(k, 1.8);
       const sh = Math.pow(k, 5) * h * .030;
       const jx = Math.sin(t * 61) * sh, jy = Math.cos(t * 47) * sh;
       charge.setPosition(pivot.x + jx, pivot.y + jy, pivot.z);
       charge.setLocalScale(h * tight, h * tight, h * tight);
       rush.setPosition(pivot.x + jx, pivot.y + jy, pivot.z);
-      const wide = 1 - .22 * k;
+      const wide = 1 - .10 * k;
       rush.setLocalScale(h * wide, h * wide, h * wide);
 
       // The warm motes are drawn in with everything else, until they are a
@@ -201,6 +208,19 @@
       // ---- what the air is doing, one named signal per beat ----
       const sig = el.dataset;
       sig.charge = clamp(norm(t, T_BUILD, T_BURST), 0, 1).toFixed(3);
+
+      // The contour on the capture's own outline. It stands further off and
+      // burns harder as the air gathers, flickering, and it is gone the
+      // instant the light lets go, because after that there is nothing left
+      // to trace.
+      const k2 = clamp(norm(t, T_BUILD, T_BURST), 0, 1);
+      const out = 1 - clamp(norm(t, T_BURST, T_WHITE), 0, 1);
+      const flick = .86 + .14 * Math.sin(t * 17.3) * Math.sin(t * 6.1);
+      scene.aura(
+        (.004 + .016 * Math.pow(k2, .8)) * out,
+        Math.pow(k2, 1.3) * flick * out,
+        null
+      );
       // The star is lit by the collapse and goes out as the volume opens.
       sig.star = (ease(clamp(norm(t, T_WHITE, T_STAR), 0, 1))
               * (1 - ease(clamp(norm(t, T_WARM - .4, T_WARM + 1.1), 0, 1)))).toFixed(3);
@@ -227,6 +247,7 @@
     });
   }
 
+
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const norm = (v, a, b) => (v - a) / (b - a);
   const ease = (k) => { const c = clamp(k, 0, 1); return c * c * (3 - 2 * c); };
@@ -238,8 +259,10 @@
       lifetime: o.lifetime,
       rate: o.rate, rate2: o.rate2,
       startAngle: 0, startAngle2: 360,
-      emitterShape: pc.EMITTERSHAPE_SPHERE,
-      emitterRadius: o.radius,
+      emitterShape: o.box ? pc.EMITTERSHAPE_BOX : pc.EMITTERSHAPE_SPHERE,
+      emitterExtents: o.box ? new pc.Vec3(o.box[0], o.box[1], o.box[2]) : undefined,
+      emitterRadius: o.radius || 0,
+      emitterRadiusInner: o.hollow || 0,
       colorMap: tex,
       blendType: pc.BLEND_ADDITIVE,
       depthWrite: false,
@@ -248,15 +271,43 @@
       preWarm: o.autoPlay,
       autoPlay: o.autoPlay,
       scaleGraph: new pc.Curve([0, o.size, 1, o.size * .15]),
-      alphaGraph: new pc.Curve([0, 0, .25, 1, 1, 0]),
+      alphaGraph: new pc.Curve([0, 0, .25, o.alpha === undefined ? 1 : o.alpha, 1, 0]),
       colorGraph: new pc.CurveSet(o.colour),
       velocityGraph: new pc.CurveSet([[0, 0], [0, o.rise[0]], [0, 0]]),
       velocityGraph2: new pc.CurveSet([[0, 0], [0, o.rise[1]], [0, 0]]),
     };
     if (o.radial) cfg.radialSpeedGraph = new pc.Curve([0, o.radial[0], 1, o.radial[1]]);
+    // Drawn along the line it is travelling, which is the difference between
+    // a streak of vapour and a bright dot with a tail.
+    if (o.along) { cfg.alignToMotion = true; cfg.stretch = .10; }
     e.addComponent("particlesystem", cfg);
     app.root.addChild(e);
     return e;
+  }
+
+  // A long soft smear. Aligned to the direction it is travelling, this is a
+  // streak of vapour; the round dot the warm motes use would be a firefly, and
+  // the reference has no fireflies anywhere in the gathering.
+  function streakTexture(device, s) {
+    const cv = document.createElement("canvas");
+    cv.width = cv.height = s;
+    const ctx = cv.getContext("2d");
+    ctx.clearRect(0, 0, s, s);
+    ctx.save();
+    ctx.translate(s / 2, s / 2);
+    ctx.scale(.16, 1);
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, s / 2);
+    g.addColorStop(0, "rgba(255,255,255,1)");
+    g.addColorStop(.35, "rgba(255,255,255,0.45)");
+    g.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(0, 0, s / 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    const t = new pc.Texture(device, { width: s, height: s, format: pc.PIXELFORMAT_RGBA8, mipmaps: true });
+    t.setSource(cv);
+    return t;
   }
 
   function dotTexture(device, s) {

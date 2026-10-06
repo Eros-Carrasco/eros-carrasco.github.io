@@ -89,25 +89,24 @@ void main() {
 
   // Vapour running inward in uneven spokes, dying as it reaches the chest.
   // Two passes at different speeds, so it never reads as one rotating wheel.
-  float spoke  = noise(vec2(ang * 3.1, t * .22));
-  float band   = fract(r * 1.6 + t * .95 + spoke * 2.4);
-  float stream = pow(1. - band, 5.0);
-  stream *= pow(max(0., .5 + .5 * sin(ang * 8. + spoke * 14.)), 2.0);
-  float band2  = fract(r * 2.7 + t * 1.70 + spoke * 5.1);
-  float fine   = pow(1. - band2, 9.0);
-  fine *= pow(max(0., .5 + .5 * sin(ang * 19. - spoke * 23.)), 3.0);
-  stream = (stream + fine * .70) * smoothstep(.10, .55, r) * smoothstep(1.55, .45, r);
-  stream *= c * (.45 + .55 * c);
+  // Vapour standing in a column around him and running upward. Radial spokes
+  // read as a starburst, which is the one thing the gathering must not be.
+  float lane   = noise(vec2(p.x * 7.0, t * .20));
+  float band   = fract(p.y * 1.9 - t * .85 + lane * 2.2);
+  float stream = pow(1. - band, 6.0);
+  stream *= pow(max(0., .5 + .5 * sin(p.x * 26. + lane * 12.)), 2.0);
+  float band2  = fract(p.y * 3.1 - t * 1.60 + lane * 4.4);
+  float fine   = pow(1. - band2, 10.0);
+  fine *= pow(max(0., .5 + .5 * sin(p.x * 51. - lane * 19.)), 3.0);
+  stream = (stream + fine * .65);
+  // Only near him, and never out at the border, so the room stays readable.
+  stream *= exp(-p.x * p.x * 9.0) * smoothstep(-1.0, -.35, p.y) * smoothstep(1.05, .45, p.y);
+  stream *= c * (.35 + .65 * c);
 
   // The air itself is uneven, and everything below is cut by it.
   float torn = noise(vec2(ang * 1.9, t * .35)) * .70
              + noise(vec2(ang * 6.1, -t * .50)) * .30;
 
-  // Pulses of pressure, each one collapsing faster than the last.
-  float ph   = fract(c * 4.0);
-  float rad  = mix(1.15, .08, ph * ph);
-  float ring = exp(-pow((r - rad) / .115, 2.0)) * (1. - ph * .55) * c;
-  ring *= .55 + .45 * torn;   // the wave is uneven, like the air it moves
 
   // What gathers sits around him rather than inside him, because the capture
   // is in front of this and would swallow anything drawn at the chest. So it
@@ -116,7 +115,7 @@ void main() {
   float sheath = smoothstep(mix(1.10, .66, c), mix(.46, .22, c), r)
                * smoothstep(.02, mix(.30, .14, c), r);
   sheath *= .15 + .85 * torn * torn;
-  float core   = sheath * c * c * (.60 + .40 * c);
+  float core   = sheath * c * c * (.18 + .22 * c);
   core += exp(-r * r * mix(300., 52., c)) * c * c * c * .9;
 
   // ---- after it: the warm volume it leaves behind ----
@@ -167,14 +166,20 @@ void main() {
   // it goes colder and closer as the air gathers. After it, the capture is
   // standing inside the light, so the air carries the colour and the rays open
   // up behind it.
-  vec3 haze = mix(mix(C_AIR, C_COLD, c * .90), C_WARM, g);
+  vec3 haze = mix(mix(C_AIR, C_COLD, c), C_WARM, g);
 
-  vec3 col = C_FLOOR;
+  // The room the gathering happens in is cold. In the reference it is a blue
+  // grey canyon at night, and ours was reading warm brown the whole way
+  // through, which took the cold out of the charge before it started. So the
+  // floor and the one warm light in the room both drain as the air gathers.
+  vec3 floorC = mix(C_FLOOR, vec3(.030, .040, .062), c);
+  vec3 lampC  = mix(C_LIGHT, vec3(.62, .76, 1.00), c * .85);
+
+  vec3 col = floorC;
   col = mix(col, haze, smoothstep(1.25, .05, length(p * vec2(1.0, .85))) * HAZE * air * (1. + g * 1.4));
-  col += C_LIGHT * lit * (.85 + g * 1.60);
+  col += lampC * lit * (.85 + g * 1.60) * (1. - .45 * c);
 
-  col += C_SPARK * stream * 1.15 * air;
-  col += C_SPARK * ring * .85;
+  col += C_SPARK * stream * 2.30 * air;
   col += mix(C_SPARK, vec3(1., .96, .86), smoothstep(.70, 1., c)) * core * .80;
 
   col += C_LIGHT * rays * (.30 + .85 * g) * air * (1. - .55 * cloud);
