@@ -193,7 +193,7 @@
       const flick = .86 + .14 * Math.sin(t * 17.3) * Math.sin(t * 6.1);
       scene.aura(
         (.010 + .055 * Math.pow(k2, .8)) * out,
-        Math.min(1, Math.pow(k2, .9) * 1.9) * flick * out,
+        Math.min(1, Math.pow(k2, 1.0) * 1.25) * flick * out,
         null
       );
       // The star is lit by the collapse and goes out as the volume opens.
