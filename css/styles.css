@@ -367,6 +367,16 @@ body.project-page {
   opacity: 0.9;
 }
 
+/* prose blocks inside a section, used by the about overview */
+.project-section .prose {
+  margin: 0 0 12px;
+  line-height: 1.6;
+  opacity: 0.9;
+}
+.project-section .prose:last-child {
+  margin-bottom: 0;
+}
+
 /* tags row */
 .project-meta {
   display: flex;
@@ -1108,3 +1118,28 @@ details.numbers[open] summary {
 }
 .splat-stage #backdrop-canvas { z-index: 0; pointer-events: none; }
 .splat-stage #splat-canvas { z-index: 1; }
+/* The burst that the figure arrives inside of. It covers everything, capture
+   included, which is what lets the scene behind it change without a seam.
+   js/aura.js drives its transform and opacity. */
+.splat-stage .splat-flash {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(255, 246, 219, 0.96) 16%,
+    rgba(255, 206, 110, 0.78) 36%,
+    rgba(255, 158, 48, 0.30) 55%,
+    rgba(255, 140, 30, 0) 72%);
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+  will-change: transform, opacity;
+}
+@media (prefers-reduced-motion: reduce) {
+  .splat-stage .splat-flash { display: none; }
+}

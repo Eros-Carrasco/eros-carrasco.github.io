@@ -22,3 +22,9 @@ Relighting Splats*.mp4
 
 # Session transcripts exported to the repo root
 /20??-??-??-*.txt
+
+# Visual reference material gathered while designing. Not part of the site.
+references/
+
+# Scratch checkouts that background agents work in.
+.claude/worktrees/

@@ -67,6 +67,12 @@ void main() {
 
   const uTime = gl.getUniformLocation(prog, "uTime");
   const uSize = gl.getUniformLocation(prog, "uSize");
+  // Written by splat-stage.js: how much of the first capture has arrived, and
+  // how many seconds it has been on screen. A shader that does not declare
+  // them gets null locations here and nothing is sent.
+  const uLoad = gl.getUniformLocation(prog, "uLoad");
+  const uSince = gl.getUniformLocation(prog, "uSince");
+  const uGlow = gl.getUniformLocation(prog, "uGlow");
 
   const resize = () => {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -91,6 +97,12 @@ void main() {
   const frame = () => {
     resize();
     if (uTime) gl.uniform1f(uTime, (performance.now() - start) / 1000);
+    if (uLoad) gl.uniform1f(uLoad, parseFloat(stage.dataset.load || "0"));
+    if (uGlow) gl.uniform1f(uGlow, parseFloat(stage.dataset.glow || "0"));
+    if (uSince) {
+      const at = parseFloat(stage.dataset.readyAt || "0");
+      gl.uniform1f(uSince, at ? (performance.now() - at) / 1000 : 0);
+    }
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     requestAnimationFrame(frame);

@@ -55,9 +55,7 @@
       if (resumeAt && performance.now() > resumeAt) spinning = true;
       return;
     }
-    const step = SPIN_DEG_PER_SEC * dt;
-    yaw -= step;
-    turned += step;
+    yaw -= SPIN_DEG_PER_SEC * dt;
     place();
   });
 
@@ -78,17 +76,20 @@
   canvas.addEventListener("pointerup", release);
   canvas.addEventListener("pointercancel", release);
 
-  // The pieces, shown one after another. Each gets one full turn, then the
-  // next takes over. The next one is fetched while the current one is spinning,
-  // so the swap has nothing to wait for.
+  // Two poses of the same person. The idle one is what the viewer meets. The
+  // meditating one takes over later, in the middle of the burst, so the change
+  // of pose happens behind the light and is never seen as a cut.
   const PIECES = [
-    "assets/eros-splat.ply",
-    "assets/eros-splat-2.ply",
+    "assets/eros-idle.ply",
+    "assets/eros-meditating.ply",
   ];
 
   let current = null;          // the entity on screen
-  let turned = 0;              // degrees travelled on this piece
+  let pending = null;          // the next pose, loaded and waiting for its cue
   let index = -1;
+  let subjectHeight = 1;       // how tall the captured figure is, in world units
+  const watchers = [];         // told whenever a pose takes over
+  const ready = [];            // told once the first pose is on screen
 
   const frameOn = (resource) => {
     // The capture's own bounds run wide: floating scan noise inflates them, so
@@ -96,13 +97,15 @@
     // subject as a standing figure and frame on that instead.
     const b = resource.aabb;
     const height = b.halfExtents.y * 2;
+    subjectHeight = height;
     pivot = new pc.Vec3(b.center.x, b.center.y + height * 0.03, b.center.z);
     dist = (height * 0.5) / Math.tan((32 * Math.PI) / 360) * 1.15;
     place();
   };
 
-  const loadPiece = (url) => new Promise((resolve) => {
+  const loadPiece = (url, onProgress) => new Promise((resolve) => {
     const a = new pc.Asset(url, "gsplat", { url });
+    if (onProgress) a.on("progress", onProgress);
     a.once("load", () => resolve(a));
     a.once("error", (err) => { console.error("[splat]", url, err); resolve(null); });
     app.assets.add(a);
@@ -116,29 +119,52 @@
     app.root.addChild(e);
     current = e;
     frameOn(asset.resource);
-    turned = 0;
+    watchers.forEach((fn) => fn(index));
   };
+
+  // Anything else that draws in this scene picks it up here, so it shares the
+  // camera with the capture. js/aura.js is the one that does. The capture
+  // itself stays this file's business.
+  window.dispatchEvent(new CustomEvent("splat-stage", {
+    detail: {
+      app,
+      camera,
+      el: stage,
+      pivot: () => pivot,
+      height: () => subjectHeight,
+      onPiece: (fn) => watchers.push(fn),
+      onReady: (fn) => ready.push(fn),
+      // Called from inside the flash. Nothing happens if the second pose has
+      // not finished downloading, which keeps a slow line from showing a cut.
+      swap: () => {
+        if (!pending) return false;
+        index = 1;
+        show(pending);
+        pending = null;
+        return true;
+      },
+    },
+  }));
 
   (async () => {
     if (app.scene.gsplat) app.scene.gsplat.alphaClip = 0.4;
 
-    let next = await loadPiece(PIECES[0]);
-    if (!next) { say("failed"); return; }
+    // The first pose reports its own bytes as they arrive. The backdrop reads
+    // this off the dataset, so its entrance is timed by the real download.
+    const first = await loadPiece(PIECES[0], (loaded, total) => {
+      if (total > 0) stage.dataset.load = String(Math.min(1, loaded / total));
+    });
+    if (!first) { say("failed"); return; }
     index = 0;
-    show(next);
+    show(first);
     say("ready");
+    stage.dataset.load = "1";
+    stage.dataset.readyAt = String(performance.now());
     stage.classList.add("is-ready");
+    ready.forEach((fn) => fn());
 
-    // Keep one piece ahead of the viewer at all times.
-    while (true) {
-      const upcoming = PIECES[(index + 1) % PIECES.length];
-      const loaded = await loadPiece(upcoming);
-      await new Promise((r) => {
-        const tick = () => { if (turned >= 360) { app.off("update", tick); r(); } };
-        app.on("update", tick);
-      });
-      if (loaded) { index = (index + 1) % PIECES.length; show(loaded); }
-      else { turned = 0; }
-    }
+    // The second pose is fetched straight away and then waits for its cue.
+    const second = await loadPiece(PIECES[1]);
+    if (second) pending = second;
   })();
 })();
