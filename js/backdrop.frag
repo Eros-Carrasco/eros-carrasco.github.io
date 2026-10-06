@@ -136,23 +136,37 @@ void main() {
   vec2  sp2  = p - vec2(.0, .46);
   float sr   = length(sp2);
   float sang = atan(sp2.x, sp2.y);
-  float sCore = (exp(-sr * sr * 190.) + exp(-sr * 11.0) * .22) * star;
-  float sRing = exp(-pow((sr - .075) / .040, 2.0)) * star;
+  float sCore = (exp(-sr * sr * 120.) + exp(-sr * 6.5) * .16) * star;
+  float sRing = exp(-pow((sr - .150) / .075, 2.0)) * star;
 
-  float a01 = sang / 6.2831853 + .5;
-  float sRay = 0.;
-  for (int k = 0; k < 2; k++) {
-    float cnt = k == 0 ? 76. : 44.;
-    float off = k == 0 ? 0. : .37;
-    float idx = floor(a01 * cnt + off);
-    float h1  = hash(vec2(idx, float(k) * 7.3 + 1.));
-    float h2  = hash(vec2(idx, float(k) * 3.1 + 9.));
-    float t01 = fract(a01 * cnt + off);
-    float thin = pow(1. - abs(t01 * 2. - 1.), 9. + h2 * 16.);
-    float reach = .060 + .210 * h1 * h1;
-    sRay += thin * exp(-sr / reach) * (.55 + .45 * h2);
-  }
-  sRay *= smoothstep(.012, .09, sr) * star;
+  // Two layers. Underneath, fire: tendrils that bend, reach and die back,
+  // never still for a frame. On top of that, and only on top, the thin flash
+  // of lines. Lines alone read as a lens flare, which is what the last pass
+  // looked like, and fire alone has no snap to it.
+  float bend = noise(vec2(sang * 2.3, t * .60)) - .5;
+  float aw   = sang + bend * .60;
+  float lob  = noise(vec2(aw * 5.0, t * 1.15)) * .55
+             + noise(vec2(aw * 12.0, -t * 1.90)) * .30
+             + noise(vec2(aw * 26.0, t * 2.60)) * .15;
+
+  // Most angles carry a short tongue and only a few throw a long one, which
+  // is what keeps it from closing into a disc.
+  float reach = .085 + .62 * pow(lob, 2.2);
+  float fire  = pow(clamp((reach - sr) / max(reach, .0001), 0., 1.), 1.7);
+  fire *= .30 + .70 * lob;
+  // Licked away at the tips, so the tongues end ragged instead of rounded.
+  fire *= .55 + .45 * noise(vec2(aw * 9.0 + sr * 11.0, t * 2.2));
+
+  // The flash of lines, laid over the fire and gone almost as fast.
+  float a01  = aw / 6.2831853 + .5;
+  float idx  = floor(a01 * 64.);
+  float h1   = hash(vec2(idx, 3.1));
+  float h2   = hash(vec2(idx, 9.7));
+  float t01  = fract(a01 * 64.);
+  float line = pow(1. - abs(t01 * 2. - 1.), 22. + h2 * 30.);
+  line *= exp(-sr / (.11 + .44 * h1 * h1)) * step(.45, h1);
+
+  float sRay = (fire * 1.9 + line * .45) * smoothstep(.010, .090, sr) * star;
 
   // ---- the cold breath: the room empties out and the stars come through ----
   // Sparse and soft. One cell in fifty holds a star, placed somewhere inside
@@ -196,9 +210,9 @@ void main() {
   col += vec3(1., .88, .66) * cloud * .20;
   col += C_LIGHT * halo * .16;
   col += vec3(1., .88, .70) * bloom * .55;
-  col += vec3(1.00, .98, .92) * sCore * 2.6;
+  col += vec3(1.00, .98, .92) * sCore * 1.5;
   col += vec3(1.00, .80, .30) * sRing * 1.6;
-  col += mix(vec3(1.00, .92, .74), vec3(1.00, .70, .52), smoothstep(.05, .40, sr)) * sRay * 3.2;
+  col += mix(vec3(1.00, .92, .74), vec3(1.00, .66, .44), smoothstep(.06, .52, sr)) * sRay * 1.9;
   // The light wraps under him too, so the floor of the frame is not a hole.
   col += C_LIGHT * g * .09 * smoothstep(.10, -.90, p.y) * air;
 

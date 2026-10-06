@@ -91,11 +91,18 @@
     let yaw = 0, aimed = false;
     const pos = new pc.Vec3();
 
-    // Adding ?fast to the url starts the clock just before the spark, so the
-    // burst and everything after it can be worked on without sitting through
-    // the charge every time. It changes nothing for a visitor.
-    const SKIP = location.search.indexOf("fast") >= 0 ? T_SPARK - 0.4 : 0;
-    scene.onReady(() => { t = SKIP; });
+    // Two debug handles on the url, both no ops for a visitor.
+    //   ?fast    starts the clock just before the spark, so the burst and
+    //            everything after it can be worked on without sitting through
+    //            the charge every time.
+    //   ?t=5.6   holds the clock at that second forever, which is the only
+    //            reliable way to look at one beat: the recorder runs slower
+    //            than real time, so guessing which second a frame landed on
+    //            costs more than it saves.
+    const q = new URLSearchParams(location.search);
+    const HOLD_AT = q.has("t") ? parseFloat(q.get("t")) : NaN;
+    const SKIP = q.has("fast") ? T_SPARK - 0.4 : 0;
+    scene.onReady(() => { t = isNaN(HOLD_AT) ? SKIP : HOLD_AT; });
 
     app.on("update", (dt) => {
       const pivot = scene.pivot();
@@ -127,7 +134,7 @@
       drift.setLocalScale(h, h, h);
 
       if (t < 0) return;
-      t += dt;
+      if (isNaN(HOLD_AT)) t += dt;
 
       // ---- the charge: the cloud tightens, then rushes, then shivers ----
       const k = clamp(norm(t, T_BUILD, T_BURST), 0, 1);
@@ -162,11 +169,13 @@
       } else if (t >= T_WHITE && t < T_STAR) {
         const u = ease(norm(t, T_WHITE, T_STAR));
         fs = 3.17 - u * 2.95;          // drawn back down to a point
-        fo = 1 - .45 * u;
+        // It has to clear almost entirely, or the star it collapses into is
+        // still behind a white sheet and nobody sees it.
+        fo = 1 - .93 * u;
       } else if (t >= T_STAR && t < T_WARM) {
         const u = norm(t, T_STAR, T_WARM);
         fs = .22 + u * .10;
-        fo = .55 * Math.pow(1 - u, 1.6);
+        fo = .07 * Math.pow(1 - u, 1.6);
       }
       flash.style.transform = "translate(-50%, -50%) scale(" + fs.toFixed(3) + ")";
       flash.style.opacity = fo.toFixed(3);
