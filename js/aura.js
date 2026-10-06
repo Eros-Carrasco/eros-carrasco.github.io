@@ -30,20 +30,20 @@
   // which also gives the figure somewhere to come from. The quiet shot of him
   // on the lotus under a flat halo becomes the whole room cooling to violet
   // for a moment, with stars, before the warmth comes back.
-  const T_BUILD = 0.60;  // the air starts to charge, cold and white
-  const T_RUSH  = 3.00;  // the gathering turns into a rush
-  const T_SPARK = 4.00;  // a point of gold at the chest, the first in the piece
-  const T_BURST = 4.70;  // it lets go
-  const T_WHITE = 5.00;  // the frame is white, and it is quick
-  const T_SWAP  = 5.15;  // the pose changes, under the white
-  const T_STAR  = 6.00;  // the white has drawn back into a star behind him
-  const T_WARM  = 7.20;  // the star opens into a volume he is standing inside
-  const T_COOL  = 9.20;  // the room cools, stars come out, the halo ring
-  const T_HELD  = 12.40; // and it stays cold. The reference holds this beat
-  const T_FIELD = 13.40; // warmth returns and the light flattens into a field
-  const T_DEITY = 13.80; // the figure starts coming out of the blur
-  const T_SET   = 15.80; // it has resolved
-  const T_FAN   = 16.40; // the arms have finished opening
+  const T_BUILD = 0.50;  // the air starts to charge, cold and white
+  const T_SPARK = 5.30;  // a point of gold at the chest, the first in the piece
+  const T_BURST = 6.00;  // it lets go
+  const T_WHITE = 6.25;  // the frame is white, and it is quick
+  const T_SWAP  = 6.45;  // the pose changes, under the white
+  const T_LIFT  = 7.55;  // the white has been held full, and starts to open
+  const T_STAR  = 8.60;  // it has drawn back into the fire behind him
+  const T_WARM  = 9.70;  // which opens into a volume he is standing inside
+  const T_COOL  = 11.40; // the room cools, stars come out, the halo ring
+  const T_HELD  = 14.60; // and it stays cold. The reference holds this beat
+  const T_FIELD = 15.60; // warmth returns and the light flattens into a field
+  const T_DEITY = 16.00; // the figure starts coming out of the blur
+  const T_SET   = 18.00; // it has resolved
+  const T_FAN   = 18.60; // the arms have finished opening
 
   // How much light the room keeps once the flash is gone. The backdrop reads
   // this as its resting state, so he is left standing in light rather than in
@@ -166,10 +166,16 @@
         const u = ease(norm(t, T_BURST, T_WHITE));
         fs = .27 + u * 2.9;
         fo = 1;
-      } else if (t >= T_WHITE && t < T_STAR) {
-        const u = ease(norm(t, T_WHITE, T_STAR));
-        fs = 3.17 - u * 2.95;          // drawn back down to a point
-        // It has to clear almost entirely, or the star it collapses into is
+      } else if (t >= T_WHITE && t < T_LIFT) {
+        // Held full. The reference sits on the blown out frame for more than
+        // a second before anything opens, and that hold is most of what makes
+        // the burst land.
+        fs = 3.17 + norm(t, T_WHITE, T_LIFT) * .25;
+        fo = 1;
+      } else if (t >= T_LIFT && t < T_STAR) {
+        const u = ease(norm(t, T_LIFT, T_STAR));
+        fs = 3.42 - u * 3.20;          // drawn back down to a point
+        // It has to clear almost entirely, or the fire it collapses into is
         // still behind a white sheet and nobody sees it.
         fo = 1 - .93 * u;
       } else if (t >= T_STAR && t < T_WARM) {
@@ -197,8 +203,8 @@
       const out = 1 - clamp(norm(t, T_BURST, T_WHITE), 0, 1);
       const flick = .86 + .14 * Math.sin(t * 17.3) * Math.sin(t * 6.1);
       scene.aura(
-        (.010 + .055 * Math.pow(k2, .8)) * out,
-        Math.min(1, Math.pow(k2, 1.0) * 1.25) * flick * out,
+        (.004 + .060 * Math.pow(k2, 2.0)) * out,
+        Math.min(1, Math.pow(k2, 2.6) * 1.35) * flick * out,
         null
       );
       // The fire reaches full size under the white, not after it. When the
