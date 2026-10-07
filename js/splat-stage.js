@@ -141,9 +141,15 @@
     // gives an even line, and an even line reads as a sticker cut round the
     // figure rather than as light coming off it.
     float frill(vec3 c) {
-      vec3 q = c * 9.0;
-      return sn(q + vec3(0.0, -uWind * 1.6, uWind * 0.5)) * 0.68
-           + sn(q * 2.6 + vec3(uWind * 1.1, -uWind * 2.4, 0.0)) * 0.32;
+      // Most of the weight is on the slowest octave. In the reference the
+      // haze around him has no detail in it at all: it is one broad soft
+      // gradient. Putting the weight on the fast octaves instead gave a mat
+      // of separate strands, which reads as hair rather than as air. The two
+      // fast octaves are left in only to fray the outer edge.
+      vec3 q = c * 11.0;
+      return sn(c * 4.0 + vec3(uWind * 0.4, -uWind * 0.9, 0.0)) * 0.54
+           + sn(q + vec3(0.0, -uWind * 1.6, uWind * 0.5)) * 0.30
+           + sn(q * 2.4 + vec3(uWind * 1.1, -uWind * 2.4, 0.0)) * 0.16;
     }
 
     // How far out this splat is sent decides everything else about it. The
@@ -166,15 +172,23 @@
     }
     void modifySplatRotationScale(vec3 oc, vec3 mc, inout vec4 rotation, inout vec3 scale) {
       float d = frill(oc);
-      scale *= 1.2 + 2.6 * d;
+      // Kept small. A big gaussian smears whatever little weight it carries
+      // over a wide patch, and a field of wide patches is a cloud, not vapour.
+      scale *= 1.0 + 1.1 * d;
     }
     void modifySplatColor(vec3 center, inout vec4 color) {
       float d = frill(center);
-      float near = pow(1.0 - d, 3.4);          // 1 on the skin, 0 way out
+      // 1 on the skin, 0 in the air, and it has to get there fast. The noise
+      // this reads piles up around the middle, so most splats sit near d=0.5
+      // and whatever alpha that value lands on is the alpha of the whole
+      // fringe. At 3.4 it landed on 0.1, and 0.1 stacked fifty deep is 0.995,
+      // which is the white wall he kept pointing at. At 9 it lands on 0.002,
+      // which fifty deep is 0.09, and the page reads straight through it.
+      float near = pow(1.0 - d, 7.0);
       // Two hundred and twenty eight thousand splats, hundreds of them
       // stacked on any one pixel, so what looks like nothing on its own is
       // still a wall when it is summed. The air gets under a thousandth.
-      float a = uFade * (0.0008 + 1.05 * near);
+      float a = uFade * (0.0006 + 0.90 * near);
       vec3 tint = mix(uTint * 0.86, vec3(1.0), near);
       color = vec4(tint, color.a * a);
     }

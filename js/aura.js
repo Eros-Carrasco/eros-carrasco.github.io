@@ -231,7 +231,7 @@
       const out = 1 - clamp(norm(t, T_BURST, T_WHITE), 0, 1);
       const flick = .86 + .14 * Math.sin(t * 17.3) * Math.sin(t * 6.1);
       scene.aura(
-        (.004 + .060 * Math.pow(k2, 2.0)) * out,
+        (.004 + .150 * Math.pow(k2, 2.0)) * out,
         Math.min(1, Math.pow(k2, 2.6) * 1.35) * flick * out,
         null
       );
