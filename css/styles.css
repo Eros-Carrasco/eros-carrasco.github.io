@@ -348,6 +348,52 @@ body.project-page {
   opacity: 0.85;
 }
 
+/* the two labs sit side by side inside the Currently section */
+.currently-lead {
+  margin: 0 0 14px 0;
+}
+
+.lab-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.lab-card {
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.lab-name {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.lab-card p {
+  margin: 0;
+  max-width: none;
+}
+
+/* the lead sits above the bullets, so it needs the gap back */
+.lab-card .lab-lead {
+  margin: 0 0 10px;
+}
+
+.lab-card li + li {
+  margin-top: 6px;
+}
+
+@media (min-width: 900px) {
+  .lab-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 /* two-column on desktop */
 @media (min-width: 900px) {
   .project-sections {
