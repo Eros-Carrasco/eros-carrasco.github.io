@@ -39,11 +39,14 @@
   // passes clear of his body on both sides, which is what lets the wrap be
   // read at all: you can see the near half in front of him and the far half
   // going behind.
-  const RAD_MIN = 0.62;
+  // Measured off his silhouette: his shoulders reach about 0.52 of a unit
+  // out from the axis in this space, so a coil ending at 0.34 put the head
+  // inside his shoulder and in front of his face. It ends just outside now.
+  const RAD_MIN = 0.56;
   const RAD_MAX = 0.88;
   // The head rides at the top of this, so it ends below the frame's edge
   // rather than at it.
-  const Y0 = -1.50, Y1 = 1.05;
+  const Y0 = -1.50, Y1 = 0.72;
 
   const TAU = Math.PI * 2;
 
@@ -116,15 +119,42 @@
   // cross section flip over when it does.
   const L = 1 + RISE;
   const headAt = (e) => -RISE + Math.min(1, Math.max(0, e)) * L;
+  // The last stretch of body leaves the centre of the back of the head, in
+  // line with the head, whatever the head is doing. The path alone does not
+  // give that: where the head turns off the path, to face the viewer, the neck
+  // would carry straight on along the path and the two would meet at a kink.
+  // So the centres nearest the head are pulled onto a straight line behind the
+  // head's own facing, and the frames are then taken from the centres rather
+  // than from the path, so the rings follow the bend.
+  const NECK = 0.10;
+  // where the head last looked, which the neck has to leave in line with
+  let lastAim = [0, 0, 1];
   const buildBody = (e) => {
     const k = headAt(e);
+    const nape = curve(k);
+    const back = [-lastAim[0], -lastAim[1], -lastAim[2]];
+    const centres = [];
+    for (let i = 0; i <= RINGS; i++) {
+      const sb = i / RINGS;                 // 0 at the tail, 1 at the head
+      const d = 1 - sb;                     // distance from the head, as a share
+      const u = k - d * L;
+      const c = curve(u);
+      if (d < NECK) {
+        const dist = Math.hypot(c[0] - nape[0], c[1] - nape[1], c[2] - nape[2]);
+        const t = [nape[0] + back[0] * dist, nape[1] + back[1] * dist, nape[2] + back[2] * dist];
+        const x = (NECK - d) / NECK, w = x * x * (3 - 2 * x);
+        centres.push([c[0] + (t[0] - c[0]) * w, c[1] + (t[1] - c[1]) * w, c[2] + (t[2] - c[2]) * w]);
+      } else {
+        centres.push(c);
+      }
+    }
     const pos = [], nrm = [], uv = [], idx = [];
     let up = [0, 1, 0];
     for (let i = 0; i <= RINGS; i++) {
-      const sb = i / RINGS;                 // 0 at the tail, 1 at the head
-      const u = k - (1 - sb) * L;
-      const c = curve(u);
-      const tan = norm(sub(curve(u + 1 / RINGS), curve(u - 1 / RINGS)));
+      const sb = i / RINGS;
+      const c = centres[i];
+      const ahead = centres[Math.min(RINGS, i + 1)], behind = centres[Math.max(0, i - 1)];
+      const tan = norm(sub(ahead, behind));
       let side = cross(tan, up);
       if (Math.hypot(side[0], side[1], side[2]) < 1e-4) side = cross(tan, [1, 0, 0]);
       side = norm(side);
@@ -140,7 +170,6 @@
         const nz = side[2] * ca + up[2] * sa;
         pos.push(c[0] + nx * g * squash, c[1] + ny * g * squash, c[2] + nz * g * squash);
         nrm.push(nx, ny, nz);
-        // along the animal, so the scales ride with it
         uv.push(sb, sd / SIDES);
       }
     }
@@ -202,6 +231,43 @@
   // The scan's stone is most of why it reads as carved, and a flat colour is
   // most of why ours reads as plastic. Both of these are drawn once into a
   // canvas and handed over as a map.
+
+  // A feather. Dark olive at the root, the carving's ochre through the vane,
+  // its red at the tip, a dark shaft down the middle and faint barbs off it.
+  // The blades were flat cards in one ochre with a hard edge, which is what
+  // made them look cheap beside a painted head. u runs across the blade and v
+  // along it from root to tip.
+  const featherTexture = (device) => {
+    const W = 64, H = 256;
+    const cv = document.createElement("canvas");
+    cv.width = W; cv.height = H;
+    const c = cv.getContext("2d");
+    const g = c.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0.00, "#1f331f");
+    g.addColorStop(0.28, "#5e4323");
+    g.addColorStop(0.70, "#6f4a22");
+    g.addColorStop(1.00, "#4e1b12");
+    c.fillStyle = g;
+    c.fillRect(0, 0, W, H);
+    // Dark at both edges of the vane. At twenty pixels across, a feather is
+    // its outline and its shaft and nothing finer; the barbs of the first pass
+    // did not survive the size, and a pale edge made them read as sweets.
+    const e = c.createLinearGradient(0, 0, W, 0);
+    e.addColorStop(0.00, "rgba(10,8,4,0.70)");
+    e.addColorStop(0.22, "rgba(10,8,4,0.0)");
+    e.addColorStop(0.78, "rgba(10,8,4,0.0)");
+    e.addColorStop(1.00, "rgba(10,8,4,0.70)");
+    c.fillStyle = e;
+    c.fillRect(0, 0, W, H);
+    // the shaft, root to just short of the tip
+    c.strokeStyle = "rgba(16,10,5,0.92)";
+    c.lineWidth = 5;
+    c.beginPath(); c.moveTo(W / 2, 0); c.lineTo(W / 2, H * 0.92); c.stroke();
+    const t = new pc.Texture(device, { width: W, height: H, format: pc.PIXELFORMAT_RGBA8, mipmaps: true });
+    t.addressU = t.addressV = pc.ADDRESS_CLAMP_TO_EDGE;
+    t.setSource(cv);
+    return t;
+  };
 
   // Scales. Rows of overlapping arcs, offset every other row, dark at the belly
   // and light along the back, which is the v axis of the tube.
@@ -331,13 +397,20 @@
     mat.update();
 
     const matF = mat.clone();
+    matF.diffuse = new pc.Color(1, 1, 1);
+    matF.diffuseMap = featherTexture(app.graphicsDevice);
+    matF.diffuseMapTiling = new pc.Vec2(1, 1);
+    matF.specular = new pc.Color(0.16, 0.14, 0.10);
+    matF.gloss = 0.28;
+    matF.useMetalness = false;
+    matF.emissive = new pc.Color(0.06, 0.04, 0.02);
+    matF.emissiveIntensity = 0.35;
     matF.blendType = pc.BLEND_NONE;
     matF.depthWrite = true;
-    // the ochre off the carving, hue 30, not a gold of my own
-    matF.diffuse = new pc.Color(0.437, 0.304, 0.168);
-    matF.emissive = new pc.Color(0.26, 0.17, 0.07);
-    matF.emissiveIntensity = 0.95;
+    matF.cull = pc.CULLFACE_NONE;
     matF.update();
+    // what heat() scales from
+    const baseGlow = mat.emissiveIntensity, baseGlowF = matF.emissiveIntensity;
 
     const root = new pc.Entity("serpent");
     const bodyE = new pc.Entity("serpent-body");
@@ -359,7 +432,7 @@
     const key = new pc.Entity("serpent-key");
     key.addComponent("light", {
       type: "directional", color: new pc.Color(1.0, 0.95, 0.80),
-      intensity: 3.4, castShadows: false,
+      intensity: 1.6, castShadows: false,
     });
     key.setEulerAngles(24, 38, 0);
     root.addChild(key);
@@ -375,83 +448,64 @@
     // already all there. So the socket rides the leading edge rather than
     // sitting at the end of the curve, and the reveal moves it.
     let camYaw = null;
-    const placeHead = (e) => {
-      const k = -RISE + Math.min(1, Math.max(0, e)) * (1 + RISE);
+    let hhS = null, lastP = 0;
+    // One rule. The head looks the way it is moving, taken from its own
+    // velocity along the path, and when it is not moving sideways, which is
+    // while it rises straight up out of the floor and once it has come to rest
+    // on his shoulder, it looks at the viewer. That one rule replaced four
+    // overlapping fixes, one for the birth, one for the start, one for the
+    // landing and one for a snap between two of them, and he was right that
+    // without it this was never going to stop being guesswork.
+    //
+    // The heading is smoothed in progress rather than in wall time so the
+    // measuring page, which steps the climb without a clock, gets the same
+    // behaviour as the running page.
+    const placeHead = (pIn) => {
+      const pr = Math.min(1, Math.max(0, pIn));
+      const e = 1 - Math.pow(1 - pr, 2.0);
+      const k = headAt(e);
       const c = curve(k);
-      // Which way it is moving, and that is the whole rule for where it looks.
-      // Winding 2.12 times round him in three and a half seconds, a head that
-      // followed its own motion turned twice over and whipped at up to 527
-      // degrees a second. Aiming further ahead along the path did not help,
-      // because the path itself was what was spinning. Fewer turns fixed it,
-      // at TURNS, and this went back to the plain tangent.
-      const tan = norm(sub(curve(k), curve(Math.max(-RISE, k - 0.012))));
-      socket.setLocalPosition(c[0], c[1], c[2]);
-      // It looks where it is going, because it is the one leading. The tangent
-      // decides, and since the tangent turns the whole way up a helix the head
-      // turns with it rather than holding one pose while the body writes
-      // itself underneath.
-      //
-      // It looks where it is going. That is the whole rule, and everything else
-      // here is a small adjustment on top of it. It was not built that way: the
-      // tangent carried 18 percent of the aim at the start and nothing at all
-      // at the end, drowned under a rearing term and a pull toward the axis
-      // that were added to fix symptoms of a head that was not leading
-      // anything. On a helix the tangent also gives a profile from outside the
-      // coil for free, so the head reads as a head rather than as the disc of
-      // its own ruff.
-      const w = (typeof performance !== "undefined" ? performance.now() : Date.now()) * 0.001;
-      const sway = [Math.sin(w * 0.83) * 0.20 + Math.sin(w * 0.37 + 2.1) * 0.09,
-                    Math.sin(w * 0.61 + 1.7) * 0.13,
-                    Math.cos(w * 0.71 + 0.4) * 0.20 + Math.cos(w * 0.29 + 0.8) * 0.08];
-      // And at the very end it stops following the curve and settles facing the
-      // way he faces, which is +Z in this space, so the two of them look the
-      // same way out of the frame.
-      // It settles looking the way he looks, +Z here. The path is laid so it
-      // already nearly does by the time it gets there, which matters: blending
-      // the tangent into +Z while the tangent still pointed away put a 151
-      // degree snap at u 0.79, because two opposed vectors mixed through zero
-      // flip. The window is wide so what little is left to turn is slow.
-      const land = Math.min(1, Math.max(0, (k - 0.72) / 0.28));
-      // And it looks up as it sets off, the diagonal he drew. A pitch only.
-      // Tilting the gaze in the plane as well was what swung the ruff round to
-      // face the camera and showed a disc of feathers with no head in it.
-      const lift = 0.50 * Math.max(0, 1 - Math.max(0, k) / 0.30);
-      // The settle turns the heading, not the vector. Mixing the tangent into
-      // +Z as vectors snapped 151 degrees in one step, because at the start of
-      // the window the tangent still points away and two opposed vectors mixed
-      // through zero flip. So the plan heading is taken as an angle and walked
-      // round to zero the way the coil is already turning, which is forward
-      // through 180, and the vector is rebuilt from that.
-      // Where the camera is, as a heading. It is the target twice over: the
-      // head comes up out of the floor looking at the viewer, and it settles
-      // on his shoulder looking at the viewer. In between it looks where it is
-      // going. Nothing is passed by the measuring page, and then it faces +Z.
+      const dd = 0.006;
+      const v = sub(curve(k + dd), curve(k - dd));
+      const vl = Math.hypot(v[0], v[1], v[2]) || 1e-6;
+      const dir = [v[0] / vl, v[1] / vl, v[2] / vl];
+      // speed along the path per unit of progress, with the ease folded in
+      const speed = (vl / (2 * dd)) * L * 2 * (1 - pr);
+      const flat = Math.hypot(dir[0], dir[2]);
+      const hspeed = speed * flat;
       const camHead = camYaw === null ? 0 : camYaw * Math.PI / 180;
-      const planLen = Math.hypot(tan[0], tan[2]);
-      const ha = planLen > 1e-3 ? Math.atan2(tan[0], tan[2]) : camHead;
-      // born is one through the rise and lets go over the first quarter of
-      // the coil; land takes over at the end. Both pull the heading toward
-      // the camera along the shortest way round, as an angle, never as a mix
-      // of vectors, which is what snapped it 151 degrees in one step before.
-      const born = k < 0 ? 1 : Math.max(0, 1 - k / 0.26);
-      const pull = Math.max(born, land * land * land);
-      let d = camHead - ha;
-      while (d > Math.PI) d -= TAU;
-      while (d < -Math.PI) d += TAU;
-      const hh = ha + d * pull;
-      const pl = Math.max(0.7, planLen);
-      const aim = norm([
-        Math.sin(hh) * pl + sway[0] * (1 - 0.6 * pull),
-        tan[1] * (1 - born) * (1 - land) * 0.85 - 0.10 + lift + born * 0.25
-          + sway[1] * (1 - 0.6 * pull),
-        Math.cos(hh) * pl + sway[2] * (1 - 0.6 * pull),
-      ]);
+      const ha = flat > 1e-3 ? Math.atan2(dir[0], dir[2]) : camHead;
+      // rest goes to one as sideways movement dies away, which happens on the
+      // rise and in the last tenth of the climb and nowhere else
+      const xr = Math.min(1, hspeed / 1.5);
+      const rest = 1 - xr * xr * (3 - 2 * xr);
+      let dA = camHead - ha;
+      while (dA > Math.PI) dA -= TAU;
+      while (dA < -Math.PI) dA += TAU;
+      const want = ha + dA * rest;
+      // the smoothing, by progress
+      if (hhS === null || pr < lastP) hhS = want;
+      let dS = want - hhS;
+      while (dS > Math.PI) dS -= TAU;
+      while (dS < -Math.PI) dS += TAU;
+      hhS += dS * (1 - Math.exp(-(pr - lastP) / 0.05));
+      lastP = pr;
+      // Never still. Three slow waves at frequencies that do not divide into
+      // each other, so it casts about instead of tracking like a bead on a
+      // wire. Quieter when it is at rest, so the settle reads as a settle.
+      const w = (typeof performance !== "undefined" ? performance.now() : Date.now()) * 0.001;
+      const calm = 1 - 0.6 * rest;
+      const sway = [(Math.sin(w * 0.83) * 0.20 + Math.sin(w * 0.37 + 2.1) * 0.09) * calm,
+                    (Math.sin(w * 0.61 + 1.7) * 0.13) * calm,
+                    (Math.cos(w * 0.71 + 0.4) * 0.20 + Math.cos(w * 0.29 + 0.8) * 0.08) * calm];
+      const pitch = dir[1] * (1 - rest) * 0.85 + 0.18 * rest - 0.05;
+      const pl = Math.max(0.35, flat * (1 - rest) + 0.9 * rest);
+      const aim = norm([Math.sin(hhS) * pl + sway[0], pitch + sway[1], Math.cos(hhS) * pl + sway[2]]);
+      socket.setLocalPosition(c[0], c[1], c[2]);
       socket.lookAt(c[0] + aim[0], c[1] + aim[1], c[2] + aim[2]);
-      // Fixed. It was reading the body's girth at wherever the head happened to
-      // be, and the body swells through its middle and tapers at both ends, so
-      // the head grew and shrank by a factor of two and a bit as it travelled.
-      // Heads do not do that. Whatever size change is left is perspective, and
-      // that one is honest.
+      lastAim = aim;
+      // Fixed. It had read the body's girth at wherever the head happened to
+      // be, so it grew and shrank as it travelled. Heads do not do that.
       const g = girthS(0.05);
       socket.setLocalScale(g * HEAD, g * HEAD, g * HEAD);
     };
@@ -511,20 +565,25 @@
         camYaw = (yawDeg === undefined || yawDeg === null) ? null : yawDeg;
         const k = Math.max(0, Math.min(1, v));
         root.enabled = k > 0.001;
-        if (!root.enabled) return;
+        // the smoothed heading starts fresh with the climb, so the first
+        // visible frame is not easing out of wherever the head was built
+        if (!root.enabled) { hhS = null; return; }
         if (mat.opacity !== 1) { mat.opacity = 1; matF.opacity = 1; mat.update(); matF.update(); }
         // Eased out: it comes up out of the floor at speed and slows into the
         // shoulder. Eased both ways it sat underground for most of a second,
         // and a settle that arrives at a crawl is the right end of the two.
         const e = 1 - Math.pow(1 - k, 2.0);
-        placeHead(e);
+        placeHead(k);
         refresh(body, buildBody(e));
         refresh(plume, buildFeathers(e));
       },
+      // Scales what the materials already carry. It used to write fixed
+      // numbers over them every frame, and the feathers' was 2.05, which is
+      // why they glowed yellow whatever their texture said.
       heat(v) {
         const k = Math.max(0, Math.min(1, v));
-        mat.emissiveIntensity = 0.7 + k * 0.8;
-        matF.emissiveIntensity = 0.95 + k * 1.1;
+        mat.emissiveIntensity = baseGlow * (1 + 0.8 * k);
+        matF.emissiveIntensity = baseGlowF * (1 + 0.6 * k);
         mat.update(); matF.update();
       },
     };

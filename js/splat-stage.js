@@ -48,6 +48,15 @@
     return v === null ? null : parseFloat(v);
   })();
   if (YAW_LOCK !== null) yaw = YAW_LOCK;
+  // ?yaw0=<degrees> only sets where the spin starts from, for the lab page
+  // that skips straight to the serpent: a full run has carried the camera
+  // some way round by then, and without this the lab showed the climb from
+  // seventy degrees off where a visitor sees it.
+  const YAW0 = (() => {
+    const v = new URLSearchParams(location.search).get("yaw0");
+    return v === null ? null : parseFloat(v);
+  })();
+  if (YAW_LOCK === null && YAW0 !== null) yaw = YAW0;
   const place = () => {
     const q = new pc.Quat().setFromEulerAngles(pitch, yaw, 0);
     const off = q.transformVector(new pc.Vec3(0, 0, dist));
@@ -273,7 +282,7 @@
         // Face front again. The pose that comes out of the light is the one
         // the piece settles on, so it should be met head on and start its
         // turn from there rather than from wherever the first one left off.
-        yaw = YAW_LOCK === null ? 0 : YAW_LOCK;
+        yaw = YAW_LOCK !== null ? YAW_LOCK : YAW0 !== null ? YAW0 : 0;
         pitch = -5;
         spinning = YAW_LOCK === null;
         resumeAt = 0;
