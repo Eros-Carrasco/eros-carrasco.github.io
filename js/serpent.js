@@ -59,9 +59,12 @@
   // going behind.
   // Measured off his silhouette: his shoulders reach about 0.52 of a unit
   // out from the axis in this space, so a coil ending at 0.34 put the head
-  // inside his shoulder and in front of his face. It ends just outside now.
-  const RAD_MIN = 0.72;
-  const RAD_MAX = 1.04;
+  // inside his shoulder and in front of his face. At 0.72 the body cleared
+  // him by a fiftieth at the top and the head's ruff went through his arm
+  // as it settled; opened by an eighth at the top and a twelfth at the
+  // bottom, his call, judged by him beside his fixed splat.
+  const RAD_MIN = 0.84;
+  const RAD_MAX = 1.12;
   // The head rides at the top of this, so it ends below the frame's edge
   // rather than at it.
   const Y0 = -1.50, Y1 = 0.72;
