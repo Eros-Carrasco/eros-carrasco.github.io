@@ -38,14 +38,14 @@
 
   const TAU = Math.PI * 2;
 
-  const HAND_MADE = true;           // false goes back to the scan
-  const HEAD_URL = "quetzalcoatl.glb";
+  // The head is a model and the body is generated, which is the right split:
+  // the body is the part that animates, winding on from the tail, and a carved
+  // head is the part code is worst at. Six attempts at building one proved
+  // that, and a turntable of all eight angles proved it rather than one frame
+  // of the running sequence proving nothing.
+  const HEAD_URL = "assets/models/quetzalcoatl.glb";
+
   const HEAD = 7.2;                 // head size against the neck's thickness
-  // The scan's snout runs along its own Y and the ruff lies in XZ, so it is
-  // turned a quarter round X to put the snout down the curve. Which way round
-  // that quarter goes was not guessable and was not guessed: at -90 the open
-  // back faced the camera and all that showed was the plug.
-  const HEAD_ROT = [90, 0, 0];
 
   // Where the body is at u along its length, 0 at the tail, 1 at the head.
   // The radius breathes a little so the coil is not a lathe part, and it draws
@@ -172,124 +172,46 @@
     return { pos, nrm, uv, idx };
   };
 
-  // ---- the head, built rather than scanned ----
-  //
-  // The scan was a stand in. This one is possible where a Buddha's head was not,
-  // and the reason is the carving itself: a Teotihuacan serpent head is made of
-  // geometric solids by design. A box for the snout, a slab for each jaw, cones
-  // for the teeth, concentric rings for the eye, a swept tube for the spiral at
-  // the temple, leaf blades for the ruff. There is no organic surface anywhere
-  // in it and no face to get wrong. That is the whole difference.
-  //
-  // Built with the snout down -Z and up at +Y, which is what the socket wants,
-  // so it drops into the same place the scan did.
+  // ---- surfaces ----
+  // The scan's stone is most of why it reads as carved, and a flat colour is
+  // most of why ours reads as plastic. Both of these are drawn once into a
+  // canvas and handed over as a map.
 
-  // A box. Eight corners, six quads, flat normals, which is right for a thing
-  // that is carved rather than grown.
-  const box = (o, c, h, skewTop) => {
-    const b = o.pos.length / 3;
-    const st = skewTop || 0;
-    const X = [-h[0], h[0]];
-    for (const sy of [-1, 1]) for (const sz of [-1, 1]) for (const sx of [-1, 1]) {
-      // the top face narrows toward the snout, so the muzzle tapers
-      const k = sy > 0 ? 1 - st * (sz < 0 ? 1 : 0) : 1;
-      o.pos.push(c[0] + sx * h[0] * k, c[1] + sy * h[1], c[2] + sz * h[2]);
-      o.nrm.push(sx, sy, sz);
-      o.uv.push(0, 0);
-    }
-    const q = (a, b2, c2, d) => o.idx.push(b + a, b + b2, b + c2, b + a, b + c2, b + d);
-    q(0,1,3,2); q(4,6,7,5); q(0,4,5,1); q(2,3,7,6); q(0,2,6,4); q(1,5,7,3);
-    void X;
-  };
-
-  // A cone, for a tooth.
-  const cone = (o, c, r, hgt, dir) => {
-    const b = o.pos.length / 3, N = 6;
-    for (let i = 0; i < N; i++) {
-      const a = (i / N) * TAU;
-      o.pos.push(c[0] + Math.cos(a) * r, c[1], c[2] + Math.sin(a) * r);
-      o.nrm.push(Math.cos(a), 0, Math.sin(a)); o.uv.push(0, 0);
-    }
-    o.pos.push(c[0], c[1] + hgt * dir, c[2]); o.nrm.push(0, dir, 0); o.uv.push(0, 1);
-    for (let i = 0; i < N; i++) o.idx.push(b + i, b + (i + 1) % N, b + N);
-  };
-
-  // A flat ring, for the eye and for the spiral's coils.
-  const ring = (o, c, r0, r1, nz) => {
-    const b = o.pos.length / 3, N = 14;
-    for (let i = 0; i < N; i++) {
-      const a = (i / N) * TAU, ca = Math.cos(a), sa = Math.sin(a);
-      o.pos.push(c[0] + ca * r0, c[1] + sa * r0, c[2]);
-      o.nrm.push(0, 0, nz); o.uv.push(0, 0);
-      o.pos.push(c[0] + ca * r1, c[1] + sa * r1, c[2]);
-      o.nrm.push(0, 0, nz); o.uv.push(0, 0);
-    }
-    for (let i = 0; i < N; i++) {
-      const a = b + i * 2, d = b + ((i + 1) % N) * 2;
-      o.idx.push(a, a + 1, d, d, a + 1, d + 1);
-    }
-  };
-
-  const headMesh = () => {
-    const o = { pos: [], nrm: [], uv: [], idx: [] };
-    // the muzzle, tapering toward the snout
-    box(o, [0, 0.10, -0.42], [0.20, 0.13, 0.42], 0.22);
-    // the brow, wider and squarer, where the ruff sits behind it
-    box(o, [0, 0.14, 0.02], [0.25, 0.17, 0.16], 0);
-    // the lower jaw, set forward and a shade narrower
-    box(o, [0, -0.17, -0.46], [0.175, 0.085, 0.40], 0.14);
-    // the lip over the jaw, the raised band in the carving
-    box(o, [0, -0.06, -0.80], [0.19, 0.035, 0.08], 0);
-    // the block on the snout tip
-    box(o, [0, 0.235, -0.78], [0.075, 0.045, 0.085], 0);
-    // teeth, upper pointing down and lower pointing up
-    for (let i = 0; i < 4; i++) {
-      const z = -0.30 - i * 0.16;
-      for (const sx of [-1, 1]) {
-        cone(o, [sx * 0.125, -0.02, z], 0.035, 0.085, -1);
-        cone(o, [sx * 0.115, -0.11, z - 0.07], 0.030, 0.075, 1);
+  // Scales. Rows of overlapping arcs, offset every other row, dark at the belly
+  // and light along the back, which is the v axis of the tube.
+  const scaleTexture = (device, s) => {
+    const cv = document.createElement("canvas");
+    cv.width = cv.height = s;
+    const c = cv.getContext("2d");
+    // Dark between, bright on. The first pass drew green scales on a green
+    // ground a few values apart and the whole thing averaged back to flat.
+    // The map was reaching the mesh the entire time; it had nothing in it.
+    c.fillStyle = "#0d2418";
+    c.fillRect(0, 0, s, s);
+    // Few per tile, because the tiling multiplies them. At fourteen across
+    // and twenty six tiles there were three hundred and sixty scales down a
+    // body four hundred pixels long, which averages to a flat colour.
+    const rows = 8, cols = 10;
+    const rh = s / rows, cw = s / cols;
+    for (let r = 0; r < rows; r++) {
+      for (let k = -1; k <= cols; k++) {
+        const x = (k + (r % 2 ? 0.5 : 0)) * cw, y = r * rh;
+        // lighter along the back, which is the middle of the v range
+        const back = 1 - Math.abs(y / s - 0.5) * 2;
+        const l = 0.42 + 0.95 * back;
+        c.beginPath();
+        c.ellipse(x + cw / 2, y + rh * 0.35, cw * 0.56, rh * 0.78, 0, 0, Math.PI * 2);
+        c.fillStyle = `rgb(${Math.round(38 * l)},${Math.round(150 * l)},${Math.round(104 * l)})`;
+        c.fill();
+        c.strokeStyle = "rgba(6,20,13,0.9)";
+        c.lineWidth = 1.6;
+        c.stroke();
       }
     }
-    // the eye: a ring with a ball in it, on each cheek
-    for (const sx of [-1, 1]) {
-      const n = sx;
-      ring(o, [sx * 0.205, 0.17, -0.20], 0.055, 0.095, n);
-      ring(o, [sx * 0.215, 0.17, -0.20], 0.0, 0.050, n);
-      // the spiral at the temple, drawn as three rings stepping inward
-      ring(o, [sx * 0.205, 0.12, 0.00], 0.085, 0.115, n);
-      ring(o, [sx * 0.212, 0.13, 0.02], 0.045, 0.072, n);
-      ring(o, [sx * 0.218, 0.14, 0.04], 0.0, 0.032, n);
-    }
-    // the ruff: leaf blades radiating from behind the brow, the same blade the
-    // body wears, so the head is not a different object stuck on the end
-    const N = 13;
-    for (let i = 0; i < N; i++) {
-      const a = (i / N) * TAU;
-      const ca = Math.cos(a), sa = Math.sin(a);
-      // Shorter than the first pass. At three times the muzzle's length the
-      // ruff was the whole object and the head was a chip in the middle of it.
-      const len = 0.20 + 0.09 * ((i * 0.618) % 1);
-      const rootR = 0.185;
-      const root = [ca * rootR, 0.12 + sa * rootR, 0.10];
-      const tip = [ca * (rootR + len), 0.12 + sa * (rootR + len), 0.13];
-      const w = 0.062;
-      const px = -sa * w, py = ca * w;
-      const b = o.pos.length / 3;
-      const SHAPE = [[0, .30], [.36, 1.0], [.74, .70], [1, 0]];
-      for (const [k, half] of SHAPE) {
-        const c2 = [root[0] + (tip[0] - root[0]) * k, root[1] + (tip[1] - root[1]) * k,
-                    root[2] + (tip[2] - root[2]) * k];
-        o.pos.push(c2[0] - px * half, c2[1] - py * half, c2[2]);
-        o.pos.push(c2[0] + px * half, c2[1] + py * half, c2[2]);
-        o.nrm.push(0, 0, 1); o.nrm.push(0, 0, 1);
-        o.uv.push(0, 0); o.uv.push(0, 0);
-      }
-      for (let k = 0; k < SHAPE.length - 1; k++) {
-        const a0 = b + k * 2;
-        o.idx.push(a0, a0 + 2, a0 + 1, a0 + 1, a0 + 2, a0 + 3);
-      }
-    }
-    return o;
+    const t = new pc.Texture(device, { width: s, height: s, format: pc.PIXELFORMAT_RGBA8, mipmaps: true });
+    t.addressU = t.addressV = pc.ADDRESS_REPEAT;
+    t.setSource(cv);
+    return t;
   };
 
   const mesh = (app, d) => {
@@ -311,7 +233,9 @@
     // Quetzal green into gold, shifting with the angle of view, which is what
     // makes a feathered thing read as feathered rather than as painted.
     const mat = new pc.StandardMaterial();
-    mat.diffuse = new pc.Color(0.045, 0.235, 0.205);
+    mat.diffuse = new pc.Color(0.80, 0.80, 0.80);
+    mat.diffuseMap = scaleTexture(app.graphicsDevice, 256);
+    mat.diffuseMapTiling = new pc.Vec2(5, 1);
     mat.specular = new pc.Color(0.95, 0.82, 0.35);
     mat.gloss = 0.80;
     mat.useMetalness = true;
@@ -330,18 +254,6 @@
     mat.depthWrite = true;
     mat.cull = pc.CULLFACE_NONE;
     mat.update();
-
-    // The head reads as carved stone with gold worked into it, not as the same
-    // green as the body: in the carving the head is the stone and the feathers
-    // are what carry the colour.
-    const matH = mat.clone();
-    matH.diffuse = new pc.Color(0.46, 0.42, 0.30);
-    matH.specular = new pc.Color(0.70, 0.62, 0.38);
-    matH.metalness = 0.35;
-    matH.gloss = 0.42;
-    matH.emissive = new pc.Color(0.13, 0.115, 0.075);
-    matH.emissiveIntensity = 0.8;
-    matH.update();
 
     const matF = mat.clone();
     matF.blendType = pc.BLEND_NONE;
@@ -377,14 +289,7 @@
     root.addChild(key);
 
     // ---- the head ----
-    // The one piece not generated. A carved serpent head is what code is worst
-    // at and a scan is best at. It hangs off a socket at the end of the curve,
-    // so if the file is not there the body still runs.
-    //
-    // The scan is a temple ornament from the Templo de Quetzalcoatl, made to
-    // project from a wall, so its back is open. He saw the hole before I did.
-    // It gets a cap, and the neck of the body comes into the same place, so
-    // between them nothing shows.
+    // Built, not loaded. It hangs off a socket at the end of the curve.
     const socket = new pc.Entity("serpent-head");
     root.addChild(socket);
     {
@@ -406,69 +311,40 @@
       socket.setLocalScale(g * HEAD, g * HEAD, g * HEAD);
     }
 
-    // the cap, a shade darker than the stone so it reads as shadow inside
-    const cap = new pc.Entity("serpent-head-cap");
-    cap.addComponent("render", { type: "cylinder", castShadows: false, receiveShadows: false });
-    const capMat = new pc.StandardMaterial();
-    capMat.diffuse = new pc.Color(0.26, 0.25, 0.19);
-    capMat.specular = new pc.Color(0.05, 0.05, 0.05);
-    capMat.gloss = 0.1;
-    capMat.update();
-    cap.render.meshInstances[0].material = capMat;
-    // Inside the open back, which is at +Z once the head is turned, and small
-    // enough to sit within the ruff rather than over it. At full ruff width it
-    // was a black disc laid over the carving.
-    cap.setLocalEulerAngles(90, 0, 0);
-    cap.setLocalScale(0.42, 0.05, 0.42);
-    cap.setLocalPosition(0, 0, 0.17);
-    cap.enabled = false;
-    socket.addChild(cap);
 
-    if (HAND_MADE) {
-      const hm = mesh(app, headMesh());
-      const he = new pc.Entity("head-built");
-      he.addComponent("render", {
-        meshInstances: [new pc.MeshInstance(hm, matH)],
-        castShadows: false, receiveShadows: false,
-      });
-      socket.addChild(he);
-      cap.enabled = false;              // nothing is open, so nothing to plug
-    } else {
-      const asset = new pc.Asset("quetzalcoatl", "container", { url: HEAD_URL });
-      app.assets.add(asset);
-      app.assets.load(asset);
-      asset.ready(() => {
-        const e = asset.resource.instantiateRenderEntity();
-        e.findComponents("render").forEach((r) => {
-          r.meshInstances.forEach((m) => {
-            const mm = m.material;
-            mm.emissive = new pc.Color(0.20, 0.18, 0.13);
-            mm.emissiveIntensity = 0.38;
-            mm.useMetalness = false;
-            mm.gloss = 0.35;
-            mm.update();
-          });
+    const asset = new pc.Asset("quetzalcoatl", "container", { url: HEAD_URL });
+    app.assets.add(asset);
+    app.assets.load(asset);
+    asset.ready(() => {
+      const e = asset.resource.instantiateRenderEntity();
+      // Lifted out of the dark without washing out its own colour, which is
+      // most of what it is bringing: it is painted rather than grey stone.
+      e.findComponents("render").forEach((r) => {
+        r.meshInstances.forEach((m) => {
+          m.material.emissive = new pc.Color(0.16, 0.15, 0.12);
+          m.material.emissiveIntensity = 0.40;
+          m.material.update();
         });
-        const mi = [];
-        e.findComponents("render").forEach((r) => mi.push(...r.meshInstances));
-        let aabb = null;
-        mi.forEach((m) => { aabb = aabb ? (aabb.add(m.aabb), aabb) : m.aabb.clone(); });
-        if (aabb) {
-          const c = aabb.center, h = aabb.halfExtents;
-          const span = Math.max(h.x, h.y, h.z) * 2;
-          const inner = new pc.Entity("head-fit");
-          inner.addChild(e);
-          e.setLocalPosition(-c.x / span, -c.y / span, -c.z / span);
-          inner.setLocalScale(1 / span, 1 / span, 1 / span);
-          inner.setLocalEulerAngles(HEAD_ROT[0], HEAD_ROT[1], HEAD_ROT[2]);
-          socket.addChild(inner);
-        } else {
-          socket.addChild(e);
-        }
-        cap.enabled = true;
       });
-      asset.on("error", () => console.warn("[serpent] no " + HEAD_URL));
-    }
+      const mi = [];
+      e.findComponents("render").forEach((r) => mi.push(...r.meshInstances));
+      let aabb = null;
+      mi.forEach((m) => { aabb = aabb ? (aabb.add(m.aabb), aabb) : m.aabb.clone(); });
+      if (aabb) {
+        const c = aabb.center, h = aabb.halfExtents;
+        const span = Math.max(h.x, h.y, h.z) * 2;
+        const inner = new pc.Entity("head-fit");
+        inner.addChild(e);
+        e.setLocalPosition(-c.x / span, -c.y / span, -c.z / span);
+        inner.setLocalScale(1 / span, 1 / span, 1 / span);
+        // It faces +Z and the socket looks down -Z, so it is turned about.
+        inner.setLocalEulerAngles(0, 180, 0);
+        socket.addChild(inner);
+      } else {
+        socket.addChild(e);
+      }
+    });
+    asset.on("error", () => console.warn("[serpent] no " + HEAD_URL + ", running without a head"));
 
     return {
       root,
