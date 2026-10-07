@@ -1129,11 +1129,11 @@ details.numbers[open] summary {
   aspect-ratio: 1;
   border-radius: 50%;
   background: radial-gradient(circle,
-    rgba(255, 255, 255, 1) 0%,
-    rgba(255, 246, 219, 0.96) 16%,
-    rgba(255, 206, 110, 0.78) 36%,
-    rgba(255, 158, 48, 0.30) 55%,
-    rgba(255, 140, 30, 0) 72%);
+    rgba(245, 237, 218, 1) 0%,
+    rgba(246, 236, 213, 0.97) 25%,
+    rgba(255, 216, 140, 0.80) 45%,
+    rgba(255, 170, 60, 0.32) 61%,
+    rgba(255, 140, 30, 0) 76%);
   transform: translate(-50%, -50%) scale(0);
   opacity: 0;
   pointer-events: none;

@@ -189,17 +189,41 @@
         // Held full. The reference sits on the blown out frame for more than
         // a second before anything opens, and that hold is most of what makes
         // the burst land.
-        // Never a lid. In the reference the blown out frame still has the
-        // burst radiating through it the whole time it is up, so this stops
-        // short of covering and lets the fire underneath show.
+        //
+        // Never a lid, except for the few frames the swap needs. Measured off
+        // the reference: through the whole of its white his silhouette sits
+        // at 60 percent of the brightness of the air around him at first and
+        // climbs to 80 by the end, so the body is readable the entire time.
+        // A flat sheet at .90 over everything washes him and the light behind
+        // him by the same amount, which left ours at 87 percent, flat, no
+        // silhouette at all. The reference can do this because its light is
+        // behind the man and he blocks it; ours is a layer in front.
+        //
+        // So the sheet is total only for the fifth of a second around the
+        // swap, which is what the swap costs, and open either side of it. The
+        // fire underneath carries the brightness while it is open, and his
+        // body stands in front of the fire and blocks it, the way it does in
+        // the reference.
+        // And it closes rather than opens. In the reference the body is at
+        // its darkest against the light at the start of the white and fades
+        // into it by the end: 63, 60, then 79 percent. Ours ran the other
+        // way, flat and then dark, which reads as him stepping out of the
+        // light instead of being taken into it.
+        const lid = ease(clamp(norm(t, T_SWAP - .07, T_SWAP - .02), 0, 1))
+                  * (1 - ease(clamp(norm(t, T_SWAP + .02, T_SWAP + .09), 0, 1)));
+        const sheet = .78 + .06 * ease(clamp(norm(t, T_WHITE, T_LIFT), 0, 1));
         fs = 3.17 + norm(t, T_WHITE, T_LIFT) * .25;
-        fo = .90;
+        fo = Math.min(.97, sheet + .70 * lid);
       } else if (t >= T_LIFT && t < T_STAR) {
         const u = ease(norm(t, T_LIFT, T_STAR));
         fs = 3.42 - u * 3.20;          // drawn back down to a point
         // It has to clear almost entirely, or the fire it collapses into is
-        // still behind a white sheet and nobody sees it.
-        fo = .90 - .86 * u;
+        // still behind a white sheet and nobody sees it. And it has to clear
+        // fast: this stands in for a cut, and in the reference the frame goes
+        // from blown out to the dark wide shot in four frames. Spread evenly
+        // across the beat it left the fire behind a sheet for most of the
+        // time it was supposed to be seen.
+        fo = .84 * Math.pow(1 - norm(t, T_LIFT, T_STAR), 3.2);
       } else if (t >= T_STAR && t < T_WARM) {
         const u = norm(t, T_STAR, T_WARM);
         fs = .22 + u * .10;
@@ -219,7 +243,7 @@
       // The spark, in front of the capture where it can be seen. It grows,
       // it gutters, and it is gone the instant the light lets go.
       const sk = clamp(norm(t, T_SPARK, T_BURST), 0, 1);
-      const alive = sk > 0 && t < T_BURST + .05;
+      const alive = sk > 0 && t < T_BURST;
       spark.style.transform = "translate(-50%, -50%) scale(" + (.10 + sk * sk * 1.25).toFixed(3) + ")";
       spark.style.opacity = alive ? (Math.pow(sk, .7) * (.72 + .28 * Math.sin(t * 29))).toFixed(3) : "0";
 
@@ -240,6 +264,20 @@
       // the burst feel like it happened rather than like it is still happening.
       sig.star = (ease(clamp(norm(t, T_BURST - .14, T_BURST), 0, 1))
               * (1 - ease(clamp(norm(t, T_WARM - .15, T_WARM + .55), 0, 1)))).toFixed(3);
+      // The blow is its own window and nothing else's. It is the quarter of a
+      // second between the light letting go and the frame going white, and
+      // the streaks belong to it alone. Hanging them off the fire instead
+      // left them burning through the compact star afterwards, where the
+      // reference has a tight ball with short spikes and no wedges at all.
+      sig.blow = (ease(clamp(norm(t, T_BURST - .12, T_BURST), 0, 1))
+              * Math.pow(1 - clamp(norm(t, T_BURST + .02, T_WHITE + .04), 0, 1), 1.5)).toFixed(3);
+      // The white has to be its own signal. Hanging the wash off the fire lit
+      // the frame at the blow, and at the blow the reference is dark: 0.24
+      // brightness with streaks tearing across it, and it does not go white
+      // until a quarter of a second later. Ours was at 0.80 before the blow
+      // had even landed, so the violent part of it was never seen.
+      sig.white = (ease(clamp(norm(t, T_BURST + .05, T_WHITE), 0, 1))
+              * Math.pow(1 - clamp(norm(t, T_LIFT, T_STAR - .12), 0, 1), 2.6)).toFixed(3);
       sig.warm = ease(clamp(norm(t, T_STAR, T_WARM), 0, 1)).toFixed(3);
       // The cold has to hold, not touch and leave. Ramping it up and starting
       // the fade in the same instant is what kept it from ever arriving.

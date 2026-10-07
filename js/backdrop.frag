@@ -6,6 +6,8 @@ uniform vec2  uSize;
 uniform float uLoad;    // how much of the capture has arrived, 0 to 1
 uniform float uCharge;  // the air gathering, cold, before anything lets go
 uniform float uStar;    // the white drawn back down into a point behind him
+uniform float uBlow;    // the quarter second the light lets go in
+uniform float uWhite;   // the blown out frame, which is not the fire
 uniform float uWarm;    // the volume of light he is left standing inside
 uniform float uCool;    // one breath where the room goes cold and starry
 uniform float uField;   // the light flattening into a field for the figure
@@ -58,6 +60,8 @@ void main() {
   float c     = clamp(uCharge, 0., 1.);
   float g     = clamp(uWarm, 0., 1.);
   float star  = clamp(uStar, 0., 1.);
+  float white = clamp(uWhite, 0., 1.);
+  float blow  = clamp(uBlow, 0., 1.);
   float cool  = clamp(uCool, 0., 1.);
   float field = clamp(uField, 0., 1.);
 
@@ -140,11 +144,19 @@ void main() {
   // The star sits behind his head rather than at the chest, where his own
   // body would swallow it. It stands in for the cut to the wide shot, so it
   // has to be seen.
-  vec2  sp2  = p - vec2(.0, .46);
+  // Clear of his head, not behind it. At 0.46 the core landed exactly behind
+  // his skull and he swallowed all of it, so what reached the frame was the
+  // spikes poking out past his shoulders and nothing else. The thing that
+  // stands in for the cut to the wide shot has to be seen.
+  vec2  sp2  = p - vec2(.0, .78);
   float sr   = length(sp2);
   float sang = atan(sp2.x, sp2.y);
-  float sCore = (exp(-sr * sr * 420.) + exp(-sr * 9.0) * .07) * star;
-  float sRing = exp(-pow((sr - .120) / .030, 2.0)) * star * .35;
+  // A ball, not a pinprick. In the reference's wide shot the star is a dense
+  // bright mass about a sixth of the frame across with the fire packed around
+  // it, and the spikes only reach half again as far as the mass itself. At a
+  // radius of 0.05 it read as a point with threads coming off it.
+  float sCore = (exp(-sr * sr * 110.) + exp(-sr * 7.0) * .16) * star;
+  float sRing = exp(-pow((sr - .135) / .045, 2.0)) * star * .40;
 
   // Two layers. Underneath, fire: tendrils that bend, reach and die back,
   // never still for a frame. On top of that, and only on top, the thin flash
@@ -171,8 +183,8 @@ void main() {
   float tfr  = fract(aw / 6.2831853 * tcnt + 40.0);
   float taper = pow(1. - abs(tfr * 2. - 1.), 1.2 + twid * 3.4);
 
-  float reach = (.055 + 1.30 * pow(tlen, 2.1)) * taper * tgap;
-  reach = max(reach, .050 + .22 * lob);          // a low collar under them all
+  float reach = (.075 + .62 * pow(tlen, 1.8)) * taper * tgap;
+  reach = max(reach, .110 + .13 * lob);          // a low collar under them all
   float fire  = pow(clamp((reach - sr) / max(reach, .0001), 0., 1.), 2.4);
   fire *= .30 + .70 * lob;
   // Licked away at the tips, so the tongues end ragged instead of rounded.
@@ -180,11 +192,14 @@ void main() {
 
   // The flash of lines, laid over the fire and gone almost as fast.
   float a01  = aw / 6.2831853 + .5;
-  float idx  = floor(a01 * 64.);
+  // Fewer and wider. Sixty four needles at an exponent of fifty are thinner
+  // than a pixel for most of their length, and a line thinner than a pixel
+  // does not get thinner, it breaks into a dotted row.
+  float idx  = floor(a01 * 38.);
   float h1   = hash(vec2(idx, 3.1));
   float h2   = hash(vec2(idx, 9.7));
-  float t01  = fract(a01 * 64.);
-  float line = pow(1. - abs(t01 * 2. - 1.), 22. + h2 * 30.);
+  float t01  = fract(a01 * 38.);
+  float line = pow(1. - abs(t01 * 2. - 1.), 7. + h2 * 13.);
   line *= exp(-sr / (.11 + .44 * h1 * h1)) * step(.45, h1);
 
   float sRay = (fire * 2.6 + line * .40) * smoothstep(.008, .050, sr) * star;
@@ -239,9 +254,47 @@ void main() {
   col += vec3(1., .94, .84) * cloud * .78;
   col += C_LIGHT * halo * .16;
   col += vec3(1., .90, .74) * bloom * .22;
-  col += vec3(1.00, .98, .92) * sCore * 1.1;
+  // The white itself. In the reference the blown out frame is a wash that
+  // fills the picture, not a shape, and the long shafts ride on top of it.
+  // That wash is behind the man, so his body blocks it and stands out of it
+  // as a dark silhouette the whole time it is up. Ours used to come from a
+  // sheet in front of everything, which washed him and the air behind him by
+  // the same amount and flattened him out of existence. This is the half that
+  // belongs behind him.
+  float wash = white * (.56 + .44 * exp(-sr * 1.6));
+  col += vec3(1.00, .985, .95) * wash * 1.35;
+  col += vec3(1.00, .98, .92) * sCore * 2.3;
   col += vec3(1.00, .80, .30) * sRing * .8;
-  col += mix(vec3(1.00, .92, .74), vec3(1.00, .66, .44), smoothstep(.06, .52, sr)) * sRay * 1.9;
+  col += mix(vec3(1.00, .92, .74), vec3(1.00, .66, .44), smoothstep(.06, .52, sr)) * sRay * 2.6;
+
+  // ---- the blow ----
+  // Measured off the reference and it is not what this was doing. At the blow
+  // the frame is dark, 0.24 brightness, and torn across by streaks running
+  // from the middle out past the corners. Dozens of them, bright against the
+  // dark, contrast 0.19 to 0.28. It does not go white until a quarter of a
+  // second after that. Ours went white first and skipped the violence
+  // entirely.
+  //
+  // This is the window where the fire is up and the white is not yet, which
+  // is exactly that quarter second.
+  // Wide and soft, and not many of them. The reference's streaks are a radial
+  // blur: wedges with no edge on them, every one a different width. Drawing
+  // them as a hundred and fifty thin bright lines gave a vector starburst,
+  // and at this size the thin ones alias into dotted rows as well.
+  float bidx = floor(a01 * 34.);
+  float bh   = hash(vec2(bidx, 17.7));
+  float bw   = hash(vec2(bidx, 4.3));
+  float bt   = fract(a01 * 34.);
+  float bray = pow(1. - abs(bt * 2. - 1.), 1.1 + bw * 2.6);
+  // They start off his body and run out past the corner, and the narrow ones
+  // run furthest, which is what keeps it from reading as an even fan.
+  bray *= smoothstep(.02, .16, sr) * exp(-sr * (.55 + 1.60 * bh)) * step(.15, bh);
+  col += mix(vec3(1.00, .96, .84), vec3(1.00, .70, .32), smoothstep(.10, .80, sr))
+       * bray * blow * 2.8;
+  // and the blown core they come out of, which is most of the light in the
+  // reference's frame at this moment.
+  float bcore = exp(-sr * sr * 24.) + exp(-sr * 4.0) * .34;
+  col += vec3(1.00, .97, .90) * bcore * blow * 1.6;
   // The light wraps under him too, so the floor of the frame is not a hole.
   col += C_LIGHT * g * .09 * smoothstep(.10, -.90, p.y) * air;
 
