@@ -397,13 +397,13 @@ const PROJECTS = {
       }
     ],
 
-    // Hidden until there are two or three of these. One entry under a heading
-    // that says "Selected" promises a set it cannot deliver.
-    // selectedRecognition: [{
-    //   title: "1st Place, NYU Data Science Bootcamp",
-    //   image: `${BASE_URL}assets/images/bootcampBadge.png`,
-    //   link: "https://credentials.engineering.nyu.edu/7844a2f4-ff71-4ea0-a2c7-48d8b27766f9#acc.gz582Yac"
-    // }]
+    // The only outside validation on the page, so it carries the Deep Learning
+    // pill, which rests on evaluation rather than training.
+    recognition: [{
+      title: "1st Place, NYU Data Science Bootcamp",
+      image: `${BASE_URL}assets/images/bootcampBadge.png`,
+      link: "https://credentials.engineering.nyu.edu/7844a2f4-ff71-4ea0-a2c7-48d8b27766f9#acc.gz582Yac"
+    }]
   },
 
   mocap: {
@@ -783,6 +783,13 @@ function renderAbout(p) {
         <section class="project-section span-2">
           <h2 class="section-title">Industry</h2>
           ${listHTML(p.industry)}
+        </section>
+      ` : ""}
+
+      ${p.recognition?.length ? `
+        <section class="project-section">
+          <h2 class="section-title">Recognition</h2>
+          ${recognitionHTML(p.recognition)}
         </section>
       ` : ""}
 
