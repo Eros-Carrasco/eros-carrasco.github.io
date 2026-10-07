@@ -39,15 +39,18 @@
   // head reaches the shoulder already facing front because that is the way it
   // is travelling, so there is no turn to make on arrival. An earlier layout
   // ended moving sideways and the head swung ninety degrees on the spot,
-  // which was the extreme turn he kept seeing. Start at ninety degrees; one
-  // and seven twelfths of a turn brings the end to three hundred.
-  const PHASE = 1.571;
+  // which was the extreme turn he kept seeing. Start at thirty degrees, in
+  // front of him and to the viewer's right, so the first move the viewer
+  // sees is a diagonal across the screen and not straight into the depth;
+  // one and three quarter turns brings the end to the same three hundred as
+  // before, so the landing did not move when the start did.
+  const PHASE = 0.524;
   // His drawing: one wide turn climbing on a diagonal, crossing in front of
   // his torso once and finishing at his shoulder. It had been 1.45 tight
   // turns, which he said felt cramped now that the animal is bigger. The
   // count no longer has to deliver the final heading, since the head faces
   // the viewer whenever it stops moving, so it is free to follow the drawing.
-  const TURNS = 1.583;
+  const TURNS = 1.750;
   // Tall and narrow, but not tight. Built as wide as it was high the view sat
   // inside the coil; built at this radius times two thirds it crossed his
   // chest and his hands at every turn and he was furniture inside it. Here it
@@ -82,26 +85,25 @@
   // the box, which is the floor as far as the frame is concerned. The head
   // comes up out of it with neck already behind it, instead of appearing in
   // the air as a head on its own, which he said looked very strange, and he
-  // was right. u runs from -RISE to 1: the rise, then the helix.
-  // The lead in is a diagonal, not a vertical: it comes up out of the floor
-  // rising to the right and joins the coil at his right side. That is the
-  // right hand panel of his drawing, body from the lower left, head up and to
-  // the right in profile. A vertical rise had the head's first move going
-  // away into the depth, which from the front showed the back of the ruff.
-  const RISE = 0.14, DROP = 0.90, DRIFT = 0.80;
-  const curve = (u) => {
-    if (u < 0) {
-      const h0 = helix(0);
-      // not clamped: what is further back than the rise is simply deeper
-      const f = -u / RISE;
-      return [h0[0] - DRIFT * f, h0[1] - DROP * f, h0[2]];
-    }
-    return helix(u);
-  };
+  // was right. u runs from -RISE to 1, and it is one helix the whole way.
+  // A straight diagonal used to come up under the floor and join the coil
+  // at floor level, and the join was a corner: a hundred degrees seen from
+  // above, with the climb dropping from forty eight degrees to six. The
+  // head looks where it is moving, so it turned through all of that in a
+  // third of a second, and from the front it read as the animal coming out
+  // to the right and reversing. Now the same helix runs on below the floor,
+  // steepening as it goes down (DEEP) so the head is out of frame when the
+  // climb starts and comes up on a diagonal, with the steepness fading out
+  // a little above the floor (DIP) so the climb angle is continuous too.
+  // RISE is how much of it starts under the floor: short, so the slow birth
+  // is seen and not spent out of frame.
+  const RISE = 0.04, DIP = 0.15, DEEP = 12;
+  const curve = (u) => helix(u);
   const helix = (u) => {
     const a = PHASE + u * TURNS * TAU;
     const r = RAD_MAX + (RAD_MIN - RAD_MAX) * u + Math.sin(u * 7.1) * 0.055;
-    const y = Y0 + (Y1 - Y0) * (u * 0.82 + u * u * 0.18) + Math.sin(a * 2.0) * 0.045;
+    const y = Y0 + (Y1 - Y0) * (u * 0.82 + u * u * 0.18) + Math.sin(a * 2.0) * 0.045
+            - (u < DIP ? DEEP * (DIP - u) * (DIP - u) : 0);
     return [Math.sin(a) * r, y, Math.cos(a) * r];
   };
 
@@ -140,6 +142,12 @@
   // cross section flip over when it does.
   const L = 1 + RISE;
   const headAt = (e) => -RISE + Math.min(1, Math.max(0, e)) * L;
+  // How far along the animal is at progress k: slow out of the floor, slow
+  // into the shoulder, quickest through the middle. It used to ease out
+  // only, so the birth was the fastest moment of the piece, one and six
+  // tenths times the average, on top of the corner that was there then.
+  const ease = (k) => 1 - Math.pow(1 - Math.pow(k, 1.4), 1.6);
+  const easeRate = (k) => k <= 0 ? 0 : 1.6 * 1.4 * Math.pow(k, 0.4) * Math.pow(1 - Math.pow(k, 1.4), 0.6);
   // The last stretch of body leaves the centre of the back of the head, in
   // line with the head, whatever the head is doing. The path alone does not
   // give that: where the head turns off the path, to face the viewer, the neck
@@ -569,7 +577,7 @@
     // behaviour as the running page.
     const placeHead = (pIn) => {
       const pr = Math.min(1, Math.max(0, pIn));
-      const e = 1 - Math.pow(1 - pr, 1.6);
+      const e = ease(pr);
       const k = headAt(e);
       const c = curve(k);
       const dd = 0.006;
@@ -577,7 +585,7 @@
       const vl = Math.hypot(v[0], v[1], v[2]) || 1e-6;
       const dir = [v[0] / vl, v[1] / vl, v[2] / vl];
       // speed along the path per unit of progress, with the ease folded in
-      const speed = (vl / (2 * dd)) * L * 2 * (1 - pr);
+      const speed = (vl / (2 * dd)) * L * easeRate(pr);
       const flat = Math.hypot(dir[0], dir[2]);
       const hspeed = speed * flat;
       // Where it looks once it has landed: where he looks. He faces +Z, which
@@ -608,7 +616,10 @@
       let dS = want - hhS;
       while (dS > Math.PI) dS -= TAU;
       while (dS < -Math.PI) dS += TAU;
-      hhS += dS * (1 - Math.exp(-(pr - lastP) / 0.05));
+      // A fifth of what it was. At 0.05 the head trailed the path by some
+      // forty five degrees through the fast part of the coil, looking where
+      // it had been going; that much was only needed to hide the corner.
+      hhS += dS * (1 - Math.exp(-(pr - lastP) / 0.02));
       lastP = pr;
       // Never still. Three slow waves at frequencies that do not divide into
       // each other, so it casts about instead of tracking like a bead on a
@@ -618,10 +629,9 @@
       const sway = [(Math.sin(w * 0.83) * 0.20 + Math.sin(w * 0.37 + 2.1) * 0.09) * calm,
                     (Math.sin(w * 0.61 + 1.7) * 0.13) * calm,
                     (Math.cos(w * 0.71 + 0.4) * 0.20 + Math.cos(w * 0.29 + 0.8) * 0.08) * calm];
-      // up on the diagonal through the rise, easing onto the coil's own slope
-      const rising = k < 0 ? 1 : Math.max(0, 1 - k / 0.10);
-      const pitch = (dir[1] * (1 - rest) * 0.85 + 0.18 * rest - 0.05) * (1 - rising) + 0.62 * rising;
-      const pl = Math.max(0.35, flat * (1 - rest) + 0.9 * rest) * (1 - rising) + 0.80 * rising;
+      // the path's own slope, under the floor as above it: one path, one rule
+      const pitch = dir[1] * (1 - rest) * 0.85 + 0.18 * rest - 0.05;
+      const pl = Math.max(0.35, flat * (1 - rest) + 0.9 * rest);
       const aim = norm([Math.sin(hhS) * pl + sway[0], pitch + sway[1], Math.cos(hhS) * pl + sway[2]]);
       socket.setLocalPosition(c[0], c[1], c[2]);
       socket.lookAt(c[0] + aim[0], c[1] + aim[1], c[2] + aim[2]);
@@ -695,7 +705,7 @@
         // Eased out: it comes up out of the floor at speed and slows into the
         // shoulder. Eased both ways it sat underground for most of a second,
         // and a settle that arrives at a crawl is the right end of the two.
-        const e = 1 - Math.pow(1 - k, 1.6);
+        const e = ease(k);
         placeHead(k);
         refresh(body, buildBody(e));
         refresh(plume, buildFeathers(e));
