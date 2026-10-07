@@ -57,7 +57,7 @@ const PROJECTS = {
         {
           heading: "Model Evaluation (PyTorch, CASIA)",
           text: [
-            "Apple Vision does the reading, picked because it installed fastest. Five of us benchmarked it against four other recognisers.",
+            "Apple Vision does the reading, picked because it installed fastest. We benchmarked it against four other recognisers as a course project.",
             "I built the nine distortions we tested against, each modelled on what a headset does to an image: motion blur, lens glare, low resolution passthrough.",
             "I collected 151 captures from the running app and ran all five models on those instead."
           ]
@@ -99,7 +99,7 @@ const PROJECTS = {
       title: "Credits",
       text: [
         "Coursework for Virtual Reality with Ken Perlin and Deep Learning for Media at NYU.",
-        "The app is mine. The evaluation was group work with Kaylie Stuteville, Kezia Widjaja and Jasmine Zhang; my part was the nine distortions, the CnOCR and Apple Vision integrations, the capture app and the run on real captures."
+        "The app is mine. The benchmark was group work outside the headset, with Kaylie Stuteville, Kezia Widjaja and Jasmine Zhang; my part there was the nine distortions and the CnOCR and Apple Vision integrations. Everything inside VR is mine, including the capture app and the run against real captures."
       ]
     },
   },
