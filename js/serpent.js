@@ -186,7 +186,11 @@
     // Dark between, bright on. The first pass drew green scales on a green
     // ground a few values apart and the whole thing averaged back to flat.
     // The map was reaching the mesh the entire time; it had nothing in it.
-    c.fillStyle = "#0d2418";
+    // Every colour here was read out of the head's own texture rather than
+    // chosen: emerald at hue 150 is 30 percent of its painted pixels, the red
+    // at hue 9 is 22 and the ochre at hue 30 is 22. The body had been a colder,
+    // brighter green of my own and the two did not look like one animal.
+    c.fillStyle = "#16301f";
     c.fillRect(0, 0, s, s);
     // Few per tile, because the tiling multiplies them. At fourteen across
     // and twenty six tiles there were three hundred and sixty scales down a
@@ -198,12 +202,12 @@
         const x = (k + (r % 2 ? 0.5 : 0)) * cw, y = r * rh;
         // lighter along the back, which is the middle of the v range
         const back = 1 - Math.abs(y / s - 0.5) * 2;
-        const l = 0.42 + 0.95 * back;
+        const l = 0.52 + 0.78 * back;
         c.beginPath();
         c.ellipse(x + cw / 2, y + rh * 0.35, cw * 0.56, rh * 0.78, 0, 0, Math.PI * 2);
-        c.fillStyle = `rgb(${Math.round(38 * l)},${Math.round(150 * l)},${Math.round(104 * l)})`;
+        c.fillStyle = `rgb(${Math.round(28 * l)},${Math.round(75 * l)},${Math.round(51 * l)})`;
         c.fill();
-        c.strokeStyle = "rgba(6,20,13,0.9)";
+        c.strokeStyle = "rgba(10,24,16,0.9)";
         c.lineWidth = 1.6;
         c.stroke();
       }
@@ -258,8 +262,9 @@
     const matF = mat.clone();
     matF.blendType = pc.BLEND_NONE;
     matF.depthWrite = true;
-    matF.diffuse = new pc.Color(0.52, 0.42, 0.10);
-    matF.emissive = new pc.Color(0.40, 0.28, 0.05);
+    // the ochre off the carving, hue 30, not a gold of my own
+    matF.diffuse = new pc.Color(0.437, 0.304, 0.168);
+    matF.emissive = new pc.Color(0.26, 0.17, 0.07);
     matF.emissiveIntensity = 0.95;
     matF.update();
 
@@ -292,25 +297,30 @@
     // Built, not loaded. It hangs off a socket at the end of the curve.
     const socket = new pc.Entity("serpent-head");
     root.addChild(socket);
-    {
-      const u = 1.0;
-      const c = curve(u);
-      const tan = norm(sub(curve(u), curve(u - 0.01)));
+
+    // The head leads and the body comes out behind it, which is how a snake
+    // arrives and is not what this did at first: the tail wrote itself up the
+    // coil and the head only turned up at the end, on top of a serpent that was
+    // already all there. So the socket rides the leading edge rather than
+    // sitting at the end of the curve, and the reveal moves it.
+    const HEAD_U0 = 0.04;
+    const placeHead = (u) => {
+      const k = Math.max(HEAD_U0, Math.min(1, u));
+      const c = curve(k);
+      const tan = norm(sub(curve(k), curve(Math.max(0, k - 0.012))));
       socket.setLocalPosition(c[0], c[1], c[2]);
-      // Tipped in and down off the tangent. Aimed straight along the curve the
-      // snout pointed up and out of the frame, at nothing.
       // Turned in toward the axis and down, not along the curve. Aimed along
       // the tangent the snout points out of the frame, and at whatever yaw the
-      // camera happens to be at, away from it. Pointing in and down means the
-      // head is seen in profile or three quarters from every angle, which is
-      // the only orientation that survives a view that never stops turning.
+      // camera happens to be at, away from it. In and down means the head is
+      // seen in profile or three quarters from every angle, which is the only
+      // orientation that survives a view that never stops turning.
       const aim = norm([-c[0] * 1.0 + tan[0] * 0.30, -0.52 + tan[1] * 0.25,
                         -c[2] * 1.0 + tan[2] * 0.30]);
       socket.lookAt(c[0] + aim[0], c[1] + aim[1], c[2] + aim[2]);
-      const g = girth(0.72);          // the neck, not the tail
+      const g = girth(Math.max(0.25, k));
       socket.setLocalScale(g * HEAD, g * HEAD, g * HEAD);
-    }
-
+    };
+    placeHead(HEAD_U0);
 
     const asset = new pc.Asset("quetzalcoatl", "container", { url: HEAD_URL });
     app.assets.add(asset);
@@ -364,6 +374,7 @@
         if (mat.opacity !== 1) { mat.opacity = 1; matF.opacity = 1; mat.update(); matF.update(); }
         // eased so it rushes on and settles, rather than arriving at a crawl
         const e = k * k * (3 - 2 * k);
+        placeHead(e);
         const seg = Math.max(1, Math.round(e * RINGS));
         body.primitive[0].count = seg * SIDES * 6;
         // the feathers follow the body they sit on, a little behind it

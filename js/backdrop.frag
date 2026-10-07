@@ -342,7 +342,12 @@ void main() {
   // and the arms vanished into it. Dark and warm, so the gold reads against
   // it the way the reference's gold reads against the dark between its arms.
   float dei = clamp(uField, 0., 1.);
-  vec3 fieldC = vec3(.175, .150, .085) + vec3(.30, .25, .10) * smoothstep(1.30, .15, r);
+  // What the violet turns into when the serpent arrives. Taken off the head's
+  // own ochre, hue 30, which is 22 percent of its painted pixels, rather than a
+  // gold chosen for a figure that no longer exists. It stays dark, because an
+  // emerald serpent in front of a bright field stops being a silhouette, which
+  // the last figure taught us.
+  vec3 fieldC = vec3(.158, .112, .062) + vec3(.26, .19, .09) * smoothstep(1.25, .18, r);
   col = mix(col, fieldC, dei * .90);
 
   // The field used to be laid down again here, in orange, over 62 percent of

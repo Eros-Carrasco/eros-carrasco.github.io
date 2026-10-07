@@ -49,14 +49,20 @@
   const T_WHITE = 5.16;  // the frame is white, and it is very quick
   const T_SWAP  = 5.32;  // the pose changes, under the white
   const T_LIFT  = 5.73;  // the white has been held full, and starts to open
-  const T_STAR  = 6.18;  // the fire stands alone, brightening as it is seen
-  const T_WARM  = 6.44;  // which opens into a volume he is standing inside
-  const T_COOL  = 6.72;  // the room cools, stars come out, the halo ring
-  const T_HELD  = 11.57;  // and it stays cold. This is the long beat
-  const T_FIELD = 12.67; // warmth returns and the light flattens into a field
-  const T_DEITY = 12.97; // the figure starts coming out of the blur
-  const T_SET   = 19.37; // it has resolved
-  const T_FAN   = 20.17; // the arms have finished opening
+  const T_STAR  = 6.00;  // the fire stands alone, brightening as it is seen
+  const T_WARM  = 6.12;  // which opens into a volume he is standing inside
+  // From here the piece is shorter than it was, on his call. The fire standing
+  // alone and the warm volume he was left in are gone: the white clears
+  // straight into the cold, the cold holds for about three seconds with its
+  // stars, and then the serpent winds on and the colour of the room turns under
+  // it. Twenty seconds became thirteen, and what came out was the part a
+  // visitor was least likely to stay for.
+  const T_COOL  = 6.16;  // the room cools, stars come out, the halo ring
+  const T_HELD  = 9.30;  // and it stays cold. This is the long beat
+  const T_FIELD = 9.40; // warmth returns and the light flattens into a field
+  const T_DEITY = 9.52; // the figure starts coming out of the blur
+  const T_SET   = 12.60; // it has resolved
+  const T_FAN   = 13.10; // the arms have finished opening
 
   // How much light the room keeps once the flash is gone. The backdrop reads
   // this as its resting state, so he is left standing in light rather than in
