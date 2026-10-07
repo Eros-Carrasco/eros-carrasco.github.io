@@ -30,6 +30,12 @@
   // which also gives the figure somewhere to come from. The quiet shot of him
   // on the lotus under a flat halo becomes the whole room cooling to violet
   // for a moment, with stars, before the warmth comes back.
+  // The gathering runs at twice the reference's share of the whole, on his
+  // call. It is the part a visitor actually sees before deciding whether to
+  // stay, and at its measured 12.6 percent it was over before it registered.
+  // Everything from the burst on carries by the same 2.37 seconds, so the
+  // beats after it keep their shares relative to each other.
+  //
   // Taken off the reference measured as one continuous run of 39.77 seconds,
   // which is what it is: five files played one after the other with no gap.
   // Its share of the whole goes: gathering 12.6, spark 2.3, blow 0.4, white
@@ -38,19 +44,19 @@
   // and the back half takes three quarters, which is the opposite of how this
   // was built. Scaled here to about sixteen seconds, keeping those shares.
   const T_BUILD = 0.30;  // the air starts to charge, cold and white
-  const T_SPARK = 2.30;  // a point of gold at the chest, the first in the piece
-  const T_BURST = 2.67;  // it lets go, and the fire is already at full reach
-  const T_WHITE = 2.79;  // the frame is white, and it is very quick
-  const T_SWAP  = 2.95;  // the pose changes, under the white
-  const T_LIFT  = 3.36;  // the white has been held full, and starts to open
-  const T_STAR  = 3.81;  // the fire stands alone, brightening as it is seen
-  const T_WARM  = 4.07;  // which opens into a volume he is standing inside
-  const T_COOL  = 4.35;  // the room cools, stars come out, the halo ring
-  const T_HELD  = 9.20;  // and it stays cold. This is the long beat
-  const T_FIELD = 10.30; // warmth returns and the light flattens into a field
-  const T_DEITY = 10.60; // the figure starts coming out of the blur
-  const T_SET   = 17.00; // it has resolved
-  const T_FAN   = 17.80; // the arms have finished opening
+  const T_SPARK = 4.30;  // a point of gold at the chest, the first in the piece
+  const T_BURST = 5.04;  // it lets go, and the fire is already at full reach
+  const T_WHITE = 5.16;  // the frame is white, and it is very quick
+  const T_SWAP  = 5.32;  // the pose changes, under the white
+  const T_LIFT  = 5.73;  // the white has been held full, and starts to open
+  const T_STAR  = 6.18;  // the fire stands alone, brightening as it is seen
+  const T_WARM  = 6.44;  // which opens into a volume he is standing inside
+  const T_COOL  = 6.72;  // the room cools, stars come out, the halo ring
+  const T_HELD  = 11.57;  // and it stays cold. This is the long beat
+  const T_FIELD = 12.67; // warmth returns and the light flattens into a field
+  const T_DEITY = 12.97; // the figure starts coming out of the blur
+  const T_SET   = 19.37; // it has resolved
+  const T_FAN   = 20.17; // the arms have finished opening
 
   // How much light the room keeps once the flash is gone. The backdrop reads
   // this as its resting state, so he is left standing in light rather than in

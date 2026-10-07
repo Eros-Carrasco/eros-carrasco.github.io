@@ -243,7 +243,15 @@ void main() {
   col = mix(col, haze, smoothstep(1.25, .05, length(p * vec2(1.0, .85))) * HAZE * air * (1. + g * 1.4) * (1. - .80 * cold0));
   // The lamp itself goes pale as the volume opens, or the whole beat sits
   // under an orange cast the reference does not have.
-  col += mix(lampC, vec3(1.00, .92, .76), g * .55) * lit * (.85 + g * .62) * (1. - .45 * c);
+  // The lamp belongs to the beats after the burst and to nothing before them.
+  // This is the last of the room that was built and then taken out on his
+  // instruction: a warm orange shaft falling from a source, burning from the
+  // very first frame, in a sequence whose first five seconds are a cold night.
+  // He saw it before I did. Before the light lets go there is nothing warm in
+  // the box at all and the page shows through.
+  float lamp = max(g, field);
+  col += mix(lampC, vec3(1.00, .92, .76), g * .55) * lit * (.85 + g * .62)
+       * (1. - .45 * c) * lamp;
 
   col += C_SPARK * stream * 2.30 * air;
   col += mix(C_SPARK, vec3(1., .96, .86), smoothstep(.70, 1., c)) * core * .80;
