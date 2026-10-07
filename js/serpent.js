@@ -45,7 +45,7 @@
   // of the running sequence proving nothing.
   const HEAD_URL = "assets/models/quetzalcoatl.glb";
 
-  const HEAD = 7.2;                 // head size against the neck's thickness
+  const HEAD = 6.5;                 // head size against the neck's thickness
 
   // Where the body is at u along its length, 0 at the tail, 1 at the head.
   // The radius breathes a little so the coil is not a lathe part, and it draws
@@ -57,15 +57,11 @@
     return [Math.sin(a) * r, y, Math.cos(a) * r];
   };
 
-  // How thick the body is at u. Thin at the tail, thickest around a third of
-  // the way along, tapering again into the neck.
-  const girth = (u) => {
-    const t = Math.min(1, u / 0.34);
-    const swell = Math.sin(Math.min(1, u) * Math.PI) * 0.55 + 0.45;
-    // Thin enough that he stays the subject. At twice this the coil crossed
-    // his chest and he was furniture inside it.
-    return (0.030 + 0.092 * t) * swell;
-  };
+  // How thick the body is at u, where u runs from the tail at 0 to the neck at
+  // 1. Thickest where it leaves the head and thinning the whole way down to the
+  // tail, which is how a snake is built. It used to swell through the middle
+  // and taper at both ends, so the fattest part of the animal was its waist.
+  const girth = (u) => 0.020 + 0.120 * Math.pow(Math.max(0, Math.min(1, u)), 0.70);
 
   const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
   const cross = (a, b) => [
@@ -309,15 +305,58 @@
       const c = curve(k);
       const tan = norm(sub(curve(k), curve(Math.max(0, k - 0.012))));
       socket.setLocalPosition(c[0], c[1], c[2]);
-      // Turned in toward the axis and down, not along the curve. Aimed along
-      // the tangent the snout points out of the frame, and at whatever yaw the
-      // camera happens to be at, away from it. In and down means the head is
-      // seen in profile or three quarters from every angle, which is the only
-      // orientation that survives a view that never stops turning.
-      const aim = norm([-c[0] * 1.0 + tan[0] * 0.30, -0.52 + tan[1] * 0.25,
-                        -c[2] * 1.0 + tan[2] * 0.30]);
+      // It looks where it is going, because it is the one leading. The tangent
+      // decides, and since the tangent turns the whole way up a helix the head
+      // turns with it rather than holding one pose while the body writes
+      // itself underneath.
+      //
+      // Back when the head was pinned at the end of the curve, aiming it along
+      // the tangent sent the snout out of the frame, so I turned it inward
+      // instead and left it there. That fixed the symptom of a head that was
+      // not leading anything. Now that it leads, the tangent is right and only
+      // needs a little bias: pulled in toward the axis so it does not stare out
+      // of the box on the near side of every turn, and tipped down so it reads
+      // as hunting rather than as climbing a pole.
+      // It rears before it travels. At the start the tangent runs away from the
+      // view and all that showed was the flat back of a wall carving, so the
+      // first thing it does is lift: up and out from the axis, the way a snake
+      // raises its head before it commits. Over the first third of the climb
+      // that gives way to the tangent, which is where it is going.
+      const outward = norm([c[0], 0, c[2]]);
+      const inward = [-outward[0], 0, -outward[2]];
+      const lead = Math.min(1, Math.max(0, (k - HEAD_U0) / 0.32));
+      const rise = (1 - lead) * (1 - lead);
+      // And it never holds a pose. Three slow waves at frequencies that do not
+      // divide into each other, so it weaves and casts about instead of
+      // tracking the curve like a bead on a wire. Rigid on the tangent it read
+      // as a model being carried along, which is the one thing it cannot look
+      // like.
+      const w = (typeof performance !== "undefined" ? performance.now() : Date.now()) * 0.001;
+      const sway = [Math.sin(w * 0.83) * 0.26 + Math.sin(w * 0.37 + 2.1) * 0.12,
+                    Math.sin(w * 0.61 + 1.7) * 0.17,
+                    Math.cos(w * 0.71 + 0.4) * 0.26 + Math.cos(w * 0.29 + 0.8) * 0.11];
+      // And at the end it settles facing the way he faces. Arriving and then
+      // turning to stare at the camera makes it a mascot; the two of them
+      // looking the same way out of the frame is a portrait, and it was his
+      // idea. His front is +Z in this space, because the second capture is
+      // placed to meet the view head on at yaw zero.
+      const land = Math.min(1, Math.max(0, (k - 0.78) / 0.22));
+      const t2 = (0.18 + 0.95 * lead) * (1 - land);
+      const aim = norm([
+        tan[0] * t2 + outward[0] * rise * 0.70 + inward[0] * lead * 0.30 * (1 - land)
+          + sway[0] * (1 - 0.55 * land),
+        tan[1] * t2 * 0.85 + rise * 1.25 - lead * 0.18 * (1 - land)
+          + sway[1] * (1 - 0.55 * land) - land * 0.06,
+        tan[2] * t2 + outward[2] * rise * 0.70 + inward[2] * lead * 0.30 * (1 - land)
+          + sway[2] * (1 - 0.55 * land) + land * 1.6,
+      ]);
       socket.lookAt(c[0] + aim[0], c[1] + aim[1], c[2] + aim[2]);
-      const g = girth(Math.max(0.25, k));
+      // Fixed. It was reading the body's girth at wherever the head happened to
+      // be, and the body swells through its middle and tapers at both ends, so
+      // the head grew and shrank by a factor of two and a bit as it travelled.
+      // Heads do not do that. Whatever size change is left is perspective, and
+      // that one is honest.
+      const g = girth(0.95);
       socket.setLocalScale(g * HEAD, g * HEAD, g * HEAD);
     };
     placeHead(HEAD_U0);

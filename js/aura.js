@@ -309,7 +309,12 @@
       // reaches the lotus, and comes back down to 0.30. This is that swell.
       sig.swell = Math.pow(Math.sin(clamp(norm(t, T_COOL + .35, T_HELD - .25), 0, 1)
                 * Math.PI), 1.15).toFixed(3);
-      sig.field = ease(clamp(norm(t, T_FIELD, T_DEITY + .9), 0, 1)).toFixed(3);
+      // Tied to the serpent's own climb, not to a window of its own. It used to
+      // finish turning the room in one second while the serpent took three and
+      // a half to arrive, so the colour had already landed before the thing it
+      // was supposed to be announcing was halfway up. Now the tone travels with
+      // the head.
+      sig.field = ease(clamp(norm(t, T_DEITY, T_FAN - .2), 0, 1)).toFixed(3);
       // Kept for anything still reading the old single channel.
       sig.glow = sig.warm;
 

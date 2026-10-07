@@ -347,7 +347,14 @@ void main() {
   // gold chosen for a figure that no longer exists. It stays dark, because an
   // emerald serpent in front of a bright field stops being a silhouette, which
   // the last figure taught us.
-  vec3 fieldC = vec3(.158, .112, .062) + vec3(.26, .19, .09) * smoothstep(1.25, .18, r);
+  // Where the violet goes when the serpent arrives. It does not go somewhere
+  // else: it deepens and empties, so the room inherits from the beat before it
+  // instead of arguing with it, and the serpent ends up the only thing in the
+  // box carrying colour. The ochre that was here first was taken off the
+  // carving's own palette, which turned out to be the reason it failed: the
+  // serpent is already emerald and red and ochre, so the field was competing
+  // with the figure in the figure's own colours and flattening it.
+  vec3 fieldC = vec3(.052, .048, .115) + vec3(.10, .09, .26) * smoothstep(1.25, .18, r);
   col = mix(col, fieldC, dei * .90);
 
   // The field used to be laid down again here, in orange, over 62 percent of
