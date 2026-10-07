@@ -31,8 +31,20 @@
   // it. TURNS, inside the one and a half to two he left open, is the count
   // that brings the last heading round to face the camera where it is at the
   // landing, so the settle has almost nothing left to turn.
-  const PHASE = -1.36;
-  const TURNS = 1.45;
+  // Negative: it coils the way the camera orbits. The camera turns through
+  // 118 degrees between the second the head appears and the second it lands,
+  // and a single turn against it put the head behind him for the whole second
+  // half of the climb, landing out of sight. Turning with it, the head comes
+  // up in front of him 25 degrees off the camera and lands 20 degrees off it.
+  // PHASE is where on the circle it starts: minus 100 degrees, which is the
+  // camera's side at that second.
+  const PHASE = -1.745;
+  // His drawing: one wide turn climbing on a diagonal, crossing in front of
+  // his torso once and finishing at his shoulder. It had been 1.45 tight
+  // turns, which he said felt cramped now that the animal is bigger. The
+  // count no longer has to deliver the final heading, since the head faces
+  // the viewer whenever it stops moving, so it is free to follow the drawing.
+  const TURNS = -1.20;
   // Tall and narrow, but not tight. Built as wide as it was high the view sat
   // inside the coil; built at this radius times two thirds it crossed his
   // chest and his hands at every turn and he was furniture inside it. Here it
@@ -42,8 +54,8 @@
   // Measured off his silhouette: his shoulders reach about 0.52 of a unit
   // out from the axis in this space, so a coil ending at 0.34 put the head
   // inside his shoulder and in front of his face. It ends just outside now.
-  const RAD_MIN = 0.56;
-  const RAD_MAX = 0.88;
+  const RAD_MIN = 0.72;
+  const RAD_MAX = 1.04;
   // The head rides at the top of this, so it ends below the frame's edge
   // rather than at it.
   const Y0 = -1.50, Y1 = 0.72;
@@ -55,7 +67,8 @@
   // head is the part code is worst at. Six attempts at building one proved
   // that, and a turntable of all eight angles proved it rather than one frame
   // of the running sequence proving nothing.
-  const HEAD_URL = "assets/models/quetzalcoatl.glb";
+  // Root absolute, so the lab pages under _notes/tools/ find it as well.
+  const HEAD_URL = "/assets/models/quetzalcoatl.glb";
 
   const HEAD = 3.75;                // head size against the neck's thickness
 
@@ -131,7 +144,12 @@
   let lastAim = [0, 0, 1];
   const buildBody = (e) => {
     const k = headAt(e);
-    const nape = curve(k);
+    const c0 = curve(k);
+    // The straight line the neck leaves along starts a little inside the
+    // head, not at its back face: the ruff reaches further back than the
+    // plate the neck meets, so a neck that stopped at the socket showed a
+    // sliver of gap under the feathers.
+    const nape = [c0[0] + lastAim[0] * 0.10, c0[1] + lastAim[1] * 0.10, c0[2] + lastAim[2] * 0.10];
     const back = [-lastAim[0], -lastAim[1], -lastAim[2]];
     const centres = [];
     for (let i = 0; i <= RINGS; i++) {
@@ -232,109 +250,162 @@
   // most of why ours reads as plastic. Both of these are drawn once into a
   // canvas and handed over as a map.
 
-  // A feather. Dark olive at the root, the carving's ochre through the vane,
-  // its red at the tip, a dark shaft down the middle and faint barbs off it.
-  // The blades were flat cards in one ochre with a hard edge, which is what
-  // made them look cheap beside a painted head. u runs across the blade and v
-  // along it from root to tip.
+  // What the body is made of was settled by a reference and not by taste: a
+  // Cleveland Museum feathered serpent in basalt, public domain. Its body has
+  // no scales at all. It is plumes, long ones, carved in low relief and laid
+  // over each other like tiles along the coils, each with a ridge down its
+  // middle, in matte grainy stone. The head he generated reads as painted
+  // stone, and this is the same stone, painted the green of its ruff.
+  //
+  // The relief is real: a height field is drawn once, the colour comes from
+  // it, and a normal map is derived from it, so the plumes catch the key
+  // light the way carving does rather than being a flat pattern.
+  const plumeMaps = (device) => {
+    const W = 512, H = 256;
+    const cv = document.createElement("canvas");
+    cv.width = W; cv.height = H;
+    const c = cv.getContext("2d");
+    // the stone, low and grainy
+    c.fillStyle = "#808080";
+    c.fillRect(0, 0, W, H);
+    for (let i = 0; i < W * H / 9; i++) {
+      const x = Math.random() * W, y = Math.random() * H;
+      const v = 110 + Math.random() * 40;
+      c.fillStyle = `rgb(${v},${v},${v})`;
+      c.fillRect(x, y, 1.5, 1.5);
+    }
+    // the plumes, four rows round the body, long along it, overlapping by
+    // half, laid from the tail end forward so each sits on the one behind it
+    // Big enough to read: three rows round the body and three plumes to a
+    // tile, with the tile a third of the body. At four rows and five to a
+    // tile they were twenty pixels long on the page and read as scratches.
+    // Shorter and more of them, overlapping along the body by a third. Long
+    // ones read as segments of cane; these read as plumage.
+    const rows = 4, per = 5;
+    const rh = H / rows, pl = W / per * 1.35, pw = rh * 1.05;
+    for (let r = 0; r < rows; r++) {
+      const cy = (r + 0.5) * rh;
+      for (let k = per + 1; k >= -1; k--) {
+        const cx = (k + (r % 2 ? 0.5 : 0)) * (W / per);
+        // the groove round it, carved into the stone
+        c.beginPath();
+        c.ellipse(cx, cy, pl / 2 + 3, pw / 2 + 3, 0, 0, Math.PI * 2);
+        c.fillStyle = "#262626";
+        c.fill();
+        // the plume, highest along its ridge, falling to its edges, and
+        // falling away toward its tip
+        const g = c.createLinearGradient(0, cy - pw / 2, 0, cy + pw / 2);
+        g.addColorStop(0.00, "#585858");
+        g.addColorStop(0.50, "#e6e6e6");
+        g.addColorStop(1.00, "#585858");
+        c.beginPath();
+        c.ellipse(cx, cy, pl / 2, pw / 2, 0, 0, Math.PI * 2);
+        c.fillStyle = g;
+        c.fill();
+        const tipFade = c.createLinearGradient(cx - pl / 2, 0, cx + pl / 2, 0);
+        tipFade.addColorStop(0.0, "rgba(60,60,60,0.55)");
+        tipFade.addColorStop(0.35, "rgba(60,60,60,0.0)");
+        tipFade.addColorStop(1.0, "rgba(60,60,60,0.0)");
+        c.fillStyle = tipFade;
+        c.fill();
+        // the shaft, a fine ridge
+        c.strokeStyle = "rgba(235,235,235,0.9)";
+        c.lineWidth = 2;
+        c.beginPath(); c.moveTo(cx - pl * 0.42, cy); c.lineTo(cx + pl * 0.46, cy); c.stroke();
+      }
+    }
+    const hgt = c.getImageData(0, 0, W, H).data;
+    const hAt = (x, y) => hgt[(((y + H) % H) * W + ((x + W) % W)) * 4] / 255;
+
+    // colour from the height: paint sits in the hollows, the stone shows on
+    // the ridges where it has worn. Taken from the head's palette.
+    const col = document.createElement("canvas");
+    col.width = W; col.height = H;
+    const cc = col.getContext("2d");
+    const img = cc.createImageData(W, H);
+    // The stone is the cream grey of the head's face, the paint is the teal
+    // of its ruff, and the paint sits in the plumes with the stone showing
+    // between them and worn through on their ridges, which is what the head
+    // looks like up close.
+    const paint = [0.13, 0.40, 0.31], stone = [0.58, 0.54, 0.44], ochre = [0.44, 0.30, 0.17];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const h = hAt(x, y);
+      // groove and stone ground below 0.3, paint on the plume body, stone
+      // worn through above 0.9 at the ridge
+      const onPlume = Math.min(1, Math.max(0, (h - 0.30) / 0.12));
+      const wear = Math.max(0, (h - 0.88) / 0.12);
+      const grain = 0.86 + Math.random() * 0.28;
+      const o = Math.random() < 0.010 ? 1 : 0;
+      const i = (y * W + x) * 4;
+      for (let ch = 0; ch < 3; ch++) {
+        const painted = paint[ch] * (0.70 + 0.55 * h);
+        const ground = stone[ch] * (0.55 + 0.60 * h);
+        let v = (ground * (1 - onPlume) + painted * onPlume) * (1 - wear) + stone[ch] * 1.05 * wear;
+        v = v * (1 - o) + ochre[ch] * o;
+        img.data[i + ch] = Math.min(255, v * grain * 255);
+      }
+      img.data[i + 3] = 255;
+    }
+    cc.putImageData(img, 0, 0);
+
+    // normals from the height, tangent space, +Y up
+    const nrm = document.createElement("canvas");
+    nrm.width = W; nrm.height = H;
+    const nc = nrm.getContext("2d");
+    const nimg = nc.createImageData(W, H);
+    const STRENGTH = 4.0;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const dx = (hAt(x + 1, y) - hAt(x - 1, y)) * STRENGTH;
+      const dy = (hAt(x, y + 1) - hAt(x, y - 1)) * STRENGTH;
+      const l = Math.hypot(dx, dy, 1);
+      const i = (y * W + x) * 4;
+      nimg.data[i] = (-dx / l * 0.5 + 0.5) * 255;
+      nimg.data[i + 1] = (dy / l * 0.5 + 0.5) * 255;
+      nimg.data[i + 2] = (1 / l * 0.5 + 0.5) * 255;
+      nimg.data[i + 3] = 255;
+    }
+    nc.putImageData(nimg, 0, 0);
+
+    const mk = (src) => {
+      const t = new pc.Texture(device, { width: W, height: H, format: pc.PIXELFORMAT_RGBA8, mipmaps: true });
+      t.addressU = t.addressV = pc.ADDRESS_REPEAT;
+      t.setSource(src);
+      return t;
+    };
+    return { diffuse: mk(col), normal: mk(nrm) };
+  };
+
+  // A standing feather, the same green stone as the ruff on the head, with a
+  // ridge and a darker edge. Two tones, which is all that survives twenty
+  // pixels across.
   const featherTexture = (device) => {
     const W = 64, H = 256;
     const cv = document.createElement("canvas");
     cv.width = W; cv.height = H;
     const c = cv.getContext("2d");
     const g = c.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0.00, "#1f331f");
-    g.addColorStop(0.28, "#5e4323");
-    g.addColorStop(0.70, "#6f4a22");
-    g.addColorStop(1.00, "#4e1b12");
+    g.addColorStop(0.00, "#244a3a");
+    g.addColorStop(0.55, "#2f6a52");
+    g.addColorStop(1.00, "#1f4536");
     c.fillStyle = g;
     c.fillRect(0, 0, W, H);
-    // Dark at both edges of the vane. At twenty pixels across, a feather is
-    // its outline and its shaft and nothing finer; the barbs of the first pass
-    // did not survive the size, and a pale edge made them read as sweets.
+    for (let i = 0; i < 1400; i++) {
+      const v = Math.random() < 0.5 ? "rgba(140,150,120,0.22)" : "rgba(10,20,12,0.25)";
+      c.fillStyle = v;
+      c.fillRect(Math.random() * W, Math.random() * H, 1.5, 1.5);
+    }
     const e = c.createLinearGradient(0, 0, W, 0);
-    e.addColorStop(0.00, "rgba(10,8,4,0.70)");
-    e.addColorStop(0.22, "rgba(10,8,4,0.0)");
-    e.addColorStop(0.78, "rgba(10,8,4,0.0)");
-    e.addColorStop(1.00, "rgba(10,8,4,0.70)");
+    e.addColorStop(0.00, "rgba(6,12,8,0.75)");
+    e.addColorStop(0.22, "rgba(6,12,8,0.0)");
+    e.addColorStop(0.78, "rgba(6,12,8,0.0)");
+    e.addColorStop(1.00, "rgba(6,12,8,0.75)");
     c.fillStyle = e;
     c.fillRect(0, 0, W, H);
-    // the shaft, root to just short of the tip
-    c.strokeStyle = "rgba(16,10,5,0.92)";
-    c.lineWidth = 5;
+    c.strokeStyle = "rgba(205,195,160,0.85)";
+    c.lineWidth = 4;
     c.beginPath(); c.moveTo(W / 2, 0); c.lineTo(W / 2, H * 0.92); c.stroke();
     const t = new pc.Texture(device, { width: W, height: H, format: pc.PIXELFORMAT_RGBA8, mipmaps: true });
     t.addressU = t.addressV = pc.ADDRESS_CLAMP_TO_EDGE;
-    t.setSource(cv);
-    return t;
-  };
-
-  // Scales. Rows of overlapping arcs, offset every other row, dark at the belly
-  // and light along the back, which is the v axis of the tube.
-  const scaleTexture = (device, s) => {
-    const cv = document.createElement("canvas");
-    cv.width = cv.height = s;
-    const c = cv.getContext("2d");
-    // Every colour here was read out of the head's own texture rather than
-    // chosen: emerald at hue 150 is 30 percent of its painted pixels, the red
-    // at hue 9 is 22 and the ochre at hue 30 is 22. Measured again on the
-    // emerald itself: its painted pixels between hue 140 and 160 average
-    // rgb 31, 71, 51, running from 26, 60, 41 in the shadow to 38, 102, 85 in
-    // the light. The scales below run through that same range.
-    //
-    // Big, and few, and the contrast is in the fill. The map was reaching the
-    // mesh the whole time, a red and green test proved it, and the body still
-    // read as flat green on the page, because the only contrast in the map
-    // was a stroke a pixel and a half wide between scales that were all one
-    // value, and the mip chain averaged it away: at the width this tube has
-    // on screen, eight rows round a body twenty pixels across are two and a
-    // half pixels each. So four rows and six scales a tile, and each scale
-    // runs from a light edge where it stands free to a dark base where the
-    // next one covers it, over a gap darker than any green on the head.
-    const rgb = (r, g, b) => `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
-    c.fillStyle = "#08160e";
-    c.fillRect(0, 0, s, s);
-    const rows = 4, cols = 6;
-    const rh = s / rows, cw = s / cols;
-    for (let r = 0; r < rows; r++) {
-      // lighter along the back, which is the middle of the v range
-      const back = 1 - Math.abs((r + 0.5) / rows - 0.5) * 2;
-      const l = 0.70 + 0.45 * back;
-      const cy = (r + 0.5) * rh;
-      // Drawn toward the head along x, so each scale lands over the base of
-      // the one behind it and its free edge faces the tail, as they lie on a
-      // snake. The gradient covers exactly the part left showing.
-      for (let k = -1; k <= cols; k++) {
-        const x0 = (k + (r % 2 ? 0.5 : 0)) * cw;
-        const g = c.createLinearGradient(x0 - cw * 0.15, 0, x0 + cw * 0.85, 0);
-        // Yellower in the map than the head's paint, because the head is
-        // judged as it renders: under the warm key its hue 150 lands at 120,
-        // and a body painted at 150 landed at 133 beside it, visibly bluer.
-        // A bright free edge against the dark base of the next scale is what
-        // reads as scales. Spread evenly across the scale the ramp was lost
-        // under the key light's own shading of the tube.
-        g.addColorStop(0, rgb(64 * l, 130 * l, 68 * l));
-        g.addColorStop(0.30, rgb(40 * l, 90 * l, 46 * l));
-        g.addColorStop(0.75, rgb(18 * l, 46 * l, 24 * l));
-        g.addColorStop(1, rgb(9 * l, 24 * l, 13 * l));
-        c.beginPath();
-        c.ellipse(x0 + cw * 0.5, cy, cw * 0.64, rh * 0.46, 0, 0, Math.PI * 2);
-        c.fillStyle = g;
-        c.fill();
-        c.strokeStyle = "rgba(6,16,10,0.95)";
-        c.lineWidth = 4;
-        c.stroke();
-      }
-    }
-    const t = new pc.Texture(device, { width: s, height: s, format: pc.PIXELFORMAT_RGBA8, mipmaps: true });
-    t.addressU = t.addressV = pc.ADDRESS_REPEAT;
-    // Sampled anisotropically, or none of the above survives: the v axis of
-    // the map is wrapped round a tube twenty pixels wide, so across the tube
-    // it is minified ten to one and more at the edges, and an isotropic mip
-    // chain takes the length of the body down by the same factor. Shot at
-    // 13.0 without this, with the big scales already in the map: still a
-    // smooth tube.
-    t.anisotropy = Math.min(16, device.maxAnisotropy || 16);
     t.setSource(cv);
     return t;
   };
@@ -345,6 +416,8 @@
     m.setNormals(d.nrm);
     m.setUvs(0, d.uv);
     m.setIndices(d.idx);
+    // tangents, so the carved plumes can be lit through a normal map
+    m.setVertexStream(pc.SEMANTIC_TANGENT, pc.calculateTangents(d.pos, d.nrm, d.uv, d.idx), 4);
     m.update(pc.PRIMITIVE_TRIANGLES);
     return m;
   };
@@ -354,6 +427,7 @@
     const plume = mesh(app, buildFeathers(0));
     const refresh = (m2, d) => {
       m2.setPositions(d.pos); m2.setNormals(d.nrm); m2.setUvs(0, d.uv);
+      m2.setVertexStream(pc.SEMANTIC_TANGENT, pc.calculateTangents(d.pos, d.nrm, d.uv, d.idx), 4);
       m2.update(pc.PRIMITIVE_TRIANGLES);
     };
 
@@ -363,9 +437,13 @@
     // At one, not 0.8: the map's greens were measured off the head, and a
     // multiplier under one was darkening them by a fifth before the light
     // touched them.
+    const maps = plumeMaps(app.graphicsDevice);
     mat.diffuse = new pc.Color(1, 1, 1);
-    mat.diffuseMap = scaleTexture(app.graphicsDevice, 256);
-    mat.diffuseMapTiling = new pc.Vec2(5, 1);
+    mat.diffuseMap = maps.diffuse;
+    mat.diffuseMapTiling = new pc.Vec2(3, 1);
+    mat.normalMap = maps.normal;
+    mat.normalMapTiling = new pc.Vec2(3, 1);
+    mat.bumpiness = 1.6;
     mat.specular = new pc.Color(0.20, 0.19, 0.14);
     // Matte, like the head. At metalness 0.72 and gloss 0.8 the map only had
     // 28 percent of the surface and the rest was one bright line of highlight
@@ -542,7 +620,7 @@
         // on the socket, which is where the body ends. Centred on the socket
         // the body ran into the middle of the skull and read as coming out
         // of somewhere lower down. The scan is 0.74 deep for 1.0 across.
-        inner.setLocalPosition(0, 0, -0.37);
+        inner.setLocalPosition(0, 0, -0.33);
         socket.addChild(inner);
       } else {
         socket.addChild(e);
