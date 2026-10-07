@@ -37,6 +37,17 @@
 
   // Orbit. Filled in once the capture's own bounds are known.
   let yaw = 0, pitch = -5, dist = 3, pivot = new pc.Vec3(0, 1, 0);
+  // ?yaw=<degrees> pins the camera for a shot. The clock can be frozen with
+  // ?t= in js/aura.js, but the spin runs on wall time, so a frozen frame was
+  // being shot from wherever the camera had drifted to since load, which is
+  // the same angle every time and never the angle a visitor sees at that
+  // second. Every strip of the serpent's climb was judged from the wrong
+  // side because of it.
+  const YAW_LOCK = (() => {
+    const v = new URLSearchParams(location.search).get("yaw");
+    return v === null ? null : parseFloat(v);
+  })();
+  if (YAW_LOCK !== null) yaw = YAW_LOCK;
   const place = () => {
     const q = new pc.Quat().setFromEulerAngles(pitch, yaw, 0);
     const off = q.transformVector(new pc.Vec3(0, 0, dist));
@@ -47,7 +58,7 @@
 
   // Spin on its own so it reads as a 3D capture rather than a photograph.
   // A drag takes over; the spin picks up again a moment after letting go.
-  let spinning = true, resumeAt = 0;
+  let spinning = YAW_LOCK === null, resumeAt = 0;
   const SECONDS_PER_TURN = 11;
   const SPIN_DEG_PER_SEC = 360 / SECONDS_PER_TURN;
   app.on("update", (dt) => {
@@ -262,9 +273,9 @@
         // Face front again. The pose that comes out of the light is the one
         // the piece settles on, so it should be met head on and start its
         // turn from there rather than from wherever the first one left off.
-        yaw = 0;
+        yaw = YAW_LOCK === null ? 0 : YAW_LOCK;
         pitch = -5;
-        spinning = true;
+        spinning = YAW_LOCK === null;
         resumeAt = 0;
         place();
         return true;

@@ -42,27 +42,35 @@
   // held 3.5, the fire seen whole 2.8, inside the light 1.6, the cold beat
   // 38.5, the figure 38.2. The first five beats take under a quarter of it
   // and the back half takes three quarters, which is the opposite of how this
-  // was built. Scaled here to about sixteen seconds, keeping those shares.
+  // was built. Scaled here to about sixteen seconds at first, keeping those
+  // shares; what it has become since is set out below.
   const T_BUILD = 0.30;  // the air starts to charge, cold and white
   const T_SPARK = 4.30;  // a point of gold at the chest, the first in the piece
   const T_BURST = 5.04;  // it lets go, and the fire is already at full reach
   const T_WHITE = 5.16;  // the frame is white, and it is very quick
   const T_SWAP  = 5.32;  // the pose changes, under the white
   const T_LIFT  = 5.73;  // the white has been held full, and starts to open
-  const T_STAR  = 6.00;  // the fire stands alone, brightening as it is seen
-  const T_WARM  = 6.12;  // which opens into a volume he is standing inside
-  // From here the piece is shorter than it was, on his call. The fire standing
-  // alone and the warm volume he was left in are gone: the white clears
-  // straight into the cold, the cold holds for about three seconds with its
-  // stars, and then the serpent winds on and the colour of the room turns under
-  // it. Twenty seconds became thirteen, and what came out was the part a
-  // visitor was least likely to stay for.
-  const T_COOL  = 6.16;  // the room cools, stars come out, the halo ring
-  const T_HELD  = 9.30;  // and it stays cold. This is the long beat
-  const T_FIELD = 9.40; // warmth returns and the light flattens into a field
-  const T_DEITY = 9.52; // the figure starts coming out of the blur
-  const T_SET   = 12.60; // it has resolved
-  const T_FAN   = 13.10; // the arms have finished opening
+  // Four hundredths apart on purpose. That collapses the fire's own beat to
+  // nothing without tearing the signals out: the fire still burns through the
+  // white, because sig.star starts before T_BURST, and it dies into the violet
+  // instead of getting a moment of its own. His words: the fire is the result
+  // of the explosion, not a thing that happens after it. With the two a tenth
+  // apart and the cold starting after them, the frame measured 0.64 at 5.82,
+  // 0.10 at 6.02, 0.74 at 6.27, 0.07 at 6.72 and 0.38 at 7.55: white, dark,
+  // gold, dark, violet, a strobe no still of any one beat showed.
+  const T_STAR  = 5.74;  // the white opens straight onto the fire
+  const T_WARM  = 5.78;  // which is already dying
+  const T_COOL  = 5.80;  // the room cools, stars come out
+  // The serpent sets off while the room is still violet, and the violet leaves
+  // across its whole climb, so the climb and the colour turning are one
+  // movement. It used to set off a quarter second after the violet had gone,
+  // which left the window open to the page for two seconds with the head
+  // arriving inside it. Thirteen and a half seconds became about eleven.
+  const T_DEITY = 7.60;  // the serpent starts climbing, under the violet
+  const T_HELD  = 7.70;  // the violet starts to leave, as slowly as it climbs
+  const T_FIELD = 7.70;  // the tone starts turning, the same instant
+  const T_SET   = 10.80; // the serpent has resolved
+  const T_FAN   = 11.20; // and come to rest on his shoulder
 
   // How much light the room keeps once the flash is gone. The backdrop reads
   // this as its resting state, so he is left standing in light rather than in
@@ -120,7 +128,11 @@
     //            costs more than it saves.
     const q = new URLSearchParams(location.search);
     const HOLD_AT = q.has("t") ? parseFloat(q.get("t")) : NaN;
-    const SKIP = q.has("fast") ? T_SPARK - 0.4 : 0;
+    // ?serpent starts just before the serpent sets off, for the lab page that
+    // replays only the climb. The camera then starts from the front rather
+    // than from where a full run would have carried it, which is a known
+    // difference and the lab says so.
+    const SKIP = q.has("fast") ? T_SPARK - 0.4 : q.has("serpent") ? T_DEITY - 0.5 : 0;
     scene.onReady(() => { t = isNaN(HOLD_AT) ? SKIP : HOLD_AT; });
 
     app.on("update", (dt) => {
@@ -269,8 +281,8 @@
       // building for the whole of the longer beat, which is what was asked
       // for.
       scene.aura(
-        (.004 + .150 * Math.pow(k2, 1.15)) * out,
-        Math.min(1, Math.pow(k2, 1.45) * 1.35) * flick * out,
+        (.004 + .150 * Math.pow(k2, 0.85)) * out,
+        Math.min(1, Math.pow(k2, 1.00) * 1.35) * flick * out,
         null
       );
       // The fire reaches full size under the white, not after it. When the
@@ -290,13 +302,28 @@
       // brightness with streaks tearing across it, and it does not go white
       // until a quarter of a second later. Ours was at 0.80 before the blow
       // had even landed, so the violent part of it was never seen.
+      // It clears on a clock of its own, not on T_STAR's. With the fire's beat
+      // collapsed, T_STAR less the old margin fell before T_LIFT, the window
+      // ran backwards and the wash sat at one for the rest of the piece. The
+      // fifteen hundredths are what the window measured before that, which is
+      // the four frames the reference takes.
       sig.white = (ease(clamp(norm(t, T_BURST + .05, T_WHITE), 0, 1))
-              * Math.pow(1 - clamp(norm(t, T_LIFT, T_STAR - .12), 0, 1), 2.6)).toFixed(3);
-      sig.warm = ease(clamp(norm(t, T_STAR, T_WARM), 0, 1)).toFixed(3);
+              * Math.pow(1 - clamp(norm(t, T_LIFT, T_LIFT + .15), 0, 1), 2.6)).toFixed(3);
+      // And it lets go. It used to ramp up and stay at one forever, which was
+      // invisible while the cold beat painted over it and then came straight
+      // back as a gold starburst the moment the cold lifted, right under the
+      // serpent's arrival. Three seconds of the piece were that, and no still
+      // of a single beat showed it.
+      sig.warm = (ease(clamp(norm(t, T_STAR, T_WARM), 0, 1))
+              * (1 - ease(clamp(norm(t, T_COOL, T_COOL + .7), 0, 1)))).toFixed(3);
       // The cold has to hold, not touch and leave. Ramping it up and starting
       // the fade in the same instant is what kept it from ever arriving.
+      // And it leaves across the serpent's whole climb, from T_HELD to a second
+      // short of the serpent settling, instead of in the half second it used
+      // to take. The indigo takes over from it as it goes, in js/backdrop.frag,
+      // so the room is turning the entire time the serpent is rising.
       sig.cool = (ease(clamp(norm(t, T_COOL, T_COOL + 1.3), 0, 1))
-              * (1 - ease(clamp(norm(t, T_HELD, T_FIELD + .5), 0, 1)))).toFixed(3);
+              * (1 - ease(clamp(norm(t, T_HELD, T_SET - 1.0), 0, 1)))).toFixed(3);
       // The cold beat is the longest thing on the page and ours did not move
       // for the whole of it: hue, saturation and brightness all measured dead
       // flat to three decimals across five seconds. The reference's does move,
@@ -326,7 +353,10 @@
       if (!swapped && t >= T_SWAP) swapped = scene.swap();
 
       // ---- the figure ----
-      serpent.reveal(clamp(norm(t, T_DEITY, T_FAN), 0, 1));
+      // It is handed where the camera is, as the stage's yaw in degrees, so the
+      // head can come out of the floor facing the viewer and settle facing the
+      // viewer, wherever the viewer happens to be by then.
+      serpent.reveal(clamp(norm(t, T_DEITY, T_FAN), 0, 1), want * 180 / Math.PI);
       serpent.heat(1 - clamp(norm(t, T_SET, T_SET + 1.8), 0, 1));
       // For one pass it was drawn in js/backdrop.frag. It was four
       // attempts at a lit gold object built from spheres and capsules and

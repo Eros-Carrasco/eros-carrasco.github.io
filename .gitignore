@@ -28,3 +28,4 @@ references/
 
 # Scratch checkouts that background agents work in.
 .claude/worktrees/
+_trabajo/

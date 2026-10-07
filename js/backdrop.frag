@@ -207,12 +207,15 @@ void main() {
   float sRay = (fire * 2.6 + line * .40) * smoothstep(.008, .050, sr) * star;
 
   // ---- the cold breath: the room empties out and the stars come through ----
-  // Sparse and soft. One cell in fifty holds a star, placed somewhere inside
+  // Sparse and soft. One cell in eleven holds a star, placed somewhere inside
   // itself rather than filling it, so the sky does not read as noise on a
   // grid. Filling every cell is what made the earlier pass look like static.
+  // It was one in fifty, and he asked for more. Shot at 7.0 against one in
+  // twenty and one in eight: one in eight starts to tile like grain at the
+  // edges of the box, one in eleven still reads as a sky.
   vec2  sp   = p * 86.;
   vec2  cell = floor(sp);
-  float keep = step(.980, hash(cell + 2.2));
+  float keep = step(.910, hash(cell + 2.2));
   vec2  at   = vec2(hash(cell), hash(cell + 7.7));
   float dd   = length(fract(sp) - at);
   float sky  = keep * exp(-dd * dd * 70.);
@@ -251,7 +254,10 @@ void main() {
   // very first frame, in a sequence whose first five seconds are a cold night.
   // He saw it before I did. Before the light lets go there is nothing warm in
   // the box at all and the page shows through.
-  float lamp = max(g, field);
+  // Only the warm beat, never the field. Hung off whichever of the two was
+  // higher it came back on as the field rose, which is exactly when the
+  // serpent arrives.
+  float lamp = g;
   col += mix(lampC, vec3(1.00, .92, .76), g * .55) * lit * (.85 + g * .62)
        * (1. - .45 * c) * lamp;
 
@@ -340,7 +346,13 @@ void main() {
   // gold or the figure stops existing: they were the same yellow for a pass
   // and the arms vanished into it. Dark and warm, so the gold reads against
   // it the way the reference's gold reads against the dark between its arms.
-  float dei = clamp(uField, 0., 1.);
+  // The cold beat hands over to this as the serpent climbs, and the two are
+  // one closed window, not two. Read off uField alone the field left a gap:
+  // the cold was gone by 9.9 and the field, tied to the climb, was only half
+  // up at 11.25, so for two seconds the page showed through with the
+  // serpent's head arriving inside it. So once the climb has begun the field
+  // is at least whatever the cold has given up.
+  float dei = max(field, (1. - cool) * step(.001, field));
   // What the violet turns into when the serpent arrives. Taken off the head's
   // own ochre, hue 30, which is 22 percent of its painted pixels, rather than a
   // gold chosen for a figure that no longer exists. It stays dark, because an
@@ -378,8 +390,9 @@ void main() {
   // room, the cold one and the flat warm one, are the exceptions and they
   // close the window while they last.
   float a = clamp(max(max(col.r, col.g), col.b) * 2.1, 0., 1.);
-  a = max(a, cool * .96);
-  a = max(a, field * .90);
+  // Their sum, not the larger of the two. They cross in the middle of the
+  // handover, and the larger alone opened the window to half at the crossing.
+  a = max(a, clamp(cool * .96 + dei * .90, 0., 1.));
 
   fragColor = vec4(col, a);
 }
