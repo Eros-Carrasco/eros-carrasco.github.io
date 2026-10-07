@@ -337,11 +337,11 @@ const PROJECTS = {
   about: {
     title: "Eros Carrasco",
     subtitle:
-      "Builds the real-time graphics and the computer vision that put the real world inside a headset.",
+      "Builds the real-time graphics and the computer vision that bring the real world into XR.",
     pills: ["CUDA", "Gaussian Splatting", "Computer Vision", "Deep Learning", "Unity and Unreal"],
     hero: {
       type: "image",
-      src: `${BASE_URL}assets/images/card_about.jpg`,
+      src: `${BASE_URL}assets/images/about_hero.jpg`,
     },
     currently: {
       lead: "Graduate researcher at NYU.",
@@ -561,7 +561,7 @@ function heroHTML(hero) {
 
   if (hero.type === "image") {
     return `
-      <div class="project-hero-media">
+      <div class="project-hero-media project-hero-media-image">
         <img src="${hero.src}" alt="" />
       </div>
     `;

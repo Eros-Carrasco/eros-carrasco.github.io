@@ -96,13 +96,19 @@ body.project-page {
   min-height: 0;
 }
 
+/* Caption rides over the photo, the way the project cards do it. */
 .card-about-caption {
-  flex-shrink: 0;
-  padding: 16px 18px 18px;
-  background: rgba(10, 17, 23, 0.45);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-top: 1.5px solid rgba(255, 255, 255, 0.08);
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 20px 18px 18px;
+  background: linear-gradient(
+    to top,
+    rgba(10, 17, 23, 0.95) 0%,
+    rgba(10, 17, 23, 0.85) 45%,
+    rgba(10, 17, 23, 0) 100%
+  );
 }
 
 .card-about-name {
@@ -286,6 +292,12 @@ body.project-page {
   border:1.5px solid rgba(255,255,255,0.06);
 }
 
+/* A photo hero keeps the crop it was given, so nothing gets cut off. */
+.project-hero-media-image {
+  height: auto;
+  aspect-ratio: 1.95;
+}
+
 .project-hero-media {
   width: 100%;
   /* aspect-ratio: 16 / 9; */
@@ -400,7 +412,6 @@ body.project-page {
 @media (min-width: 900px) {
   .project-sections {
     grid-template-columns: 1.2fr 0.8fr;
-    align-items: start;
   }
   .project-section.span-2 {
     grid-column: 1 / -1;
