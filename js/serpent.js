@@ -31,20 +31,23 @@
   // it. TURNS, inside the one and a half to two he left open, is the count
   // that brings the last heading round to face the camera where it is at the
   // landing, so the settle has almost nothing left to turn.
-  // Negative: it coils the way the camera orbits. The camera turns through
-  // 118 degrees between the second the head appears and the second it lands,
-  // and a single turn against it put the head behind him for the whole second
-  // half of the climb, landing out of sight. Turning with it, the head comes
-  // up in front of him 25 degrees off the camera and lands 20 degrees off it.
-  // PHASE is where on the circle it starts: minus 100 degrees, which is the
-  // camera's side at that second.
-  const PHASE = -1.745;
+  // Laid out for a camera in front and a scene that is not turning, which is
+  // how he asked for it to be judged, against his drawing. The coil begins at
+  // his right side, where the diagonal lead in delivers the head, climbs away
+  // behind him, crosses in front of his torso once, and arrives beside his
+  // left shoulder moving toward the viewer. That last part is the point: the
+  // head reaches the shoulder already facing front because that is the way it
+  // is travelling, so there is no turn to make on arrival. An earlier layout
+  // ended moving sideways and the head swung ninety degrees on the spot,
+  // which was the extreme turn he kept seeing. Start at ninety degrees; one
+  // and seven twelfths of a turn brings the end to three hundred.
+  const PHASE = 1.571;
   // His drawing: one wide turn climbing on a diagonal, crossing in front of
   // his torso once and finishing at his shoulder. It had been 1.45 tight
   // turns, which he said felt cramped now that the animal is bigger. The
   // count no longer has to deliver the final heading, since the head faces
   // the viewer whenever it stops moving, so it is free to follow the drawing.
-  const TURNS = -1.20;
+  const TURNS = 1.583;
   // Tall and narrow, but not tight. Built as wide as it was high the view sat
   // inside the coil; built at this radius times two thirds it crossed his
   // chest and his hands at every turn and he was furniture inside it. Here it
@@ -80,13 +83,18 @@
   // comes up out of it with neck already behind it, instead of appearing in
   // the air as a head on its own, which he said looked very strange, and he
   // was right. u runs from -RISE to 1: the rise, then the helix.
-  const RISE = 0.12, DROP = 0.90;
+  // The lead in is a diagonal, not a vertical: it comes up out of the floor
+  // rising to the right and joins the coil at his right side. That is the
+  // right hand panel of his drawing, body from the lower left, head up and to
+  // the right in profile. A vertical rise had the head's first move going
+  // away into the depth, which from the front showed the back of the ruff.
+  const RISE = 0.14, DROP = 0.90, DRIFT = 0.80;
   const curve = (u) => {
     if (u < 0) {
       const h0 = helix(0);
       // not clamped: what is further back than the rise is simply deeper
       const f = -u / RISE;
-      return [h0[0], h0[1] - DROP * f, h0[2]];
+      return [h0[0] - DRIFT * f, h0[1] - DROP * f, h0[2]];
     }
     return helix(u);
   };
@@ -540,7 +548,7 @@
     // behaviour as the running page.
     const placeHead = (pIn) => {
       const pr = Math.min(1, Math.max(0, pIn));
-      const e = 1 - Math.pow(1 - pr, 2.0);
+      const e = 1 - Math.pow(1 - pr, 1.6);
       const k = headAt(e);
       const c = curve(k);
       const dd = 0.006;
@@ -552,11 +560,19 @@
       const flat = Math.hypot(dir[0], dir[2]);
       const hspeed = speed * flat;
       const camHead = camYaw === null ? 0 : camYaw * Math.PI / 180;
-      const ha = flat > 1e-3 ? Math.atan2(dir[0], dir[2]) : camHead;
-      // rest goes to one as sideways movement dies away, which happens on the
-      // rise and in the last tenth of the climb and nowhere else
+      // On the rise the motion is straight up and has no heading, so it takes
+      // the heading it will have the moment it joins the coil, and looks up
+      // along it: his drawing, a head coming out of the floor looking up on
+      // the diagonal it is about to climb. Facing the viewer there instead,
+      // which was the first version, meant an eighty degree swing in one step
+      // the instant it set off.
+      const first = sub(helix(0.02), helix(0));
+      const firstHead = Math.atan2(first[0], first[2]);
+      const ha = flat > 1e-3 ? Math.atan2(dir[0], dir[2]) : firstHead;
+      // rest goes to one as sideways movement dies away, and only counts in
+      // the second half, which is to say at the landing
       const xr = Math.min(1, hspeed / 1.5);
-      const rest = 1 - xr * xr * (3 - 2 * xr);
+      const rest = (1 - xr * xr * (3 - 2 * xr)) * (pr > 0.5 ? 1 : 0);
       let dA = camHead - ha;
       while (dA > Math.PI) dA -= TAU;
       while (dA < -Math.PI) dA += TAU;
@@ -576,8 +592,10 @@
       const sway = [(Math.sin(w * 0.83) * 0.20 + Math.sin(w * 0.37 + 2.1) * 0.09) * calm,
                     (Math.sin(w * 0.61 + 1.7) * 0.13) * calm,
                     (Math.cos(w * 0.71 + 0.4) * 0.20 + Math.cos(w * 0.29 + 0.8) * 0.08) * calm];
-      const pitch = dir[1] * (1 - rest) * 0.85 + 0.18 * rest - 0.05;
-      const pl = Math.max(0.35, flat * (1 - rest) + 0.9 * rest);
+      // up on the diagonal through the rise, easing onto the coil's own slope
+      const rising = k < 0 ? 1 : Math.max(0, 1 - k / 0.10);
+      const pitch = (dir[1] * (1 - rest) * 0.85 + 0.18 * rest - 0.05) * (1 - rising) + 0.62 * rising;
+      const pl = Math.max(0.35, flat * (1 - rest) + 0.9 * rest) * (1 - rising) + 0.80 * rising;
       const aim = norm([Math.sin(hhS) * pl + sway[0], pitch + sway[1], Math.cos(hhS) * pl + sway[2]]);
       socket.setLocalPosition(c[0], c[1], c[2]);
       socket.lookAt(c[0] + aim[0], c[1] + aim[1], c[2] + aim[2]);
@@ -650,7 +668,7 @@
         // Eased out: it comes up out of the floor at speed and slows into the
         // shoulder. Eased both ways it sat underground for most of a second,
         // and a settle that arrives at a crawl is the right end of the two.
-        const e = 1 - Math.pow(1 - k, 2.0);
+        const e = 1 - Math.pow(1 - k, 1.6);
         placeHead(k);
         refresh(body, buildBody(e));
         refresh(plume, buildFeathers(e));
