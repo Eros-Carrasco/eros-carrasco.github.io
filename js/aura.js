@@ -260,9 +260,16 @@
       const k2 = clamp(norm(t, T_BUILD, T_BURST), 0, 1);
       const out = 1 - clamp(norm(t, T_BURST, T_WHITE), 0, 1);
       const flick = .86 + .14 * Math.sin(t * 17.3) * Math.sin(t * 6.1);
+      // The exponents came down when the gathering was stretched. They are
+      // powers of how far through the window we are, so doubling the window
+      // and leaving them alone does not make the steam last longer, it makes
+      // it start later: at 1.2 seconds there was six times less of it than
+      // before. Halving them puts it back where it appeared and lets it go on
+      // building for the whole of the longer beat, which is what was asked
+      // for.
       scene.aura(
-        (.004 + .150 * Math.pow(k2, 2.0)) * out,
-        Math.min(1, Math.pow(k2, 2.6) * 1.35) * flick * out,
+        (.004 + .150 * Math.pow(k2, 1.15)) * out,
+        Math.min(1, Math.pow(k2, 1.45) * 1.35) * flick * out,
         null
       );
       // The fire reaches full size under the white, not after it. When the
