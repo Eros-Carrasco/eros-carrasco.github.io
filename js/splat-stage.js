@@ -68,6 +68,10 @@
   // Spin on its own so it reads as a 3D capture rather than a photograph.
   // A drag takes over; the spin picks up again a moment after letting go.
   let spinning = YAW_LOCK === null, resumeAt = 0;
+  // Held still, facing front, from the change of pose until the serpent has
+  // come to rest on his shoulder; then the turntable starts again with the
+  // two of them on it. His call. js/aura.js sets and clears it.
+  let held = false;
   // Was 11. He asked for half the speed once the serpent was on it.
   const SECONDS_PER_TURN = 22;
   const SPIN_DEG_PER_SEC = 360 / SECONDS_PER_TURN;
@@ -76,6 +80,7 @@
       if (resumeAt && performance.now() > resumeAt) spinning = true;
       return;
     }
+    if (held) return;
     yaw -= SPIN_DEG_PER_SEC * dt;
     place();
   });
@@ -147,6 +152,8 @@
     uniform float uFade;
     uniform float uWind;
     uniform vec3  uTint;
+    uniform float uGrow;   // how much bigger every splat is drawn, 1 as it gathers
+    uniform float uAir;    // alpha the far splats carry, 0 as it gathers
 
     float sh(vec3 p) { return fract(sin(dot(p, vec3(12.99, 78.23, 37.71))) * 43758.5453); }
     float sn(vec3 p) {
@@ -195,7 +202,7 @@
       float d = frill(oc);
       // Kept small. A big gaussian smears whatever little weight it carries
       // over a wide patch, and a field of wide patches is a cloud, not vapour.
-      scale *= 1.0 + 1.1 * d;
+      scale *= (1.0 + 1.1 * d) * max(uGrow, 1.0);
     }
     void modifySplatColor(vec3 center, inout vec4 color) {
       float d = frill(center);
@@ -209,20 +216,34 @@
       // Two hundred and twenty eight thousand splats, hundreds of them
       // stacked on any one pixel, so what looks like nothing on its own is
       // still a wall when it is summed. The air gets under a thousandth.
-      float a = uFade * (0.0006 + 0.90 * near);
+      // uAir is what lets the same steam fill the box for the change of
+      // pose: the far splats, which carry under a thousandth while it
+      // gathers, carry enough to stack into a wall when it is told to.
+      float a = uFade * (0.0006 + uAir + 0.90 * near);
       vec3 tint = mix(uTint * 0.86, vec3(1.0), near);
       color = vec4(tint, color.a * a);
     }
 `;
 
   let shellMat = null;
+  // The veil is a third copy of him, drawn in a layer after everything else
+  // so it sits in front: the shell sits behind him by construction, so
+  // however thick it got the pose was changing in plain view. The veil only
+  // exists while the steam fills the box, and it is built once, from the
+  // first pose, since by the time it is on it is a cloud and not a shape.
+  let veil = null, veilMat = null;
+  const veilLayer = new pc.Layer({ name: "veil" });
+  app.scene.layers.push(veilLayer);
+  camera.camera.layers = camera.camera.layers.concat([veilLayer.id]);
 
-  const addShell = (asset) => {
-    const e = new pc.Entity("aura-shell");
-    e.addComponent("gsplat", { asset, unified: false });
+  const addShell = (asset, layers) => {
+    const e = new pc.Entity(layers ? "aura-veil" : "aura-shell");
+    const opts = { asset, unified: false };
+    if (layers) opts.layers = layers;
+    e.addComponent("gsplat", opts);
     app.root.addChild(e);
     const mat = e.gsplat.material;
-    if (!mat) return e;
+    if (!mat) return { e, mat: null };
     if (mat.shaderChunks && mat.shaderChunks.glsl && mat.shaderChunks.glsl.set) {
       mat.shaderChunks.glsl.set("gsplatModifyVS", SHELL_CHUNK);
     } else {
@@ -233,16 +254,23 @@
     mat.setParameter("uPush", 0);
     mat.setParameter("uWind", 0);
     mat.setParameter("uFade", 0);
+    mat.setParameter("uGrow", 1);
+    mat.setParameter("uAir", 0);
     mat.setParameter("uTint", [.84, .94, 1.0]);
     mat.update();
-    shellMat = mat;
-    return e;
+    return { e, mat };
   };
 
   const show = (asset) => {
     if (current) { current.destroy(); current = null; }
     if (shell) { shell.destroy(); shell = null; shellMat = null; }
-    shell = addShell(asset);
+    const s = addShell(asset);
+    shell = s.e; shellMat = s.mat;
+    if (!veil) {
+      const v = addShell(asset, [veilLayer.id]);
+      veil = v.e; veilMat = v.mat;
+      veil.enabled = false;
+    }
     const e = new pc.Entity();
     e.addComponent("gsplat", { asset });
     app.root.addChild(e);
@@ -265,16 +293,32 @@
       onReady: (fn) => ready.push(fn),
       // How far the aura stands off the silhouette, how strong it is, and what
       // colour it runs. js/aura.js drives all three.
-      aura: (push, fade, tint) => {
+      aura: (push, fade, tint, grow, air) => {
         if (!shellMat) return;
         shellMat.setParameter("uHeart", [pivot.x, pivot.y, pivot.z]);
         shellMat.setParameter("uPush", push * subjectHeight);
         shellMat.setParameter("uFade", fade);
         shellMat.setParameter("uWind", performance.now() / 1000);
+        shellMat.setParameter("uGrow", grow === undefined ? 1 : grow);
+        shellMat.setParameter("uAir", air === undefined ? 0 : air);
         if (tint) shellMat.setParameter("uTint", tint);
+      },
+      // The copy in front of him, for the steam that fills the box. Off
+      // whenever it carries nothing, so it costs nothing outside its beat.
+      veil: (push, fade, grow, air) => {
+        if (!veilMat) return;
+        veil.enabled = fade > 0.001;
+        if (!veil.enabled) return;
+        veilMat.setParameter("uHeart", [pivot.x, pivot.y, pivot.z]);
+        veilMat.setParameter("uPush", push * subjectHeight);
+        veilMat.setParameter("uFade", fade);
+        veilMat.setParameter("uWind", performance.now() / 1000);
+        veilMat.setParameter("uGrow", grow);
+        veilMat.setParameter("uAir", air);
       },
       // Called from inside the flash. Nothing happens if the second pose has
       // not finished downloading, which keeps a slow line from showing a cut.
+      hold: (on) => { held = !!on; },
       swap: () => {
         if (!pending) return false;
         index = 1;
