@@ -221,8 +221,8 @@ void main() {
 
   // A thin flat ring standing over his head, the way the reference hangs one
   // over the lotus. Squashed hard, so it reads as a disc seen almost edge on.
-  vec2  rp  = (p - vec2(.0, .72)) * vec2(1.0, 3.6);
-  float ring2 = exp(-pow((length(rp) - .33) / .035, 2.0)) * cool;
+  // The flat ring that used to sit over his head through the cold beat is
+  // gone, on his call.
 
   // Before the burst this is a dark room with one shaft falling into it, and
   // it goes colder and closer as the air gathers. After it, the capture is
@@ -328,7 +328,6 @@ void main() {
   night *= .62 + .78 * swell;
   vec3 cold = mix(col * .30, night, cool);
   cold += vec3(.86, .80, 1.00) * sky * (.70 + .60 * swell) * cool;
-  cold += vec3(.92, .84, 1.00) * ring2 * .95;
   col = mix(col, cold, cool);
 
   // The figure is not drawn here. It was, for one pass, as a flat yellow cel

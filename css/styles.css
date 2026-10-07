@@ -1140,29 +1140,6 @@ details.numbers[open] summary {
   z-index: 2;
   will-change: transform, opacity;
 }
-/* The point of light at the chest, before it lets go. It has to be in front
-   of the capture, not behind it, or the body covers the one thing the whole
-   gathering is building towards. Four points with an edge on them, because in
-   the reference the shape is most of what it is. */
-.splat-stage .splat-spark {
-  position: absolute;
-  left: 50%;
-  top: 46%;
-  width: 46%;
-  aspect-ratio: 1;
-  transform: translate(-50%, -50%) scale(0);
-  opacity: 0;
-  pointer-events: none;
-  z-index: 3;
-  background: radial-gradient(circle,
-    rgba(255, 255, 255, 1) 0%,
-    rgba(255, 246, 198, 1) 22%,
-    rgba(255, 206, 74, 0.96) 45%,
-    rgba(255, 170, 30, 0.75) 100%);
-  clip-path: polygon(50% 0%, 57% 43%, 100% 50%, 57% 57%, 50% 100%, 43% 57%, 0% 50%, 43% 43%);
-  will-change: transform, opacity;
-}
 @media (prefers-reduced-motion: reduce) {
   .splat-stage .splat-flash,
-  .splat-stage .splat-spark { display: none; }
 }

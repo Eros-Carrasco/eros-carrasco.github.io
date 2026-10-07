@@ -103,10 +103,6 @@
     flash.setAttribute("aria-hidden", "true");
     el.appendChild(flash);
 
-    const spark = document.createElement("div");
-    spark.className = "splat-spark";
-    spark.setAttribute("aria-hidden", "true");
-    el.appendChild(spark);
 
     // ---- the clock ----
     let t = -1;                  // seconds since the idle pose landed
@@ -252,12 +248,11 @@
       const chg = clamp(norm(t, T_BUILD, T_BURST), 0, 1)
                 * (1 - clamp(norm(t, T_BURST, T_BURST + .22), 0, 1));
       sig.charge = chg.toFixed(3);
-      // The spark, in front of the capture where it can be seen. It grows,
-      // it gutters, and it is gone the instant the light lets go.
+      // The four pointed star that used to grow at his chest is gone, on his
+      // call. What is left of that beat is the air gathering on his own outline
+      // and the light letting go, with nothing drawn on top of him.
       const sk = clamp(norm(t, T_SPARK, T_BURST), 0, 1);
-      const alive = sk > 0 && t < T_BURST;
-      spark.style.transform = "translate(-50%, -50%) scale(" + (.10 + sk * sk * 1.25).toFixed(3) + ")";
-      spark.style.opacity = alive ? (Math.pow(sk, .7) * (.72 + .28 * Math.sin(t * 29))).toFixed(3) : "0";
+      void sk;
 
       // The contour on the capture's own outline. It stands further off and
       // burns harder as the air gathers, flickering, and it is gone the
