@@ -24,6 +24,17 @@ const PROJECTS = {
       { value: "0%", title: "The Model That Should Have Won", description: "Its zero was my preprocessing, not the model." }
     ],
 
+    inUse: {
+      title: "In Use",
+      figs: [{
+        src: `${BASE_URL}assets/images/mrandarin_headset.jpg`,
+        alt: "Wearing the headset and reaching toward a whiteboard with a marker in hand"
+      }, {
+        src: `${BASE_URL}assets/images/mrandarin_app.jpg`,
+        alt: "A monitor showing the headset view: a hand writing a Chinese character between two markers, a counter of discovered characters on the left and a pokedex on the right"
+      }]
+    },
+
     work: {
       title: "The System",
       items: [
@@ -57,7 +68,7 @@ const PROJECTS = {
         {
           heading: "Model Evaluation (PyTorch, CASIA)",
           text: [
-            "Apple Vision does the reading, picked because it installed fastest. Five of us benchmarked it against four other recognisers.",
+            "Apple Vision does the reading, picked because it installed fastest. We benchmarked it against four other recognisers as a course project.",
             "I built the nine distortions we tested against, each modelled on what a headset does to an image: motion blur, lens glare, low resolution passthrough.",
             "I collected 151 captures from the running app and ran all five models on those instead."
           ]
@@ -99,7 +110,7 @@ const PROJECTS = {
       title: "Credits",
       text: [
         "Coursework for Virtual Reality with Ken Perlin and Deep Learning for Media at NYU.",
-        "The app is mine. The evaluation was group work with Kaylie Stuteville, Kezia Widjaja and Jasmine Zhang; my part was the nine distortions, the CnOCR and Apple Vision integrations, the capture app and the run on real captures."
+        "The app is mine. The benchmark was group work outside the headset, with Kaylie Stuteville, Kezia Widjaja and Jasmine Zhang; my part there was the nine distortions and the CnOCR and Apple Vision integrations. Everything inside VR is mine, including the capture app and the run against real captures."
       ]
     },
   },
@@ -337,20 +348,42 @@ const PROJECTS = {
   about: {
     title: "Eros Carrasco",
     subtitle:
-      "Pipeline and tools engineer, working in XR and gaussian splatting",
-    pills: ["NYU M.S.", "Real-Time Graphics", "Mixed Reality", "Gaussian Splatting"],
+      "Builds the real-time graphics and the computer vision that bring the real world into XR.",
+    pills: ["CUDA", "Gaussian Splatting", "Computer Vision", "Deep Learning", "Unity and Unreal"],
     hero: {
       type: "image",
-      src: `${BASE_URL}assets/images/card_about.jpg`,
+      src: `${BASE_URL}assets/images/about_hero.jpg`,
     },
-    overview: [
-      "Graduate Researcher at NYU, working in two labs on how captured places and real-time graphics behave in front of people.",
-      "Before NYU I was an XR Designer at Transfr, where five VR training simulations I researched, designed and built run in real classrooms.",
-      "Twice, something I built became the way a team works: the Spanish localization process at Transfr, and the review system the Future Reality Lab now runs on its own submissions."
+    currently: {
+      lead: "Graduate researcher at NYU.",
+      labs: [
+        {
+          name: "Brooklyn Navy Yard",
+          lead: "Research on Gaussian splats for production use in XR.",
+          bullets: [
+            "Building the computer vision and analysis in Python that let a local agent read a splat and work on it, because the captures cannot leave the building.",
+            "Wrote a custom CUDA rasterizer for the work that does not fit a game engine.",
+            "Writing the same renderer again in C++ as an Unreal plugin, deploying it in a VR multiplayer motion-capture production built with the team.",
+            "Relight the scans with my own tooling."
+          ]
+        },
+        {
+          name: "Future Reality Lab",
+          lead: "Research with Ken Perlin on how AR glasses will integrate into desktop workflows, collaboration, and work with 3D data.",
+          bullets: [
+            "Contributing to the lab's XR framework, which moves content between the desktop screen and 3D space. My piece is the registration that anchors your monitor in virtual space.",
+            "Targeting publication at SIGGRAPH and CHI."
+          ]
+        }
+      ]
+    },
+    industry: [
+      "Designed and developed five VR career exploration simulations in Unity at Transfr, deployed in real educational environments.",
+      "Defined and documented the Spanish localization workflow for 30+ learning experiences, adopted by the team as its standard."
     ],
     currentFocus: [
-      "Graduate Researcher at the Future Reality Lab with Ken Perlin, building software for the lab's mixed reality platform.",
-      "Graduate Researcher at The Yard, working on 3D Gaussian Splatting: making photoreal scans render well in VR, respond to light, and be editable by speech."
+      "Graduating from NYU in May 2027 and available for full-time work from then.",
+      "I want to work where the hard parts of real-time graphics are still unsolved."
     ],
     links: [
       {
@@ -375,7 +408,9 @@ const PROJECTS = {
       }
     ],
 
-    selectedRecognition: [{
+    // The only outside validation on the page, so it carries the Deep Learning
+    // pill, which rests on evaluation rather than training.
+    recognition: [{
       title: "1st Place, NYU Data Science Bootcamp",
       image: `${BASE_URL}assets/images/bootcampBadge.png`,
       link: "https://credentials.engineering.nyu.edu/7844a2f4-ff71-4ea0-a2c7-48d8b27766f9#acc.gz582Yac"
@@ -537,7 +572,7 @@ function heroHTML(hero) {
 
   if (hero.type === "image") {
     return `
-      <div class="project-hero-media">
+      <div class="project-hero-media project-hero-media-image">
         <img src="${hero.src}" alt="" />
       </div>
     `;
@@ -735,28 +770,47 @@ function renderAbout(p) {
     <div class="project-sections">
 
       <section class="project-section span-2">
-        <h2 class="section-title">Overview</h2>
-        ${listHTML(p.overview)}
-      </section>
-
-      <section class="project-section">
-        <h2 class="section-title">Current Focus</h2>
+        <h2 class="section-title">Looking for</h2>
         ${listHTML(p.currentFocus)}
       </section>
+
+      ${p.currently ? `
+        <section class="project-section span-2">
+          <h2 class="section-title">Currently</h2>
+          <p class="currently-lead">${p.currently.lead}</p>
+          <div class="lab-grid">
+            ${p.currently.labs.map((l) => `
+              <div class="lab-card">
+                <h3 class="lab-name">${l.name}</h3>
+                ${l.lead ? `<p class="lab-lead">${l.lead}</p>` : ""}
+                ${l.bullets?.length ? listHTML(l.bullets) : ""}
+              </div>
+            `).join("")}
+          </div>
+        </section>
+      ` : ""}
+
+      ${p.industry?.length ? `
+        <section class="project-section span-2">
+          <h2 class="section-title">Industry</h2>
+          ${listHTML(p.industry)}
+        </section>
+      ` : ""}
+
+      ${p.recognition?.length ? `
+        <section class="project-section">
+          <h2 class="section-title">Recognition</h2>
+          ${recognitionHTML(p.recognition)}
+        </section>
+      ` : ""}
 
       ${p.links?.length ? `
         <section class="project-section">
           <h2 class="section-title">Links</h2>
           ${linksHTML(p.links)}
         </section>
-
-        ${p.selectedRecognition?.length ? `
-          <section class="project-section span-2">
-            <h2 class="section-title">Selected Recognition</h2>
-            ${recognitionHTML(p.selectedRecognition)}
-          </section>
-        ` : ""}
       ` : ""}
+
     </div>
   `;
 }
@@ -883,6 +937,13 @@ function renderMRandarin(p) {
         <h2 class="section-title">In Short</h2>
         ${statsHTML(p.impactStats)}
       </section>
+
+      ${p.inUse ? `
+        <section class="project-section span-2">
+          <h2 class="section-title">${p.inUse.title}</h2>
+          <div class="still-grid">${p.inUse.figs.map(figureHTML).join("")}</div>
+        </section>
+      ` : ""}
 
       <section class="project-section span-2">
         <h2 class="section-title">${p.work.title}</h2>
