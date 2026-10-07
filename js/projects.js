@@ -348,11 +348,12 @@ const PROJECTS = {
       labs: [
         {
           name: "Brooklyn Navy Yard",
-          lead: "Product-oriented research on XR and Gaussian splats for production use.",
+          lead: "Research on Gaussian splats for production use in XR.",
           bullets: [
-            "Capture and relight the scans, then manipulate them with computer vision tools I wrote in Python.",
-            "Building a custom CUDA rasterizer for the work that does not fit a game engine.",
-            "Packaged the system as an Unreal plugin and deployed it in VR, in a multiplayer motion capture production built with the team."
+            "Building the computer vision and analysis in Python that let a local agent read a splat and work on it, because the captures cannot leave the building.",
+            "Wrote a custom CUDA rasterizer for the work that does not fit a game engine.",
+            "Writing the same renderer again in C++ as an Unreal plugin, deploying it in a VR multiplayer motion-capture production built with the team.",
+            "Relight the scans with my own tooling."
           ]
         },
         {
@@ -757,6 +758,11 @@ function renderAbout(p) {
 
     <div class="project-sections">
 
+      <section class="project-section span-2">
+        <h2 class="section-title">Looking for</h2>
+        ${listHTML(p.currentFocus)}
+      </section>
+
       ${p.currently ? `
         <section class="project-section span-2">
           <h2 class="section-title">Currently</h2>
@@ -767,7 +773,6 @@ function renderAbout(p) {
                 <h3 class="lab-name">${l.name}</h3>
                 ${l.lead ? `<p class="lab-lead">${l.lead}</p>` : ""}
                 ${l.bullets?.length ? listHTML(l.bullets) : ""}
-                ${l.text ? `<p>${l.text}</p>` : ""}
               </div>
             `).join("")}
           </div>
@@ -781,13 +786,8 @@ function renderAbout(p) {
         </section>
       ` : ""}
 
-      <section class="project-section">
-        <h2 class="section-title">Looking for</h2>
-        ${listHTML(p.currentFocus)}
-      </section>
-
       ${p.links?.length ? `
-        <section class="project-section">
+        <section class="project-section span-2">
           <h2 class="section-title">Links</h2>
           ${linksHTML(p.links)}
         </section>
