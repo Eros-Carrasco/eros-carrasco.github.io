@@ -16,8 +16,6 @@
   window.addEventListener("splat-stage", (e) => build(e.detail), { once: true });
 
   // ---- where the figure stands ----
-  const DEPTH  = 4.40;  // how far behind the capture, in subject heights
-  const LIFT   = 0.46;  // how far above the capture's middle
   const SIZE   = 0.33;  // overall scale, in subject heights
   const FOLLOW = 2.40;  // how fast it swings round to the camera. lower lags more
 
@@ -80,18 +78,12 @@
   function build(scene) {
     const { app, camera, el } = scene;
 
-    // ---- light. Only the meshes care; the splat is unlit. ----
-    const key = new pc.Entity("aura-key");
-    key.addComponent("light", { type: "directional", intensity: 1.1, color: new pc.Color(1, .93, .80) });
-    key.setEulerAngles(38, 150, 0);
-    app.root.addChild(key);
-
-    const warm = new pc.Entity("aura-warm");
-    warm.addComponent("light", {
-      type: "omni", intensity: 2.0, range: 12, color: new pc.Color(1, .66, .22),
-    });
-    app.root.addChild(warm);
-
+    // ---- light ----
+    // None of the room's own. The capture is unlit and so are the motes, so
+    // the key and the orange lamp the room used to carry lit nothing but the
+    // serpent, from the sides the lab never lit it from, and the stone body
+    // that was judged there came back a flat bright green tube. The serpent
+    // brings its own rig, the lab's, so both pages light it the same way.
     const serpent = window.makeSerpent(app);
     app.root.addChild(serpent.root);
     serpent.reveal(0);
@@ -116,7 +108,6 @@
     let t = -1;                  // seconds since the idle pose landed
     let swapped = false, drifting = false;
     let yaw = 0, aimed = false;
-    const pos = new pc.Vec3();
 
     // Two debug handles on the url, both no ops for a visitor.
     //   ?fast    starts the clock just before the spark, so the burst and
@@ -148,20 +139,12 @@
       while (d < -Math.PI) d += Math.PI * 2;
       yaw += d * (1 - Math.exp(-dt * FOLLOW));
 
-      // Where it stands comes from where the camera actually is, so it holds
-      // the back of the frame. Only the way it faces is allowed to arrive
-      // late, which is what gives it weight when the view is dragged. Letting
-      // the position lag as well slides it off centre, because the view turns
-      // without ever stopping and the lag never gets a chance to catch up.
-      const bx = Math.sin(want), bz = Math.cos(want);
-      pos.set(pivot.x - bx * h * DEPTH, pivot.y + h * LIFT, pivot.z - bz * h * DEPTH);
       // The serpent is wound round him, so it stands where he stands rather
       // than behind him, and it does not turn to face the camera: a coil has
       // no face to turn, which is the whole reason it was chosen.
       serpent.root.setPosition(pivot.x, pivot.y, pivot.z);
       serpent.root.setLocalScale(h * SIZE, h * SIZE, h * SIZE);
 
-      warm.setPosition(pos.x, pos.y, pos.z);
       drift.setPosition(pivot.x, pivot.y, pivot.z);
       drift.setLocalScale(h, h, h);
 

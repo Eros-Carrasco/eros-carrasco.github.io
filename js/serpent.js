@@ -512,16 +512,37 @@
     root.addChild(bodyE);
     root.addChild(plumeE);
 
-    // Its own raking light, so the coil has a lit side and a dark one. Lit only
-    // by the scene it came out evenly bright, which is what made every earlier
-    // figure read as a cut out shape.
+    // Its own light, and all of it. Nothing else on the page is lit, so the
+    // two lamps the room carried for the figure that used to stand behind him
+    // lit only this, from the sides the lab never lit it from and one of them
+    // orange, and the body judged as carved stone in the lab came back a flat
+    // bright green tube. This rig is the lab's, so the lab and the page light
+    // it the same way by construction: a key from the front left, a warmer
+    // rake from the other side so the coil has a lit side and a dark one, and
+    // enough ambient that the dark side is not black. The ambient is set on
+    // the scene because only the serpent reads it.
+    app.scene.ambientLight = new pc.Color(0.18, 0.18, 0.20);
+    // The two lamps hang off a rig that turns with the camera, so the page,
+    // where the camera goes round him, lights the serpent at every angle the
+    // way the lab lights it with the camera in front. Fixed to the world they
+    // would have swept across the coil as the view turned, and nothing in the
+    // lab would have said anything about the page.
+    const rig = new pc.Entity("serpent-rig");
+    root.addChild(rig);
     const key = new pc.Entity("serpent-key");
     key.addComponent("light", {
+      type: "directional", color: new pc.Color(1.0, 0.97, 0.92),
+      intensity: 1.4, castShadows: false,
+    });
+    key.setEulerAngles(40, -30, 0);
+    rig.addChild(key);
+    const rake = new pc.Entity("serpent-rake");
+    rake.addComponent("light", {
       type: "directional", color: new pc.Color(1.0, 0.95, 0.80),
       intensity: 1.6, castShadows: false,
     });
-    key.setEulerAngles(24, 38, 0);
-    root.addChild(key);
+    rake.setEulerAngles(24, 38, 0);
+    rig.addChild(rake);
 
     // ---- the head ----
     // Built, not loaded. It hangs off a socket at the end of the curve.
@@ -559,7 +580,12 @@
       const speed = (vl / (2 * dd)) * L * 2 * (1 - pr);
       const flat = Math.hypot(dir[0], dir[2]);
       const hspeed = speed * flat;
-      const camHead = camYaw === null ? 0 : camYaw * Math.PI / 180;
+      // Where it looks once it has landed: where he looks. He faces +Z, which
+      // is heading zero, and the camera starts there. It used to turn to face
+      // the camera wherever the camera had got to, which on the page meant it
+      // kept turning while he did not, and the two never read as one thing.
+      // On the turntable he, the serpent and the light all turn together.
+      const hisHead = 0;
       // On the rise the motion is straight up and has no heading, so it takes
       // the heading it will have the moment it joins the coil, and looks up
       // along it: his drawing, a head coming out of the floor looking up on
@@ -573,7 +599,7 @@
       // the second half, which is to say at the landing
       const xr = Math.min(1, hspeed / 1.5);
       const rest = (1 - xr * xr * (3 - 2 * xr)) * (pr > 0.5 ? 1 : 0);
-      let dA = camHead - ha;
+      let dA = hisHead - ha;
       while (dA > Math.PI) dA -= TAU;
       while (dA < -Math.PI) dA += TAU;
       const want = ha + dA * rest;
@@ -659,6 +685,7 @@
       // just how far down the list to stop.
       reveal(v, yawDeg) {
         camYaw = (yawDeg === undefined || yawDeg === null) ? null : yawDeg;
+        rig.setLocalEulerAngles(0, camYaw === null ? 0 : camYaw, 0);
         const k = Math.max(0, Math.min(1, v));
         root.enabled = k > 0.001;
         // the smoothed heading starts fresh with the climb, so the first
