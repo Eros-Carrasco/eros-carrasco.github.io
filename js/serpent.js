@@ -81,13 +81,14 @@
 
   const HEAD = 3.75;                // head size against the neck's thickness
   // The snout sits twelve degrees under the model's axis, measured from its
-  // vertices, so DROOP lifts the axis by that much and the snout itself
-  // points where it is going. LIFT is on top of that, his call: it should
-  // read as looking up through the climb. REST_DOWN is where it looks once
-  // it has landed on his shoulder: twenty degrees down toward the viewer,
-  // which is the look he approved (see placeHead for how that number came
+  // vertices. DROOP lifts the axis by half of that, so the axis rides a
+  // little above the path and the snout a little below it: at the full
+  // twelve plus six more of LIFT he said the head looked forced upward and
+  // not like it was looking where it was going. REST_DOWN is where it looks
+  // once it has landed on his shoulder: twenty degrees down toward the
+  // viewer, the look he approved (see placeHead for how that number came
   // to be).
-  const DROOP = 12 * Math.PI / 180, LIFT = 6 * Math.PI / 180, REST_DOWN = -20 * Math.PI / 180;
+  const DROOP = 6 * Math.PI / 180, LIFT = 0, REST_DOWN = -20 * Math.PI / 180;
 
   // Where the body is at u along its length, 0 at the tail, 1 at the head.
   // The radius breathes a little so the coil is not a lathe part, and it draws

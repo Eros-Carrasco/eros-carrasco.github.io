@@ -68,7 +68,8 @@
   // Spin on its own so it reads as a 3D capture rather than a photograph.
   // A drag takes over; the spin picks up again a moment after letting go.
   let spinning = YAW_LOCK === null, resumeAt = 0;
-  const SECONDS_PER_TURN = 11;
+  // Was 11. He asked for half the speed once the serpent was on it.
+  const SECONDS_PER_TURN = 22;
   const SPIN_DEG_PER_SEC = 360 / SECONDS_PER_TURN;
   app.on("update", (dt) => {
     if (!spinning) {
