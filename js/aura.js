@@ -18,7 +18,7 @@
   // ---- where the figure stands ----
   const DEPTH  = 4.40;  // how far behind the capture, in subject heights
   const LIFT   = 0.46;  // how far above the capture's middle
-  const SIZE   = 0.88;  // overall scale, in subject heights
+  const SIZE   = 0.33;  // overall scale, in subject heights
   const FOLLOW = 2.40;  // how fast it swings round to the camera. lower lags more
 
   // ---- the beats, in seconds from the moment the idle pose lands ----
@@ -78,10 +78,9 @@
     });
     app.root.addChild(warm);
 
-    const deity = window.makeDeity(app);
-    app.root.addChild(deity.root);
-    deity.reveal(0);
-    deity.spread(0);
+    const serpent = window.makeSerpent(app);
+    app.root.addChild(serpent.root);
+    serpent.reveal(0);
 
     // ---- the motes ----
     const dot = dotTexture(app.graphicsDevice, 64);
@@ -142,10 +141,11 @@
       // without ever stopping and the lag never gets a chance to catch up.
       const bx = Math.sin(want), bz = Math.cos(want);
       pos.set(pivot.x - bx * h * DEPTH, pivot.y + h * LIFT, pivot.z - bz * h * DEPTH);
-      deity.root.setPosition(pos);
-      deity.root.setLocalScale(h * SIZE, h * SIZE, h * SIZE);
-      const sx = Math.sin(yaw), sz = Math.cos(yaw);
-      deity.root.lookAt(pos.x + sx * 10, pos.y, pos.z + sz * 10);
+      // The serpent is wound round him, so it stands where he stands rather
+      // than behind him, and it does not turn to face the camera: a coil has
+      // no face to turn, which is the whole reason it was chosen.
+      serpent.root.setPosition(pivot.x, pivot.y, pivot.z);
+      serpent.root.setLocalScale(h * SIZE, h * SIZE, h * SIZE);
 
       warm.setPosition(pos.x, pos.y, pos.z);
       drift.setPosition(pivot.x, pivot.y, pivot.z);
@@ -320,9 +320,8 @@
       if (!swapped && t >= T_SWAP) swapped = scene.swap();
 
       // ---- the figure ----
-      deity.reveal(clamp(norm(t, T_DEITY, T_SET), 0, 1));
-      deity.spread(clamp(norm(t, T_SET - .8, T_FAN), 0, 1));
-      deity.heat(1 - clamp(norm(t, T_SET, T_SET + 1.8), 0, 1));
+      serpent.reveal(clamp(norm(t, T_DEITY, T_FAN), 0, 1));
+      serpent.heat(1 - clamp(norm(t, T_SET, T_SET + 1.8), 0, 1));
       // For one pass it was drawn in js/backdrop.frag. It was four
       // attempts at a lit gold object built from spheres and capsules and
       // every one of them landed between a sticker and a toy. Reading the
