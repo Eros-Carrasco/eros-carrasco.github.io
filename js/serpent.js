@@ -77,6 +77,14 @@
   const HEAD_URL = "/assets/models/quetzalcoatl.glb";
 
   const HEAD = 3.75;                // head size against the neck's thickness
+  // The snout sits twelve degrees under the model's axis, measured from its
+  // vertices, so DROOP lifts the axis by that much and the snout itself
+  // points where it is going. LIFT is on top of that, his call: it should
+  // read as looking up through the climb. REST_DOWN is where it looks once
+  // it has landed on his shoulder: twenty degrees down toward the viewer,
+  // which is the look he approved (see placeHead for how that number came
+  // to be).
+  const DROOP = 12 * Math.PI / 180, LIFT = 6 * Math.PI / 180, REST_DOWN = -20 * Math.PI / 180;
 
   // Where the body is at u along its length, 0 at the tail, 1 at the head.
   // The radius breathes a little so the coil is not a lathe part, and it draws
@@ -629,12 +637,33 @@
       const sway = [(Math.sin(w * 0.83) * 0.20 + Math.sin(w * 0.37 + 2.1) * 0.09) * calm,
                     (Math.sin(w * 0.61 + 1.7) * 0.13) * calm,
                     (Math.cos(w * 0.71 + 0.4) * 0.20 + Math.cos(w * 0.29 + 0.8) * 0.08) * calm];
-      // the path's own slope, under the floor as above it: one path, one rule
-      const pitch = dir[1] * (1 - rest) * 0.85 + 0.18 * rest - 0.05;
-      const pl = Math.max(0.35, flat * (1 - rest) + 0.9 * rest);
-      const aim = norm([Math.sin(hhS) * pl + sway[0], pitch + sway[1], Math.cos(hhS) * pl + sway[2]]);
+      // Up or down. Moving: the path's own climb, plus the model's droop,
+      // since its snout sits under its axis (measured from its vertices:
+      // twelve degrees skull to tip, thirty from the centroid to the tip),
+      // so the snout itself points where it is going and not the axis; plus
+      // a little more, because the coil's local slope is shallow for most
+      // of the way and he wants it reading upward through a climb. It used
+      // to take 0.85 of the slope and no droop, and he saw it looking down
+      // the whole way up. At rest: the angle he called perfect, untouched.
+      const climb = Math.asin(Math.max(-1, Math.min(1, dir[1])));
+      const elev = climb + DROOP + LIFT;
+      const moveAim = [Math.sin(hhS) * Math.cos(elev), Math.sin(elev), Math.cos(hhS) * Math.cos(elev)];
+      const restAim = [Math.sin(hhS) * Math.cos(REST_DOWN), Math.sin(REST_DOWN), Math.cos(hhS) * Math.cos(REST_DOWN)];
+      const aim = norm([moveAim[0] * (1 - rest) + restAim[0] * rest + sway[0],
+                        moveAim[1] * (1 - rest) + restAim[1] * rest + sway[1],
+                        moveAim[2] * (1 - rest) + restAim[2] * rest + sway[2]]);
       socket.setLocalPosition(c[0], c[1], c[2]);
-      socket.lookAt(c[0] + aim[0], c[1] + aim[1], c[2] + aim[2]);
+      // lookAt takes world coordinates. It was being given the root's own,
+      // and the root stands a metre up and at a third of his height, so
+      // every aim came out pointing down by an amount that depended on
+      // where the head was: thirty six degrees low early in the climb,
+      // twenty at the shoulder. That is the "looking down the whole way up"
+      // he saw, and no rule above this line could have fixed it. The twenty
+      // at the shoulder is the look he approved, so it is kept on purpose,
+      // as REST_DOWN. The root is not rotated, so the direction itself is
+      // the same in both spaces.
+      const wp = socket.getPosition();
+      socket.lookAt(wp.x + aim[0], wp.y + aim[1], wp.z + aim[2]);
       lastAim = aim;
       // Fixed. It had read the body's girth at wherever the head happened to
       // be, so it grew and shrank as it travelled. Heads do not do that.
