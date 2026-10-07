@@ -155,7 +155,6 @@
   // only, so the birth was the fastest moment of the piece, one and six
   // tenths times the average, on top of the corner that was there then.
   const ease = (k) => 1 - Math.pow(1 - Math.pow(k, 1.4), 1.6);
-  const easeRate = (k) => k <= 0 ? 0 : 1.6 * 1.4 * Math.pow(k, 0.4) * Math.pow(1 - Math.pow(k, 1.4), 0.6);
   // The last stretch of body leaves the centre of the back of the head, in
   // line with the head, whatever the head is doing. The path alone does not
   // give that: where the head turns off the path, to face the viewer, the neck
@@ -592,10 +591,7 @@
       const v = sub(curve(k + dd), curve(k - dd));
       const vl = Math.hypot(v[0], v[1], v[2]) || 1e-6;
       const dir = [v[0] / vl, v[1] / vl, v[2] / vl];
-      // speed along the path per unit of progress, with the ease folded in
-      const speed = (vl / (2 * dd)) * L * easeRate(pr);
       const flat = Math.hypot(dir[0], dir[2]);
-      const hspeed = speed * flat;
       // Where it looks once it has landed: where he looks. He faces +Z, which
       // is heading zero, and the camera starts there. It used to turn to face
       // the camera wherever the camera had got to, which on the page meant it
@@ -611,10 +607,12 @@
       const first = sub(helix(0.02), helix(0));
       const firstHead = Math.atan2(first[0], first[2]);
       const ha = flat > 1e-3 ? Math.atan2(dir[0], dir[2]) : firstHead;
-      // rest goes to one as sideways movement dies away, and only counts in
-      // the second half, which is to say at the landing
-      const xr = Math.min(1, hspeed / 1.5);
-      const rest = (1 - xr * xr * (3 - 2 * xr)) * (pr > 0.5 ? 1 : 0);
+      // rest goes to one through the last quarter of the climb, by progress.
+      // It used to be driven by the speed along the path, and once the
+      // birth was slowed the speed only died in the last hundredth, so the
+      // whole settle, fifty degrees of pitch, happened in one frame.
+      const xr = Math.min(1, Math.max(0, (pr - 0.75) / 0.25));
+      const rest = xr * xr * (3 - 2 * xr);
       let dA = hisHead - ha;
       while (dA > Math.PI) dA -= TAU;
       while (dA < -Math.PI) dA += TAU;
