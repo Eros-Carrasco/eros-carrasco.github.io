@@ -24,6 +24,17 @@ const PROJECTS = {
       { value: "0%", title: "The Model That Should Have Won", description: "Its zero was my preprocessing, not the model." }
     ],
 
+    inUse: {
+      title: "In Use",
+      figs: [{
+        src: `${BASE_URL}assets/images/mrandarin_headset.jpg`,
+        alt: "Wearing the headset and reaching toward a whiteboard with a marker in hand"
+      }, {
+        src: `${BASE_URL}assets/images/mrandarin_app.jpg`,
+        alt: "A monitor showing the headset view: a hand writing a Chinese character between two markers, a counter of discovered characters on the left and a pokedex on the right"
+      }]
+    },
+
     work: {
       title: "The System",
       items: [
@@ -926,6 +937,13 @@ function renderMRandarin(p) {
         <h2 class="section-title">In Short</h2>
         ${statsHTML(p.impactStats)}
       </section>
+
+      ${p.inUse ? `
+        <section class="project-section span-2">
+          <h2 class="section-title">${p.inUse.title}</h2>
+          <div class="still-grid">${p.inUse.figs.map(figureHTML).join("")}</div>
+        </section>
+      ` : ""}
 
       <section class="project-section span-2">
         <h2 class="section-title">${p.work.title}</h2>

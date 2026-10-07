@@ -690,6 +690,22 @@ body.project-page {
 }
 
 /* ===== NUEVO: CSS PARA VIDEOS DEL MOCAP ===== */
+/* Two stills side by side, the way the mocap clips sit in a row. */
+.still-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 10px;
+}
+.still-grid .fig img {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+@media (max-width: 640px) {
+  .still-grid { grid-template-columns: 1fr; }
+}
+
 .mocap-grid {
   display: grid;
   gap: 12px;
