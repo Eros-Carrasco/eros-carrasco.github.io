@@ -377,6 +377,7 @@ body.project-page {
 .lab-card p {
   margin: 0;
   max-width: none;
+  line-height: 1.6;
 }
 
 /* the lead sits above the bullets, so it needs the gap back */

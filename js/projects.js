@@ -337,8 +337,8 @@ const PROJECTS = {
   about: {
     title: "Eros Carrasco",
     subtitle:
-      "Builds the machine learning tooling and real-time renderers that make 3D captures usable in XR.",
-    pills: ["NYU M.S.", "Real-Time Graphics", "Mixed Reality", "Gaussian Splatting"],
+      "Builds the real-time graphics and the computer vision that put the real world inside a headset.",
+    pills: ["CUDA", "Gaussian Splatting", "Computer Vision", "Deep Learning", "Unity and Unreal"],
     hero: {
       type: "image",
       src: `${BASE_URL}assets/images/card_about.jpg`,
@@ -787,7 +787,7 @@ function renderAbout(p) {
       ` : ""}
 
       ${p.links?.length ? `
-        <section class="project-section span-2">
+        <section class="project-section">
           <h2 class="section-title">Links</h2>
           ${linksHTML(p.links)}
         </section>
