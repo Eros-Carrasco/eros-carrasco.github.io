@@ -21,14 +21,25 @@
 (() => {
   const RINGS = 260;        // steps along the body
   const SIDES = 10;         // around the tube
-  const TURNS = 2.35;       // how many times it goes round him
+  // Chosen so the last turn lands the head out in front and to one side.
+  // At 2.35 it finished round the back, where his own head covered it.
+  const TURNS = 2.12;
   // Tall and narrow. Built as wide as it was high the coil passed a whole
   // body width out from him and the view sat inside it.
   const RAD_MIN = 0.40;
   const RAD_MAX = 0.60;
-  const Y0 = -1.50, Y1 = 1.62;
+  // The head rides at the top of this, so it ends below the frame's edge
+  // rather than at it.
+  const Y0 = -1.50, Y1 = 1.05;
 
   const TAU = Math.PI * 2;
+
+  const HEAD_URL = "quetzalcoatl.glb";
+  const HEAD = 5.4;                 // head size against the neck's thickness
+  // The scan's snout runs along its own Y and the ruff lies in XZ, so it is
+  // turned a quarter round X to put the snout down the curve. The socket
+  // looks along the curve, and in this engine that is its -Z.
+  const HEAD_ROT = [-90, 0, 0];
 
   // Where the body is at u along its length, 0 at the tail, 1 at the head.
   // The radius breathes a little so the coil is not a lathe part, and it draws
@@ -175,13 +186,22 @@
     mat.metalness = 0.72;
     mat.emissive = new pc.Color(0.02, 0.105, 0.095);
     mat.emissiveIntensity = 0.7;
-    mat.opacity = 0;
-    mat.blendType = pc.BLEND_NORMAL;
-    mat.depthWrite = false;
+    // Opaque, and this is not a style choice. Transparent, it never wrote depth,
+    // and neither does the splat pass, so there was nothing for either to test
+    // against and whichever drew last won the whole frame. In practice the
+    // splat drew last and the serpent vanished behind him everywhere, which is
+    // what he spotted: a coil that is supposed to wrap was only ever behind.
+    // Writing depth is what makes the near half of the coil cross in front of
+    // him and the far half go behind.
+    mat.opacity = 1;
+    mat.blendType = pc.BLEND_NONE;
+    mat.depthWrite = true;
     mat.cull = pc.CULLFACE_NONE;
     mat.update();
 
     const matF = mat.clone();
+    matF.blendType = pc.BLEND_NONE;
+    matF.depthWrite = true;
     matF.diffuse = new pc.Color(0.52, 0.42, 0.10);
     matF.emissive = new pc.Color(0.40, 0.28, 0.05);
     matF.emissiveIntensity = 0.95;
@@ -207,10 +227,88 @@
     const key = new pc.Entity("serpent-key");
     key.addComponent("light", {
       type: "directional", color: new pc.Color(1.0, 0.95, 0.80),
-      intensity: 2.8, castShadows: false,
+      intensity: 3.4, castShadows: false,
     });
     key.setEulerAngles(24, 38, 0);
     root.addChild(key);
+
+    // ---- the head ----
+    // The one piece not generated. A carved serpent head is what code is worst
+    // at and a scan is best at. It hangs off a socket at the end of the curve,
+    // so if the file is not there the body still runs.
+    //
+    // The scan is a temple ornament from the Templo de Quetzalcoatl, made to
+    // project from a wall, so its back is open. He saw the hole before I did.
+    // It gets a cap, and the neck of the body comes into the same place, so
+    // between them nothing shows.
+    const socket = new pc.Entity("serpent-head");
+    root.addChild(socket);
+    {
+      const u = 1.0;
+      const c = curve(u);
+      const tan = norm(sub(curve(u), curve(u - 0.01)));
+      socket.setLocalPosition(c[0], c[1], c[2]);
+      socket.lookAt(c[0] + tan[0], c[1] + tan[1], c[2] + tan[2]);
+      const g = girth(0.72);          // the neck, not the tail
+      socket.setLocalScale(g * HEAD, g * HEAD, g * HEAD);
+    }
+
+    // the cap, a shade darker than the stone so it reads as shadow inside
+    const cap = new pc.Entity("serpent-head-cap");
+    cap.addComponent("render", { type: "cylinder", castShadows: false, receiveShadows: false });
+    const capMat = new pc.StandardMaterial();
+    capMat.diffuse = new pc.Color(0.26, 0.25, 0.19);
+    capMat.specular = new pc.Color(0.05, 0.05, 0.05);
+    capMat.gloss = 0.1;
+    capMat.update();
+    cap.render.meshInstances[0].material = capMat;
+    // Inside the open back, which is at +Z once the head is turned, and small
+    // enough to sit within the ruff rather than over it. At full ruff width it
+    // was a black disc laid over the carving.
+    cap.setLocalEulerAngles(90, 0, 0);
+    cap.setLocalScale(0.42, 0.05, 0.42);
+    cap.setLocalPosition(0, 0, 0.17);
+    cap.enabled = false;
+    socket.addChild(cap);
+
+    const asset = new pc.Asset("quetzalcoatl", "container", { url: HEAD_URL });
+    app.assets.add(asset);
+    app.assets.load(asset);
+    asset.ready(() => {
+      const e = asset.resource.instantiateRenderEntity();
+      // The scan comes in with nothing emissive on it and one raking light is
+      // not enough for carved stone in a dark box: it read as a black lump.
+      e.findComponents("render").forEach((r) => {
+        r.meshInstances.forEach((m) => {
+          const mm = m.material;
+          mm.emissive = new pc.Color(0.30, 0.27, 0.18);
+          mm.emissiveIntensity = 0.55;
+          mm.useMetalness = false;
+          mm.gloss = 0.35;
+          mm.update();
+        });
+      });
+      // The scan is 83 by 60 by 83 with its origin in a corner, so it is
+      // recentred and brought to unit size before anything else is done to it.
+      const mi = [];
+      e.findComponents("render").forEach((r) => mi.push(...r.meshInstances));
+      let aabb = null;
+      mi.forEach((m) => { aabb = aabb ? (aabb.add(m.aabb), aabb) : m.aabb.clone(); });
+      if (aabb) {
+        const c = aabb.center, h = aabb.halfExtents;
+        const span = Math.max(h.x, h.y, h.z) * 2;
+        const inner = new pc.Entity("head-fit");
+        inner.addChild(e);
+        e.setLocalPosition(-c.x / span, -c.y / span, -c.z / span);
+        inner.setLocalScale(1 / span, 1 / span, 1 / span);
+        inner.setLocalEulerAngles(HEAD_ROT[0], HEAD_ROT[1], HEAD_ROT[2]);
+        socket.addChild(inner);
+      } else {
+        socket.addChild(e);
+      }
+      cap.enabled = true;
+    });
+    asset.on("error", () => console.warn("[serpent] no " + HEAD_URL + ", running without a head"));
 
     return {
       root,
