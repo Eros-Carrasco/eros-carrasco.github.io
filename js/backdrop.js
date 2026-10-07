@@ -67,6 +67,15 @@ void main() {
 
   const uTime = gl.getUniformLocation(prog, "uTime");
   const uSize = gl.getUniformLocation(prog, "uSize");
+  // The sequence, written onto the stage by splat-stage.js and js/aura.js, one
+  // named signal per beat. A shader that does not declare one gets a null
+  // location here and nothing is sent for it, so they can be added and dropped
+  // freely on either side.
+  const SIGNALS = ["uLoad", "uCharge", "uSpark", "uStar", "uBlow", "uWhite", "uWarm", "uCool", "uSwell", "uField", "uGlow"];
+  const signal = SIGNALS
+    .map((name) => ({ name, key: name.slice(1).toLowerCase(), at: gl.getUniformLocation(prog, name) }))
+    .filter((u) => u.at);
+  const uSince = gl.getUniformLocation(prog, "uSince");
 
   const resize = () => {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -91,6 +100,11 @@ void main() {
   const frame = () => {
     resize();
     if (uTime) gl.uniform1f(uTime, (performance.now() - start) / 1000);
+    for (const u of signal) gl.uniform1f(u.at, parseFloat(stage.dataset[u.key] || "0"));
+    if (uSince) {
+      const at = parseFloat(stage.dataset.readyAt || "0");
+      gl.uniform1f(uSince, at ? (performance.now() - at) / 1000 : 0);
+    }
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     requestAnimationFrame(frame);
