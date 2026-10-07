@@ -24,10 +24,14 @@
   // Chosen so the last turn lands the head out in front and to one side.
   // At 2.35 it finished round the back, where his own head covered it.
   const TURNS = 2.12;
-  // Tall and narrow. Built as wide as it was high the coil passed a whole
-  // body width out from him and the view sat inside it.
-  const RAD_MIN = 0.40;
-  const RAD_MAX = 0.60;
+  // Tall and narrow, but not tight. Built as wide as it was high the view sat
+  // inside the coil; built at this radius times two thirds it crossed his
+  // chest and his hands at every turn and he was furniture inside it. Here it
+  // passes clear of his body on both sides, which is what lets the wrap be
+  // read at all: you can see the near half in front of him and the far half
+  // going behind.
+  const RAD_MIN = 0.62;
+  const RAD_MAX = 0.88;
   // The head rides at the top of this, so it ends below the frame's edge
   // rather than at it.
   const Y0 = -1.50, Y1 = 1.05;
@@ -37,9 +41,10 @@
   const HEAD_URL = "quetzalcoatl.glb";
   const HEAD = 5.4;                 // head size against the neck's thickness
   // The scan's snout runs along its own Y and the ruff lies in XZ, so it is
-  // turned a quarter round X to put the snout down the curve. The socket
-  // looks along the curve, and in this engine that is its -Z.
-  const HEAD_ROT = [-90, 0, 0];
+  // turned a quarter round X to put the snout down the curve. Which way round
+  // that quarter goes was not guessable and was not guessed: at -90 the open
+  // back faced the camera and all that showed was the plug.
+  const HEAD_ROT = [90, 0, 0];
 
   // Where the body is at u along its length, 0 at the tail, 1 at the head.
   // The radius breathes a little so the coil is not a lathe part, and it draws
@@ -117,7 +122,10 @@
   // one carrying the same u so they appear with the length of body they sit on.
   const feathers = () => {
     const pos = [], nrm = [], uv = [], idx = [];
-    const N = 86;
+    // Few enough to be separate. At 86 they overlapped into one continuous
+    // sawtooth band running the length of the body, which reads as a crest or
+    // a ribbon, not as plumes. The carving has gaps between every feather.
+    const N = 46;
     let up = [0, 1, 0];
     for (let i = 0; i < N; i++) {
       const u = 0.06 + (i / N) * 0.90;
@@ -126,8 +134,11 @@
       let side = norm(cross(tan, up));
       up = norm(cross(side, tan));
       const g = girth(u);
-      const len = (0.06 + 0.13 * Math.sin(u * Math.PI)) * (0.55 + 0.85 * ((i * 0.618) % 1));
-      for (const lean of [-0.42, 0.42]) {
+      const len = (0.07 + 0.16 * Math.sin(u * Math.PI)) * (0.50 + 0.95 * ((i * 0.618) % 1));
+      // Splayed, and not the same pair twice. Two blades at a fixed angle the
+      // whole way along is a fin; the lean walks so they fan out.
+      const splay = 0.30 + 0.45 * ((i * 0.382) % 1);
+      for (const lean of [-splay, splay]) {
         const bx = side[0] * lean + up[0], by = side[1] * lean + up[1], bz = side[2] * lean + up[2];
         const b = norm([bx, by, bz]);
         const root = [c[0] + b[0] * g * .8, c[1] + b[1] * g * .8, c[2] + b[2] * g * .8];
@@ -136,7 +147,7 @@
         // blades that swell away from the root and come to a point, and a
         // ruff of triangles standing straight off the spine read as a
         // stegosaurus instead. Narrow at the root, widest at a third, tapered.
-        const w = g * 0.95;
+        const w = g * 0.62;
         const base = pos.length / 3;
         const along = (k) => [
           root[0] + (tip[0] - root[0]) * k,
@@ -248,7 +259,10 @@
       const c = curve(u);
       const tan = norm(sub(curve(u), curve(u - 0.01)));
       socket.setLocalPosition(c[0], c[1], c[2]);
-      socket.lookAt(c[0] + tan[0], c[1] + tan[1], c[2] + tan[2]);
+      // Tipped in and down off the tangent. Aimed straight along the curve the
+      // snout pointed up and out of the frame, at nothing.
+      const aim = norm([tan[0] - c[0] * 0.55, tan[1] - 0.42, tan[2] - c[2] * 0.55]);
+      socket.lookAt(c[0] + aim[0], c[1] + aim[1], c[2] + aim[2]);
       const g = girth(0.72);          // the neck, not the tail
       socket.setLocalScale(g * HEAD, g * HEAD, g * HEAD);
     }
@@ -281,8 +295,10 @@
       e.findComponents("render").forEach((r) => {
         r.meshInstances.forEach((m) => {
           const mm = m.material;
-          mm.emissive = new pc.Color(0.30, 0.27, 0.18);
-          mm.emissiveIntensity = 0.55;
+          // Just enough to lift it out of the dark. Higher and the scan's own
+          // stone, which is the whole reason for using a scan, washes to flat gold.
+          mm.emissive = new pc.Color(0.20, 0.18, 0.13);
+          mm.emissiveIntensity = 0.38;
           mm.useMetalness = false;
           mm.gloss = 0.35;
           mm.update();
