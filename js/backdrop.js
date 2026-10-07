@@ -71,7 +71,7 @@ void main() {
   // named signal per beat. A shader that does not declare one gets a null
   // location here and nothing is sent for it, so they can be added and dropped
   // freely on either side.
-  const SIGNALS = ["uLoad", "uCharge", "uSpark", "uStar", "uBlow", "uWhite", "uWarm", "uCool", "uField", "uGlow"];
+  const SIGNALS = ["uLoad", "uCharge", "uSpark", "uStar", "uBlow", "uWhite", "uWarm", "uCool", "uSwell", "uField", "uGlow"];
   const signal = SIGNALS
     .map((name) => ({ name, key: name.slice(1).toLowerCase(), at: gl.getUniformLocation(prog, name) }))
     .filter((u) => u.at);

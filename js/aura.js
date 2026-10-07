@@ -16,9 +16,9 @@
   window.addEventListener("splat-stage", (e) => build(e.detail), { once: true });
 
   // ---- where the figure stands ----
-  const DEPTH  = 2.10;  // how far behind the capture, in subject heights
-  const LIFT   = 0.52;  // how far above the capture's middle
-  const SIZE   = 1.15;  // overall scale, in subject heights
+  const DEPTH  = 4.40;  // how far behind the capture, in subject heights
+  const LIFT   = 0.46;  // how far above the capture's middle
+  const SIZE   = 0.88;  // overall scale, in subject heights
   const FOLLOW = 2.40;  // how fast it swings round to the camera. lower lags more
 
   // ---- the beats, in seconds from the moment the idle pose lands ----
@@ -296,6 +296,13 @@
       // the fade in the same instant is what kept it from ever arriving.
       sig.cool = (ease(clamp(norm(t, T_COOL, T_COOL + 1.3), 0, 1))
               * (1 - ease(clamp(norm(t, T_HELD, T_FIELD + .5), 0, 1)))).toFixed(3);
+      // The cold beat is the longest thing on the page and ours did not move
+      // for the whole of it: hue, saturation and brightness all measured dead
+      // flat to three decimals across five seconds. The reference's does move,
+      // and by a lot. It opens dark at 0.26, nearly doubles to 0.52 when it
+      // reaches the lotus, and comes back down to 0.30. This is that swell.
+      sig.swell = Math.pow(Math.sin(clamp(norm(t, T_COOL + .35, T_HELD - .25), 0, 1)
+                * Math.PI), 1.15).toFixed(3);
       sig.field = ease(clamp(norm(t, T_FIELD, T_DEITY + .9), 0, 1)).toFixed(3);
       // Kept for anything still reading the old single channel.
       sig.glow = sig.warm;
@@ -312,10 +319,15 @@
       // lands loses the whole point of the burst.
       if (!swapped && t >= T_SWAP) swapped = scene.swap();
 
-      // ---- the figure comes out of the blur ----
+      // ---- the figure ----
       deity.reveal(clamp(norm(t, T_DEITY, T_SET), 0, 1));
       deity.spread(clamp(norm(t, T_SET - .8, T_FAN), 0, 1));
       deity.heat(1 - clamp(norm(t, T_SET, T_SET + 1.8), 0, 1));
+      // For one pass it was drawn in js/backdrop.frag. It was four
+      // attempts at a lit gold object built from spheres and capsules and
+      // every one of them landed between a sticker and a toy. Reading the
+      // reference properly says why: there is no lit object in it. The frame
+      // is flat yellow and the deity is the shape cut out of it.
     });
   }
 

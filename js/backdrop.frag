@@ -10,6 +10,7 @@ uniform float uBlow;    // the quarter second the light lets go in
 uniform float uWhite;   // the blown out frame, which is not the fire
 uniform float uWarm;    // the volume of light he is left standing inside
 uniform float uCool;    // one breath where the room goes cold and starry
+uniform float uSwell;   // the rise and fall inside the cold beat
 uniform float uField;   // the light flattening into a field for the figure
 
 in  vec3 vPos;
@@ -63,6 +64,7 @@ void main() {
   float white = clamp(uWhite, 0., 1.);
   float blow  = clamp(uBlow, 0., 1.);
   float cool  = clamp(uCool, 0., 1.);
+  float swell = clamp(uSwell, 0., 1.);
   float field = clamp(uField, 0., 1.);
 
   // The frame shivers as the pressure comes up, worst in the last moment.
@@ -312,24 +314,43 @@ void main() {
   // merely fading, so the warm light is cut almost to nothing and a nebula is
   // laid in its place.
   float neb = fbm(p * vec2(1.3, 1.1) + vec2(t * .018, -t * .012) + 11.0);
-  vec3 cloudA = vec3(.56, .13, .50) * smoothstep(.30, .78, neb);
-  vec3 cloudB = vec3(.17, .12, .58) * smoothstep(.24, .72, 1. - neb);
-  vec3 night  = vec3(.030, .022, .062) + cloudA + cloudB;
+  // Measured against the reference rather than picked: its cold beat sits at
+  // 292 degrees of hue, between violet and magenta, at 0.50 saturation. Ours
+  // was at 266 and 0.75, a flat blue violet half again as intense as anything
+  // in the reference. Both clouds were pulled round to 310 and 275 and their
+  // darkest channel lifted, which is what takes the saturation down without
+  // moving the hue.
+  vec3 cloudA = vec3(.58, .29, .53) * smoothstep(.30, .78, neb);
+  vec3 cloudB = vec3(.40, .25, .50) * smoothstep(.24, .72, 1. - neb);
+  vec3 night  = vec3(.040, .031, .062) + cloudA + cloudB;
   night *= .55 + .70 * smoothstep(1.35, .10, r);
+  // and it rises and falls instead of sitting still
+  night *= .62 + .78 * swell;
   vec3 cold = mix(col * .30, night, cool);
-  cold += vec3(.86, .80, 1.00) * sky * 1.00 * cool;
+  cold += vec3(.86, .80, 1.00) * sky * (.70 + .60 * swell) * cool;
   cold += vec3(.92, .84, 1.00) * ring2 * .95;
   col = mix(col, cold, cool);
 
-  // And then the light flattens into a field, which is what the figure comes
-  // out of. It stops being a lamp in a room and becomes the room.
-  // Kept well short of a solid fill. A flat yellow field is what the
-  // reference flattens to, but the figure in front of it here is lit gold
-  // too, and if the field reaches the same value the figure stops existing.
-  // So the field darkens toward the edges and keeps the middle for the figure.
-  vec3 flat_ = vec3(.72, .46, .13) * (.55 + .34 * air) + vec3(1., .93, .74) * rays * .16;
-  flat_ *= .55 + .45 * smoothstep(1.25, .25, r);
-  col = mix(col, flat_, field * .62);
+  // The figure is not drawn here. It was, for one pass, as a flat yellow cel
+  // with the shape cut out of it, because that is exactly how the reference
+  // draws it. It does not transfer: the reference's camera never moves and
+  // ours orbits continuously, so a drawing pinned to the screen behind it is a
+  // sticker by construction. The reference is not the authority on this one.
+  // js/deity.js owns the figure and it is a mesh.
+  // The field the figure stands in. It has to stay well under the figure's own
+  // gold or the figure stops existing: they were the same yellow for a pass
+  // and the arms vanished into it. Dark and warm, so the gold reads against
+  // it the way the reference's gold reads against the dark between its arms.
+  float dei = clamp(uField, 0., 1.);
+  vec3 fieldC = vec3(.175, .150, .085) + vec3(.30, .25, .10) * smoothstep(1.30, .15, r);
+  col = mix(col, fieldC, dei * .90);
+
+  // The field used to be laid down again here, in orange, over 62 percent of
+  // the frame, because back when the figure was a lit gold object in front of
+  // it the field had to stay darker or the object stopped existing. The figure
+  // IS the field now, so this was repainting the deity's own yellow 10 degrees
+  // of hue toward orange and taking the gaps between its arms with it. The
+  // block above owns the field.
 
   // Before the capture arrives the room is dimmer, and it comes up as the
   // bytes do, so the box is never a dead rectangle.
