@@ -42,3 +42,35 @@ if (!reduceMotion && "IntersectionObserver" in window) {
     clips.forEach((v) => io.observe(v));
   }
 }
+
+// Phones get their own layout below 640px (the PHONE block in css/styles.css).
+// There is no hover there, so the four featured clips play while most of them
+// is on screen, and a small bar with the resume slides in once the intro with
+// the contact buttons has scrolled away.
+const phone = window.matchMedia("(max-width: 640px)");
+
+if ("IntersectionObserver" in window) {
+  const bar = document.getElementById("phone-bar");
+  const intro = document.getElementById("phone-intro");
+  if (bar && intro) {
+    const link = bar.querySelector("a");
+    new IntersectionObserver(([e]) => {
+      const on = phone.matches && !e.isIntersecting;
+      bar.classList.toggle("is-on", on);
+      bar.setAttribute("aria-hidden", on ? "false" : "true");
+      link.tabIndex = on ? 0 : -1;
+    }).observe(intro);
+  }
+
+  if (!reduceMotion) {
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => {
+        if (!phone.matches) return;
+        if (e.isIntersecting) e.target.play().catch(() => {});
+        else e.target.pause();
+      }),
+      { threshold: 0.6 }
+    );
+    document.querySelectorAll(".card-featured video").forEach((v) => io.observe(v));
+  }
+}
