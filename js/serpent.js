@@ -327,7 +327,7 @@
   // Twice the feathers in each row, his call. They are all one mesh, one
   // draw, rebuilt each frame, so the cost is a little more work on the CPU
   // placing them and nothing to speak of on the GPU.
-  const N_ROW = 92, N_RUFF = 22, N_TAIL = 5;
+  const N_ROW = 92, N_RUFF = 44, N_TAIL = 10;
   const buildFeathers = (e) => {
     const out = { pos: [], nrm: [], uv: [], idx: [] };
     if (!bodyRings) return out;
@@ -350,7 +350,8 @@
         const root = [f.c[0] + f.D[0] * f.g * 0.80 + f.S[0] * row * f.g * 0.42,
                       f.c[1] + f.D[1] * f.g * 0.80 + f.S[1] * row * f.g * 0.42,
                       f.c[2] + f.D[2] * f.g * 0.80 + f.S[2] * row * f.g * 0.42];
-        const len = Math.max(0.055, f.g * 1.5);
+        // the middle row twice the size of the two beside it, his call
+        const len = Math.max(0.055, f.g * (row === 0 ? 3.0 : 1.5));
         // green only, in its two shades
         place(out, TPL.crest, root, X, Y, Z, len, (i + row) & 1);
       }
@@ -363,26 +364,33 @@
       const f = ringAt(d);
       const th = ((i + ring * 0.5) / N_RUFF) * TAU;
       const R = mixv(f.D, f.S, Math.cos(th), Math.sin(th));
-      const back = 0.45 + ring * 0.15;
+      const back = 0.55 + ring * 0.15;
       const Y = mixv(R, f.T, Math.cos(back), -Math.sin(back));
       const Z = mixv(f.T, R, Math.cos(back), Math.sin(back));
       const X = norm(cross(Y, Z));
-      const root = [f.c[0] + R[0] * f.g * 0.9, f.c[1] + R[1] * f.g * 0.9, f.c[2] + R[2] * f.g * 0.9];
+      // rooted inside the body, so the bare quill is buried and the vane
+      // starts at the skin: rooted on the surface they looked unattached
+      const root = [f.c[0] + R[0] * f.g * 0.45, f.c[1] + R[1] * f.g * 0.45, f.c[2] + R[2] * f.g * 0.45];
       // orange, all of them: the white and the blue went to the body, his call
-      place(out, TPL.ruff, root, X, Y, Z, f.g * (1.9 - ring * 0.4), 2);
+      place(out, TPL.ruff, root, X, Y, Z, f.g * (2.2 - ring * 0.4), 2);
     }
     // the plume at the tail: a few long streamers, like a quetzal's
     for (let i = 0; i < N_TAIL; i++) {
-      const d = 0.985 - (i % 2) * 0.012;
+      const layer = i < N_TAIL / 2 ? 0 : 1;
+      const j = i % (N_TAIL / 2);
+      // two layers, the inner one further up the tail, both rooted inside
+      // it and lying along it, so they grow out of the tail instead of
+      // standing off its tip
+      const d = 0.975 - layer * 0.03 - (j % 2) * 0.008;
       const f = ringAt(d);
-      const spread = (i / (N_TAIL - 1) - 0.5) * 1.3;
-      const liftT = 1.0 + 0.25 * Math.abs(spread) + 0.04 * Math.sin(wT * 1.3 + i);
+      const spread = (j / (N_TAIL / 2 - 1) - 0.5) * 1.3 + (layer ? 0.12 : 0);
+      const liftT = 0.70 + 0.25 * Math.abs(spread) + 0.04 * Math.sin(wT * 1.3 + i);
       const R = rotAround(f.D, f.T, spread);
       const Y = mixv(f.T, R, -Math.cos(liftT), Math.sin(liftT));
       const Z = mixv(R, f.T, Math.cos(liftT), Math.sin(liftT));
       const X = norm(cross(Y, Z));
-      const root = [f.c[0] + R[0] * f.g * 0.5, f.c[1] + R[1] * f.g * 0.5, f.c[2] + R[2] * f.g * 0.5];
-      const len = 0.62 + 0.30 * (1 - Math.abs(spread) / 0.65);
+      const root = [f.c[0] + R[0] * f.g * 0.2, f.c[1] + R[1] * f.g * 0.2, f.c[2] + R[2] * f.g * 0.2];
+      const len = (0.62 + 0.30 * (1 - Math.abs(spread) / 0.65)) * (layer ? 0.8 : 1);
       // orange, like the ruff
       place(out, TPL.tail, root, X, Y, Z, len, 2);
     }
