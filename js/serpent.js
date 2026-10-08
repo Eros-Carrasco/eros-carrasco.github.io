@@ -391,21 +391,21 @@
   // most of why ours reads as plastic. Both of these are drawn once into a
   // canvas and handed over as a map.
 
-  // The body is dark stone, smooth, with paint on it. It was carved plumes in
-  // low relief, laid like tiles, off a basalt reference; he said the division
-  // into scales and patches was not for him, and that the details should be
-  // lines, not patches. So: one dark grainy stone, and painted on it a cream
-  // band along the belly and white lines along the flanks, with a thinner
-  // line of Maya blue beside each, the white much more than the blue, his
-  // order of colours. The lines are incised a little, so the light finds
-  // their edges, and the paint is worn, so they are not vector lines.
+  // The body's skin. His calls, in order: not carved plumes laid like tiles
+  // (he did not like that design), not grey stone either (too literal), but
+  // a dark green, saturated enough to let the crest and the lines stand out;
+  // scales were a fine idea, so these are a snake's: small keeled scales in
+  // a staggered lattice over the back and flanks, and wide ventral scutes
+  // across the belly band. Painted over them, and meant to stand out hard:
+  // a cream band along the belly, one white line along each flank and a
+  // thinner line of Maya blue between the white and the crest. White is the
+  // body's second colour, the blue its third, and there is more white.
   //
   // Round the body: a quarter of the way is the back (under the crest),
   // three quarters is the belly; the flanks sit at the seam and at the half.
-  const stoneMaps = (device) => {
+  const skinMaps = (device) => {
     const W = 512, H = 256;
-    const stone = [0.19, 0.21, 0.19], cream = [0.84, 0.80, 0.70], white = [0.90, 0.88, 0.82], maya = [0.42, 0.72, 0.86], ochre = [0.40, 0.27, 0.15];
-    // noise along the body, for the wear on the paint and the grain
+    const green = [0.06, 0.30, 0.17], cream = [0.86, 0.82, 0.70], white = [0.96, 0.95, 0.91], maya = [0.45, 0.78, 0.92], ochre = [0.40, 0.27, 0.15];
     const seedF = (x, y) => { const v = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453; return v - Math.floor(v); };
     const smooth = (x, y, sc) => {
       const fx = x / sc, fy = y / sc, ix = Math.floor(fx), iy = Math.floor(fy), tx = fx - ix, ty = fy - iy;
@@ -413,36 +413,61 @@
       const u = tx * tx * (3 - 2 * tx), v = ty * ty * (3 - 2 * ty);
       return (a * (1 - u) + b * u) * (1 - v) + (c2 * (1 - u) + d2 * u) * v;
     };
-    // where the paint is, as (v centre, half width, colour, how worn)
-    // A band with edge lines and paired flank lines read as a road with its
-    // markings. One band, one line a flank, one blue line above each.
+    // the belly band, in v, and the scutes across it
+    const B0 = 0.675, B1 = 0.825, SCUTE = 28;
+    // the scales: rows round the body, staggered along it
+    const SROW = 24, SLEN = 38;
+    const scaleAt = (x, y) => {
+      // returns 0..1 inside a scale (1 at the keel), 0 in the groove
+      const row = Math.floor(y / SROW);
+      const off = (row % 2) * (SLEN / 2);
+      const cy = (row + 0.5) * SROW;
+      const cx = (Math.floor((x - off) / SLEN) + 0.5) * SLEN + off;
+      const dx = (x - cx) / (SLEN * 0.5), dy = (y - cy) / (SROW * 0.5);
+      // a rounded diamond, longer along the body, its free edge toward the tail
+      const d = Math.pow(Math.abs(dx), 1.6) + Math.pow(Math.abs(dy), 1.6);
+      const inside = Math.min(1, Math.max(0, (1.0 - d) / 0.22));
+      const keel = Math.exp(-dy * dy * 6.0) * 0.35;
+      return inside * (0.65 + keel);
+    };
     const lines = [
-      { v: 0.750, hw: 0.075, col: cream, worn: 0.40 },   // the belly band, worn
-      { v: 0.000, hw: 0.007, col: white, worn: 0.42 },   // one white line a flank
-      { v: 0.500, hw: 0.007, col: white, worn: 0.42 },
-      { v: 0.130, hw: 0.004, col: maya, worn: 0.48 },    // the blue, thinner, between the white and the crest
-      { v: 0.370, hw: 0.004, col: maya, worn: 0.48 },
+      { v: 0.000, hw: 0.009, col: white, worn: 0.20 },
+      { v: 0.500, hw: 0.009, col: white, worn: 0.20 },
+      { v: 0.130, hw: 0.005, col: maya, worn: 0.28 },
+      { v: 0.370, hw: 0.005, col: maya, worn: 0.28 },
     ];
     const col = document.createElement("canvas"); col.width = W; col.height = H;
     const cc = col.getContext("2d"); const img = cc.createImageData(W, H);
     const hgt = new Float32Array(W * H);
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const v = y / H;
-      const grain = 0.86 + 0.28 * smooth(x, y, 2.3) * 0.5 + 0.14 * smooth(x, y, 11);
-      let h = 0.5 + (smooth(x, y, 3) - 0.5) * 0.08 + (smooth(x, y, 23) - 0.5) * 0.10;
-      let r = stone[0] * grain, g = stone[1] * grain, b = stone[2] * grain;
-      // an ochre fleck now and then, the head has them
-      if (seedF(x * 3.1, y * 1.7) > 0.992) { r = ochre[0]; g = ochre[1]; b = ochre[2]; }
+      const grain = 0.90 + 0.20 * smooth(x, y, 2.3);
+      let h, r, g, b;
+      const inBand = v > B0 && v < B1;
+      if (inBand) {
+        // the scutes: wide plates across the belly, a groove between them
+        const along = ((x % SCUTE) + SCUTE) % SCUTE;
+        const groove = Math.min(1, Math.max(0, (2.5 - Math.min(along, SCUTE - along)) / 1.5));
+        const edge = Math.min(1, Math.max(0, Math.min(v - B0, B1 - v) / 0.012));
+        h = 0.58 - 0.22 * groove - 0.10 * (1 - edge);
+        const k = (1 - 0.45 * groove) * grain * (0.80 + 0.20 * edge);
+        r = cream[0] * k; g = cream[1] * k; b = cream[2] * k;
+      } else {
+        const sc = scaleAt(x, y);
+        h = 0.42 + 0.30 * sc + (smooth(x, y, 3) - 0.5) * 0.05;
+        const k = (0.62 + 0.55 * sc) * grain;
+        r = green[0] * k; g = green[1] * k; b = green[2] * k;
+      }
+      if (seedF(x * 3.1, y * 1.7) > 0.994) { r = ochre[0]; g = ochre[1]; b = ochre[2]; }
       for (const ln of lines) {
         const dv = Math.min(Math.abs(v - ln.v), Math.abs(v - ln.v + 1), Math.abs(v - ln.v - 1));
         if (dv > ln.hw + 0.004) continue;
-        // soft at the edge, and worn through along the body
-        const edge = Math.min(1, Math.max(0, (ln.hw + 0.004 - dv) / 0.006));
+        const edge = Math.min(1, Math.max(0, (ln.hw + 0.004 - dv) / 0.005));
         const wear = smooth(x, y + 300, 9) * 0.6 + smooth(x, y + 900, 37) * 0.4;
-        const k = edge * Math.min(1, Math.max(0, (wear - ln.worn) / (1 - ln.worn) * 1.6));
-        const tone = 0.90 + 0.18 * smooth(x, y + 77, 5);
+        const k = edge * Math.min(1, Math.max(0, (wear - ln.worn) / (1 - ln.worn) * 2.2));
+        const tone = 0.94 + 0.10 * smooth(x, y + 77, 5);
         r = r * (1 - k) + ln.col[0] * tone * k; g = g * (1 - k) + ln.col[1] * tone * k; b = b * (1 - k) + ln.col[2] * tone * k;
-        h -= 0.16 * edge;   // incised
+        h -= 0.10 * edge;
       }
       hgt[y * W + x] = h;
       const i = (y * W + x) * 4;
@@ -588,13 +613,13 @@
     // At one, not 0.8: the map's greens were measured off the head, and a
     // multiplier under one was darkening them by a fifth before the light
     // touched them.
-    const maps = stoneMaps(app.graphicsDevice);
+    const maps = skinMaps(app.graphicsDevice);
     mat.diffuse = new pc.Color(1, 1, 1);
     mat.diffuseMap = maps.diffuse;
     mat.diffuseMapTiling = new pc.Vec2(3, 1);
     mat.normalMap = maps.normal;
     mat.normalMapTiling = new pc.Vec2(3, 1);
-    mat.bumpiness = 1.0;
+    mat.bumpiness = 1.3;
     mat.specular = new pc.Color(0.20, 0.19, 0.14);
     // Matte, like the head. At metalness 0.72 and gloss 0.8 the map only had
     // 28 percent of the surface and the rest was one bright line of highlight
@@ -610,7 +635,7 @@
     // The head's own hue, 150, not the teal this was. It is the colour of the
     // shadow side and of the glow on arrival, and at hue 173 it was pulling
     // the whole body colder than the head.
-    mat.emissive = new pc.Color(0.020, 0.026, 0.024);
+    mat.emissive = new pc.Color(0.015, 0.045, 0.025);
     mat.emissiveIntensity = 0.5;
     // Opaque, and this is not a style choice. Transparent, it never wrote depth,
     // and neither does the splat pass, so there was nothing for either to test
