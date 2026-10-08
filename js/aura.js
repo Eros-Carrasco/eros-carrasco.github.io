@@ -30,17 +30,22 @@
   // between the steam and the night, built against a reference clip beat by
   // beat; he liked the steam and not the explosion, so the steam became the
   // whole change.
+  // The gathering ran four seconds and he asked for a third less; it is
+  // 2.67 now and everything after it moved up by the same 1.33, so the beats
+  // keep their shares. The cover is full a quarter second before the swap
+  // and holds a third of a second past it, so the pose changes under solid
+  // steam and not under the last of it.
   const T_BUILD  = 0.30;  // the air starts to gather on him, cold and thin
-  const T_THICK  = 4.30;  // it thickens and spreads
-  const T_COVER  = 5.20;  // nothing in the box but steam
-  const T_SWAP   = 5.32;  // the pose changes, under it
-  const T_CLEAR  = 5.60;  // the steam starts to let go
-  const T_NIGHT  = 6.40;  // and the violet night is there, full of stars
-  const T_METEOR = 6.90;  // a star falls across it
-  const T_DEITY  = 7.60;  // the serpent starts climbing, under the violet
-  const T_HELD   = 7.70;  // the violet starts to turn, as slowly as it climbs
-  const T_SET    = 10.80; // the serpent has resolved
-  const T_FAN    = 11.20; // and come to rest on his shoulder
+  const T_THICK  = 2.97;  // it thickens and spreads
+  const T_COVER  = 3.74;  // nothing in the box but steam
+  const T_SWAP   = 3.99;  // the pose changes, under it
+  const T_CLEAR  = 4.34;  // the steam starts to let go
+  const T_NIGHT  = 5.07;  // and the violet night is there, full of stars
+  const T_METEOR = 5.57;  // a star falls across it
+  const T_DEITY  = 6.27;  // the serpent starts climbing, under the violet
+  const T_HELD   = 6.37;  // the violet starts to turn, as slowly as it climbs
+  const T_SET    = 9.47;  // the serpent has resolved
+  const T_FAN    = 9.87;  // and come to rest on his shoulder
 
   function build(scene) {
     const { app, camera, el } = scene;
@@ -126,12 +131,24 @@
                  + 4.5 * thick * (1 - gone);
       const grow = 1 + 2.4 * thick * (1 - .5 * gone);
       const airA = .018 * thick * (1 - gone);
-      scene.aura(push, fade, null, grow, airA);
+      // whiter as it thickens: at its gathering tint it read as grey smoke
+      // against the pale steam the backdrop paints behind it
+      scene.aura(push, fade, [.84 + .32 * thick, .94 + .22 * thick, 1.0 + .16 * thick], grow, airA);
       // and the copy in front of him, which is what actually hides the swap.
       // Denser than the one behind: at the same weight he was a ghost under
       // it and the pose changed in plain view.
-      const hide = thick * (1 - gone);
-      scene.veil(.15 + 1.30 * thick + 1.20 * gone, 9.0 * hide, 1 + 3.2 * thick * (1 - .5 * gone), .055 * hide);
+      // It stays on him rather than spreading with the shell: the backdrop
+      // covers the rest of the box by itself, and sent out past the corners
+      // the veil left gaps over his own silhouette, which is the one place
+      // it is needed. Measured as the mean difference between the frame with
+      // him and without him, out of 255: eight spread out, under two here.
+      // It goes as soon as the swap is behind it, in a third of a second,
+      // while the steam behind him is still nearly whole: he comes out of
+      // the steam in the new pose, and the steam then breaks up into the
+      // night. Left to thin with the shell it hung on as a white cut out of
+      // his own shape over the night.
+      const hide = thick * (1 - ease(clamp(norm(t, T_CLEAR, T_CLEAR + .35), 0, 1)));
+      scene.veil(.10 + .25 * thick + .60 * (1 - hide), 14.0 * hide, 1 + 4.0 * thick, .12 * hide);
 
       // ---- what the backdrop is doing, one named signal per beat ----
       const sig = el.dataset;
@@ -147,7 +164,7 @@
       // and it breathes once while it is there
       sig.swell = Math.pow(Math.sin(clamp(norm(t, T_NIGHT, T_DEITY + .4), 0, 1) * Math.PI), 1.15).toFixed(3);
       // one falling star, while the night is at its fullest
-      const mu = norm(t, T_METEOR, T_METEOR + .75);
+      const mu = norm(t, T_METEOR, T_METEOR + .55);
       sig.meteor = (mu > 0 && mu < 1 ? mu : 0).toFixed(3);
       // the night turning vivid, tied to the serpent's own climb
       sig.field = ease(clamp(norm(t, T_DEITY, T_FAN - .2), 0, 1)).toFixed(3);

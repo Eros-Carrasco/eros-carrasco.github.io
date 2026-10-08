@@ -154,6 +154,8 @@
     uniform vec3  uTint;
     uniform float uGrow;   // how much bigger every splat is drawn, 1 as it gathers
     uniform float uAir;    // alpha the far splats carry, 0 as it gathers
+    uniform vec3  uToward; // the way to the camera, for the veil
+    uniform float uRadial; // 1: pushed out from the heart (the shell); 0: toward the camera (the veil)
 
     float sh(vec3 p) { return fract(sin(dot(p, vec3(12.99, 78.23, 37.71))) * 43758.5453); }
     float sn(vec3 p) {
@@ -195,7 +197,11 @@
     void modifySplatCenter(inout vec3 center) {
       float d = frill(center);
       // Lifted as well as pushed out, so the fringe rises off him like heat.
-      vec3 dir = normalize(center - uHeart) + vec3(0.0, 0.55, 0.0);
+      // The shell is pushed out from his heart and lifted, like heat. The
+      // veil is pushed straight at the camera instead, so it keeps his
+      // silhouette and sits over all of him: pushed out from the heart, the
+      // splats at his feet went down and his shoes showed under the steam.
+      vec3 dir = mix(uToward, normalize(center - uHeart) + vec3(0.0, 0.55, 0.0), uRadial);
       center += normalize(dir) * uPush * (0.07 + 2.40 * d * d);
     }
     void modifySplatRotationScale(vec3 oc, vec3 mc, inout vec4 rotation, inout vec3 scale) {
@@ -256,6 +262,8 @@
     mat.setParameter("uFade", 0);
     mat.setParameter("uGrow", 1);
     mat.setParameter("uAir", 0);
+    mat.setParameter("uToward", [0, 0, 1]);
+    mat.setParameter("uRadial", layers ? 0 : 1);
     mat.setParameter("uTint", [.84, .94, 1.0]);
     mat.update();
     return { e, mat };
@@ -315,6 +323,12 @@
         veilMat.setParameter("uWind", performance.now() / 1000);
         veilMat.setParameter("uGrow", grow);
         veilMat.setParameter("uAir", air);
+        // the same white the backdrop paints, or his silhouette shows in the
+        // steam as a greyer patch of his own shape
+        veilMat.setParameter("uTint", [1.14, 1.145, 1.16]);
+        const c = camera.getPosition();
+        const tw = new pc.Vec3(c.x - pivot.x, c.y - pivot.y, c.z - pivot.z).normalize();
+        veilMat.setParameter("uToward", [tw.x, tw.y, tw.z]);
       },
       // Called from inside the flash. Nothing happens if the second pose has
       // not finished downloading, which keeps a slow line from showing a cut.

@@ -133,12 +133,12 @@ void main() {
   vec3 nightCol = night + vec3(.86, .80, 1.00) * sky * (.90 + .50 * swell) * 1.30;
 
   // ---- a falling star ----
-  // Once, across the top of the night, over most of a second. A bright head
+  // Once, across the top of the night, in half a second. A bright head
   // and a tail that thins behind it, both soft, and it fades in and out so
   // it is never cut off at either end.
   float meteor = 0.;
   if (met > .001 && met < .999) {
-    vec2  m0  = vec2(-1.05, .92), m1 = vec2(.80, .28);
+    vec2  m0  = vec2(-1.05, .92), m1 = vec2(1.12, .16);   // off the right edge
     vec2  dir = normalize(m1 - m0);
     vec2  hp  = mix(m0, m1, met);
     vec2  rel = p - hp;
@@ -174,6 +174,14 @@ void main() {
   float cov = smoothstep(th, th + .40, vap);
   // Pale the whole way: with a grey low end it read as smoke, not steam.
   vec3 steamC = mix(vec3(.86, .89, .94), vec3(.98, .985, 1.00), clamp(vap, 0., 1.));
+  // Flat while it is whole. The veil over him is one smooth white and the
+  // steam here has grain, and the two side by side drew his outline; for
+  // the moment the box is all steam, the grain goes too.
+  steamC = mix(steamC, vec3(.975, .98, 1.00), smoothstep(.70, 1.0, cover));
+  // A thin even haze comes up under the patches as they form, so the holes
+  // between them show pale air and not the dark room: with the room showing
+  // through, the steam read as black smoke while it was closing.
+  col = mix(col, steamC * .80, smoothstep(0., .6, cover) * .85);
   col = mix(col, steamC, cov);
 
   // Before the capture arrives the room is dimmer, and it comes up as the

@@ -405,31 +405,44 @@
   // A standing feather, the same green stone as the ruff on the head, with a
   // ridge and a darker edge. Two tones, which is all that survives twenty
   // pixels across.
+  // Silver, with the shaft in one of the head's two other colours: its
+  // crimson or its gold. His call, after the teal ones. window.__featherShaft
+  // picks which, "crimson" unless told "gold"; the lab page sets it from the
+  // url so the two can be put side by side.
+  const SHAFT = {
+    crimson: ["rgba(142,31,42,0.95)", "rgba(190,52,62,0.95)"],
+    gold:    ["rgba(176,132,52,0.95)", "rgba(226,194,110,0.95)"],
+  };
   const featherTexture = (device) => {
     const W = 64, H = 256;
     const cv = document.createElement("canvas");
     cv.width = W; cv.height = H;
     const c = cv.getContext("2d");
     const g = c.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0.00, "#244a3a");
-    g.addColorStop(0.55, "#2f6a52");
-    g.addColorStop(1.00, "#1f4536");
+    g.addColorStop(0.00, "#9a9ea8");
+    g.addColorStop(0.50, "#d3d6dc");
+    g.addColorStop(1.00, "#a4a8b1");
     c.fillStyle = g;
     c.fillRect(0, 0, W, H);
     for (let i = 0; i < 1400; i++) {
-      const v = Math.random() < 0.5 ? "rgba(140,150,120,0.22)" : "rgba(10,20,12,0.25)";
+      const v = Math.random() < 0.5 ? "rgba(245,247,250,0.28)" : "rgba(60,64,72,0.22)";
       c.fillStyle = v;
       c.fillRect(Math.random() * W, Math.random() * H, 1.5, 1.5);
     }
     const e = c.createLinearGradient(0, 0, W, 0);
-    e.addColorStop(0.00, "rgba(6,12,8,0.75)");
-    e.addColorStop(0.22, "rgba(6,12,8,0.0)");
-    e.addColorStop(0.78, "rgba(6,12,8,0.0)");
-    e.addColorStop(1.00, "rgba(6,12,8,0.75)");
+    e.addColorStop(0.00, "rgba(40,44,52,0.70)");
+    e.addColorStop(0.22, "rgba(40,44,52,0.0)");
+    e.addColorStop(0.78, "rgba(40,44,52,0.0)");
+    e.addColorStop(1.00, "rgba(40,44,52,0.70)");
     c.fillStyle = e;
     c.fillRect(0, 0, W, H);
-    c.strokeStyle = "rgba(205,195,160,0.85)";
-    c.lineWidth = 4;
+    const shaft = SHAFT[(typeof window !== "undefined" && window.__featherShaft) || "crimson"] || SHAFT.crimson;
+    const sg = c.createLinearGradient(0, 0, 0, H);
+    sg.addColorStop(0.00, shaft[0]);
+    sg.addColorStop(0.45, shaft[1]);
+    sg.addColorStop(1.00, shaft[0]);
+    c.strokeStyle = sg;
+    c.lineWidth = 6;
     c.beginPath(); c.moveTo(W / 2, 0); c.lineTo(W / 2, H * 0.92); c.stroke();
     const t = new pc.Texture(device, { width: W, height: H, format: pc.PIXELFORMAT_RGBA8, mipmaps: true });
     t.addressU = t.addressV = pc.ADDRESS_CLAMP_TO_EDGE;
@@ -505,10 +518,11 @@
     matF.diffuse = new pc.Color(1, 1, 1);
     matF.diffuseMap = featherTexture(app.graphicsDevice);
     matF.diffuseMapTiling = new pc.Vec2(1, 1);
-    matF.specular = new pc.Color(0.16, 0.14, 0.10);
-    matF.gloss = 0.28;
+    // silver: a sheen the stone body does not have, but not a mirror
+    matF.specular = new pc.Color(0.40, 0.40, 0.43);
+    matF.gloss = 0.42;
     matF.useMetalness = false;
-    matF.emissive = new pc.Color(0.06, 0.04, 0.02);
+    matF.emissive = new pc.Color(0.03, 0.03, 0.035);
     matF.emissiveIntensity = 0.35;
     matF.blendType = pc.BLEND_NONE;
     matF.depthWrite = true;
