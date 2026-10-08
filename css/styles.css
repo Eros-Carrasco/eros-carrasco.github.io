@@ -395,11 +395,11 @@ body.project-page {
 
 /* the lead sits above the bullets, so it needs the gap back */
 .lab-card .lab-lead {
-  margin: 0 0 10px;
+  margin: 0 0 14px;
 }
 
 .lab-card li + li {
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 @media (min-width: 900px) {
@@ -516,6 +516,19 @@ body.project-page {
 
 .links-list li {
   margin: 0;
+}
+
+/* Links shares a row with Recognition. Centre the pills in the space under the
+   heading so they sit level with the badge, and drop the list indent. */
+.links-section {
+  display: flex;
+  flex-direction: column;
+}
+.project-section.links-section .links-list {
+  flex: 1;
+  align-items: center;
+  align-content: center;
+  padding-left: 0;
 }
 
 .links-list a {
