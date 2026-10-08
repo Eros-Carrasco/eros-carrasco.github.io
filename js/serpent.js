@@ -306,7 +306,7 @@
     return { pos, nrm, uv, idx };
   };
   const TPL = { crest: featherTemplate(0.34), ruff: featherTemplate(0.26), tail: featherTemplate(0.20) };
-  const BANDS = 6;   // emerald, deep emerald, crimson, gold, cream, teal: the atlas
+  const BANDS = 6;   // emerald, deep emerald, orange, gold, cream, blue: the atlas
   let bodyRings = null;
   // The body at a distance d behind the head: its centre, the way it runs
   // (toward the head), and a frame round it. D is the back: away from him,
@@ -362,8 +362,9 @@
       const off = (v, a, b) => [f.c[0] + f.D[0] * a + f.S[0] * b, f.c[1] + f.D[1] * a + f.S[1] * b, f.c[2] + f.D[2] * a + f.S[2] * b];
       const root = off(f.c, f.g * 0.85, row * f.g * 0.28);
       const len = Math.max(0.07, f.g * 2.0);
-      // greens mostly, in three shades, a gold one in seven, a cream one in eleven
-      const band = i % 11 === 5 ? 4 : i % 7 === 3 ? 3 : [0, 1, 5][i % 3];
+      // green only, in its two shades: more than that and the crest was a
+      // parrot, his words were that it had too many colours
+      const band = i % 2;
       place(out, TPL.crest, root, X, Y, Z, len, band);
     }
     // the ruff: a ring round the neck, radiating out and leaning back, the
@@ -378,7 +379,8 @@
       const Z = mixv(f.T, R, Math.cos(back), Math.sin(back));
       const X = norm(cross(Y, Z));
       const root = [f.c[0] + R[0] * f.g * 0.9, f.c[1] + R[1] * f.g * 0.9, f.c[2] + R[2] * f.g * 0.9];
-      place(out, TPL.ruff, root, X, Y, Z, f.g * 1.5, i % 2 ? 3 : 2);
+      // orange, with a white one in four and a blue one in seven
+      place(out, TPL.ruff, root, X, Y, Z, f.g * 1.5, i % 7 === 3 ? 5 : i % 4 === 1 ? 4 : 2);
     }
     // the plume at the tail: long feathers fanning back off the last of it
     for (let i = 0; i < N_TAIL; i++) {
@@ -392,7 +394,8 @@
       const X = norm(cross(Y, Z));
       const root = [f.c[0] + R[0] * f.g * 0.5, f.c[1] + R[1] * f.g * 0.5, f.c[2] + R[2] * f.g * 0.5];
       const len = 0.42 + 0.22 * (1 - Math.abs(spread) / 0.75);
-      place(out, TPL.tail, root, X, Y, Z, len, i === 3 ? 2 : i % 2 ? 5 : 1);
+      // orange in the middle, white beside it, blue at the two edges
+      place(out, TPL.tail, root, X, Y, Z, len, [5, 4, 2, 2, 2, 4, 5][i]);
     }
     return out;
   };
@@ -482,7 +485,9 @@
     // Stone first. The paint used to be the ruff's full teal and the body
     // competed with the feathers, which carry the colour now: this is grey
     // green stone with the paint worn down into the hollows.
-    const paint = [0.33, 0.42, 0.37], stone = [0.58, 0.54, 0.44], ochre = [0.44, 0.30, 0.17];
+    // Dark, like the basalt the reference is carved from: at a pale grey
+    // green he said it looked washed out and vegetable.
+    const paint = [0.13, 0.21, 0.17], stone = [0.31, 0.30, 0.26], ochre = [0.40, 0.27, 0.15];
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const h = hAt(x, y);
       // groove and stone ground below 0.3, paint on the plume body, stone
@@ -550,10 +555,10 @@
     const paints = [
       { base: [0.04, 0.26, 0.15], tip: [0.10, 0.62, 0.34], edge: [0.05, 0.40, 0.48] },   // emerald
       { base: [0.03, 0.18, 0.11], tip: [0.07, 0.44, 0.26], edge: [0.04, 0.30, 0.38] },   // deep emerald
-      { base: [0.38, 0.04, 0.07], tip: [0.86, 0.14, 0.12], edge: [0.60, 0.08, 0.20] },   // crimson
+      { base: [0.52, 0.17, 0.03], tip: [0.98, 0.54, 0.12], edge: [0.88, 0.30, 0.06] },   // orange
       { base: [0.62, 0.34, 0.06], tip: [0.98, 0.78, 0.26], edge: [0.90, 0.52, 0.12] },   // gold
       { base: [0.70, 0.66, 0.56], tip: [0.95, 0.93, 0.86], edge: [0.80, 0.80, 0.78] },   // cream
-      { base: [0.03, 0.22, 0.30], tip: [0.10, 0.52, 0.62], edge: [0.08, 0.36, 0.60] },   // teal
+      { base: [0.04, 0.18, 0.46], tip: [0.14, 0.44, 0.84], edge: [0.10, 0.30, 0.70] },   // blue
     ];
     const quill = [0.93, 0.88, 0.70];
     const col = document.createElement("canvas"); col.width = W; col.height = H;
@@ -668,8 +673,8 @@
     // The head's own hue, 150, not the teal this was. It is the colour of the
     // shadow side and of the glow on arrival, and at hue 173 it was pulling
     // the whole body colder than the head.
-    mat.emissive = new pc.Color(0.035, 0.045, 0.040);
-    mat.emissiveIntensity = 0.6;
+    mat.emissive = new pc.Color(0.020, 0.026, 0.024);
+    mat.emissiveIntensity = 0.5;
     // Opaque, and this is not a style choice. Transparent, it never wrote depth,
     // and neither does the splat pass, so there was nothing for either to test
     // against and whichever drew last won the whole frame. In practice the
