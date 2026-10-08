@@ -38,7 +38,7 @@
   const T_BUILD  = 0.30;  // the air starts to gather on him, cold and thin
   const T_THICK  = 2.97;  // it thickens and spreads
   const T_COVER  = 3.74;  // nothing in the box but steam
-  const T_SWAP   = 3.99;  // the pose changes, under it
+  const T_SWAP   = 3.79;  // the pose changes, the moment it is
   const T_CLEAR  = 4.34;  // the steam starts to let go
   const T_NIGHT  = 5.07;  // and the violet night is there, full of stars
   const T_METEOR = 5.57;  // a star falls across it
@@ -180,6 +180,12 @@
         // and from here the camera holds still, facing him, until the
         // serpent has come to rest on his shoulder
         if (swapped) scene.hold(true);
+        // The second pose is six megabytes. If it is not in yet, the clock
+        // waits here, under the steam, until it is: a swap that lands late
+        // lands after the steam has opened, in plain view, which is what he
+        // saw. The steam itself keeps drifting on wall time, so the wait
+        // does not read as a freeze.
+        else if (isNaN(HOLD_AT)) t = T_SWAP;
       }
       if (swapped && !released && t >= T_FAN) { released = true; scene.hold(false); }
 

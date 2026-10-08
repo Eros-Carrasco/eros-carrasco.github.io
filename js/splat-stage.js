@@ -156,6 +156,7 @@
     uniform float uAir;    // alpha the far splats carry, 0 as it gathers
     uniform vec3  uToward; // the way to the camera, for the veil
     uniform float uRadial; // 1: pushed out from the heart (the shell); 0: toward the camera (the veil)
+    uniform float uGrain;  // how much the veil's splats differ from each other in tone
 
     float sh(vec3 p) { return fract(sin(dot(p, vec3(12.99, 78.23, 37.71))) * 43758.5453); }
     float sn(vec3 p) {
@@ -227,6 +228,9 @@
       // gathers, carry enough to stack into a wall when it is told to.
       float a = uFade * (0.0006 + uAir + 0.90 * near);
       vec3 tint = mix(uTint * 0.86, vec3(1.0), near);
+      // grain, for the veil: an even white over the whole box was too much
+      // for the eye, and grey tones through it is what he asked for
+      tint *= 1.0 + uGrain * (d - 0.5) * 2.0;
       color = vec4(tint, color.a * a);
     }
 `;
@@ -264,6 +268,7 @@
     mat.setParameter("uAir", 0);
     mat.setParameter("uToward", [0, 0, 1]);
     mat.setParameter("uRadial", layers ? 0 : 1);
+    mat.setParameter("uGrain", layers ? 0.22 : 0);
     mat.setParameter("uTint", [.84, .94, 1.0]);
     mat.update();
     return { e, mat };
@@ -325,7 +330,7 @@
         veilMat.setParameter("uAir", air);
         // the same white the backdrop paints, or his silhouette shows in the
         // steam as a greyer patch of his own shape
-        veilMat.setParameter("uTint", [1.14, 1.145, 1.16]);
+        veilMat.setParameter("uTint", [1.01, 1.02, 1.05]);
         const c = camera.getPosition();
         const tw = new pc.Vec3(c.x - pivot.x, c.y - pivot.y, c.z - pivot.z).normalize();
         veilMat.setParameter("uToward", [tw.x, tw.y, tw.z]);

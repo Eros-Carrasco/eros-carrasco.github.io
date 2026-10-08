@@ -172,12 +172,12 @@ void main() {
             + fbm(p * 4.6 - vec2(t * .03, t * .14)) * .30;
   float th  = mix(1.05, -.45, cover);
   float cov = smoothstep(th, th + .40, vap);
-  // Pale the whole way: with a grey low end it read as smoke, not steam.
-  vec3 steamC = mix(vec3(.86, .89, .94), vec3(.98, .985, 1.00), clamp(vap, 0., 1.));
-  // Flat while it is whole. The veil over him is one smooth white and the
-  // steam here has grain, and the two side by side drew his outline; for
-  // the moment the box is all steam, the grain goes too.
-  steamC = mix(steamC, vec3(.975, .98, 1.00), smoothstep(.70, 1.0, cover));
+  // Pale, but not white: an even white over the whole box was too much for
+  // the eye. Grey tones through it, moving, with a finer grain on top; the
+  // veil over him carries the same grain, so his outline does not show as
+  // smooth beside grainy.
+  float grain = fbm(p * 9.0 + vec2(-t * .07, t * .11)) - .5;
+  vec3 steamC = mix(vec3(.74, .77, .82), vec3(.90, .915, .94), clamp(vap, 0., 1.)) + grain * .07;
   // A thin even haze comes up under the patches as they form, so the holes
   // between them show pale air and not the dark room: with the room showing
   // through, the steam read as black smoke while it was closing.
