@@ -25,6 +25,14 @@
 
 <body>
 
+  <!-- PHONE BAR: slides in once the intro has scrolled away (phones only) -->
+  <div class="phone-bar" id="phone-bar" aria-hidden="true">
+    <div class="phone-bar-inner">
+      <span class="phone-bar-name">Eros Carrasco</span>
+      <a class="phone-btn phone-btn-primary phone-btn-sm" href="assets/Eros%20Carrasco%20-%20Resume.pdf" tabindex="-1">Resume</a>
+    </div>
+  </div>
+
   <main class="homepage-grid">
 
     <!-- LEFT COLUMN -->
@@ -61,13 +69,27 @@
       <canvas id="splat-canvas"></canvas>
     </div>
 
+    <!-- PHONE INTRO: name and contact under the splat (phones only) -->
+    <div class="phone-intro" id="phone-intro">
+      <p class="phone-eyebrow">Graduate Researcher @ NYU</p>
+      <h1 class="phone-name">Eros Carrasco</h1>
+      <p class="phone-lede">Builds the real-time graphics and the computer vision that bring the real world into XR.</p>
+      <nav class="phone-actions" aria-label="Contact">
+        <a class="phone-btn phone-btn-primary" href="assets/Eros%20Carrasco%20-%20Resume.pdf">Resume</a>
+        <a class="phone-btn" href="mailto:ejj2059@nyu.edu">Email</a>
+        <a class="phone-btn" href="about/">About</a>
+      </nav>
+    </div>
+
     </div><!-- /left-column -->
 
     <!-- PROJECT CARDS (right column, 2x3) -->
     <div class="projects-grid">
 
+      <h2 class="phone-label">Selected work</h2>
+
       <!-- SPLATLAB -->
-      <a class="card" href="projects/splatlab/" data-project="splatlab">
+      <a class="card card-featured" href="projects/splatlab/" data-project="splatlab">
         <div class="card-media">
           <video src="assets/videos/card_splatlab.mp4" poster="assets/images/poster_splatlab_card.jpg" muted loop
             playsinline preload="none" tabindex="-1" aria-hidden="true"></video>
@@ -75,6 +97,7 @@
 
         <div class="card-info">
           <h3>SplatLab</h3>
+          <p class="card-desc">Gaussian splat research: spatial analysis, object recognition, relighting and transitions, in an Unreal integration and a renderer of my own.</p>
           <div class="tags">
             <span>Gaussian Splatting</span>
             <span>Real-Time Relighting</span>
@@ -85,7 +108,7 @@
       </a>
 
       <!-- MRANDARIN -->
-      <a class="card" href="projects/mrandarin/" data-project="mrandarin">
+      <a class="card card-featured" href="projects/mrandarin/" data-project="mrandarin">
         <div class="card-media">
           <video src="assets/videos/card_mrandarin.mp4" poster="assets/images/poster_mrandarin.jpg" muted loop
             playsinline preload="none" tabindex="-1" aria-hidden="true"></video>
@@ -93,6 +116,7 @@
 
         <div class="card-info">
           <h3>MRandarin</h3>
+          <p class="card-desc">A mixed reality Chinese handwriting tutor for the Quest 3: marker based registration in WebXR, OCR on a paired PC, and an evaluation of five recognisers against real headset captures.</p>
           <div class="tags">
             <span>Computer Vision</span>
             <span>Real-Time OCR</span>
@@ -103,7 +127,7 @@
       </a>
 
       <!-- FUTURE REALITY LAB -->
-      <a class="card" href="projects/future-reality-lab/" data-project="frl">
+      <a class="card card-featured" href="projects/future-reality-lab/" data-project="frl">
         <div class="card-media">
           <video src="assets/videos/card_frl.mp4" poster="assets/images/poster_frl_card.jpg" muted loop
             playsinline preload="none" tabindex="-1" aria-hidden="true"></video>
@@ -111,6 +135,7 @@
 
         <div class="card-info">
           <h3>Future Reality Lab</h3>
+          <p class="card-desc">Research with Ken Perlin's group at NYU, building software for the lab's VR platform.</p>
           <div class="tags">
             <span>Mixed Reality</span>
             <span>Research</span>
@@ -121,14 +146,19 @@
       </a>
 
       <!-- TRANSFR CARD -->
-      <a class="card" href="projects/transfr/" data-project="transfr">
+      <a class="card card-featured" href="projects/transfr/" data-project="transfr">
         <div class="card-media">
-          <video src="assets/videos/transfr_hero.mp4" poster="assets/images/poster_transfr.jpg" muted loop playsinline
-            preload="none" tabindex="-1" aria-hidden="true"></video>
+          <video poster="assets/images/poster_transfr.jpg" muted loop playsinline
+            preload="none" tabindex="-1" aria-hidden="true">
+            <!-- Phones play a lighter copy of the same reel: 2 MB instead of 4.6 -->
+            <source src="assets/videos/transfr_hero_phone.mp4" type="video/mp4" media="(max-width: 640px)" />
+            <source src="assets/videos/transfr_hero.mp4" type="video/mp4" />
+          </video>
         </div>
 
         <div class="card-info">
           <h3>Transfr</h3>
+          <p class="card-desc">Designed and developed five VR career exploration simulations in Unity, deployed in real educational environments.</p>
           <div class="tags">
             <span>VR Training</span>
             <span>Industry Production</span>
@@ -137,6 +167,8 @@
 
         <div class="card-overlay-icon" aria-hidden="true">↗</div>
       </a>
+
+      <h2 class="phone-label">More projects</h2>
 
       <!-- MOTION CAPTURE CARD -->
       <a class="card" href="projects/salsa-ai/" data-project="mocap">
@@ -192,6 +224,17 @@
       </a>
 
     </div><!-- /projects-grid -->
+
+    <!-- PHONE CONTACT (phones only) -->
+    <section class="phone-contact" aria-labelledby="phone-contact-title">
+      <h2 class="phone-label" id="phone-contact-title">Contact</h2>
+      <nav class="phone-contact-links">
+        <a class="phone-btn phone-btn-primary" href="assets/Eros%20Carrasco%20-%20Resume.pdf">Resume</a>
+        <a class="phone-btn" href="mailto:ejj2059@nyu.edu">Email</a>
+        <a class="phone-btn" href="https://www.linkedin.com/in/eros-carrasco/">LinkedIn</a>
+        <a class="phone-btn" href="https://github.com/Eros-Carrasco">GitHub</a>
+      </nav>
+    </section>
 
   </main>
 

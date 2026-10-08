@@ -292,8 +292,9 @@ body.project-page {
   border:1.5px solid rgba(255,255,255,0.06);
 }
 
-/* A photo hero keeps the crop it was given, so nothing gets cut off. */
-.project-hero-media-image {
+/* A photo hero keeps the crop it was given, so nothing gets cut off. Both
+   classes, so this outranks the fixed height on .project-hero-media below. */
+.project-hero-media.project-hero-media-image {
   height: auto;
   aspect-ratio: 1.95;
 }
@@ -408,6 +409,26 @@ body.project-page {
   }
 }
 
+/* On a phone a card inside a card leaves the text a narrow column. Drop the
+   inner card and let a rule between the two labs do the separating. */
+@media (max-width: 640px) {
+  .lab-grid {
+    gap: 22px;
+  }
+
+  .lab-card {
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .lab-card + .lab-card {
+    padding-top: 22px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+}
+
 /* two-column on desktop */
 @media (min-width: 900px) {
   .project-sections {
@@ -451,6 +472,17 @@ body.project-page {
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.08);
   opacity: 0.9;
+}
+
+/* A little smaller on a phone, so the About pills take two rows, not three. */
+@media (max-width: 640px) {
+  .project-meta {
+    gap: 6px;
+  }
+
+  .pill {
+    padding: 5px 9px;
+  }
 }
 
 /* gallery */
@@ -550,6 +582,24 @@ body.project-page {
   background: rgba(255,255,255,0.12);
   border-color: rgba(255,255,255,0.2);
   transform: translateY(-2px);
+}
+
+/* Four links on a phone: two by two, so Email is not left alone on a row,
+   and tall enough for a thumb. */
+@media (max-width: 640px) {
+  .project-section.links-section .links-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .links-list a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    box-sizing: border-box;
+  }
 }
 
 .recognition-list {
@@ -1208,3 +1258,323 @@ details.numbers[open] summary {
 .splat-stage #splat-canvas { z-index: 1; }
 /* The change of pose happens under the steam now, in the canvases; there is
    no sheet in front of them any more. */
+
+/* ===== PHONE ===== */
+/* Below 640px the landing is its own layout rather than the desktop one
+   squeezed: the splat opens edge to edge with the name and contact buttons
+   under it, the first four projects follow as full-width clips that play while
+   on screen, the other three sit in a short list, and the contact links close
+   the page. The pieces that only exist here stay hidden at every other width. */
+.phone-bar,
+.phone-intro,
+.phone-label,
+.phone-contact,
+.card-desc {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  body {
+    background: #0a1117;
+  }
+
+  .homepage-grid {
+    display: block;
+    min-height: 0;
+    padding: 0 0 48px;
+  }
+
+  .left-column {
+    gap: 0;
+  }
+
+  /* The splat is already him, so the portrait card steps aside. */
+  .card-about {
+    display: none;
+  }
+
+  .splat-stage {
+    border: 0;
+    border-radius: 0;
+  }
+
+  /* A vertical swipe scrolls the page; a sideways one turns the splat. */
+  .splat-stage canvas {
+    touch-action: pan-y;
+  }
+
+  /* Bar with the resume, shown once the intro has scrolled away. */
+  .phone-bar {
+    display: block;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    height: 0;
+  }
+
+  .phone-bar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 20px;
+    background: rgba(10, 17, 23, 0.86);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+    transform: translateY(-100%);
+    opacity: 0;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+  }
+
+  .phone-bar.is-on .phone-bar-inner {
+    transform: none;
+    opacity: 1;
+  }
+
+  .phone-bar-name {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .phone-intro {
+    display: grid;
+    gap: 10px;
+    padding: 22px 20px 0;
+  }
+
+  .phone-eyebrow {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: #5ddcff;
+  }
+
+  .phone-name {
+    margin: 0;
+    font-size: 34px;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+
+  .phone-lede {
+    margin: 0;
+    font-size: 17px;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.65);
+  }
+
+  .phone-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding-top: 8px;
+  }
+
+  .phone-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    padding: 0 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    background: #0f141b;
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .phone-btn-primary {
+    background: #5ddcff;
+    border-color: transparent;
+    color: #04202b;
+  }
+
+  .phone-btn-sm {
+    min-height: 36px;
+    padding: 0 14px;
+    border-radius: 10px;
+    font-size: 14px;
+  }
+
+  .phone-label {
+    display: block;
+    margin: 0;
+    padding: 44px 20px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .projects-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .projects-grid .card {
+    height: auto;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    transition: none;
+  }
+
+  .projects-grid .card:hover,
+  .projects-grid .card:focus-visible {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .projects-grid .card:hover .card-media video,
+  .projects-grid .card:focus-visible .card-media video {
+    transform: none;
+  }
+
+  /* Featured: the clip runs edge to edge and the text sits under it. */
+  .card-featured + .card-featured {
+    margin-top: 36px;
+  }
+
+  .card-featured .card-media {
+    flex: none;
+    aspect-ratio: 16 / 9;
+  }
+
+  .card-featured .card-info {
+    position: static;
+    width: auto;
+    display: grid;
+    gap: 6px;
+    padding: 14px 20px 0;
+    background: none;
+  }
+
+  .card-featured .card-info h3 {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0;
+    font-size: 21px;
+    line-height: 1.2;
+  }
+
+  .card-featured .card-info h3::after {
+    content: "↗";
+    flex: none;
+    font-size: 18px;
+    font-weight: 400;
+    color: #5ddcff;
+  }
+
+  .card-featured .card-desc {
+    display: block;
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.65);
+  }
+
+  .card-featured .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .card-featured .tags span {
+    padding: 3px 9px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    opacity: 1;
+  }
+
+  .card-featured .tags span:not(:last-child)::after {
+    content: none;
+  }
+
+  .card-featured .card-overlay-icon {
+    display: none;
+  }
+
+  /* The rest: one compact row each, thumbnail, name, tags. */
+  .projects-grid .card:not(.card-featured) {
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    min-height: 76px;
+    margin: 0 20px;
+    padding: 12px 0;
+    overflow: visible;
+    border-top: 1px solid rgba(255, 255, 255, 0.09);
+  }
+
+  .projects-grid .card:not(.card-featured):last-child {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  }
+
+  .projects-grid .card:not(.card-featured) .card-media {
+    flex: none;
+    width: 92px;
+    height: 58px;
+    border-radius: 10px;
+  }
+
+  .projects-grid .card:not(.card-featured) .card-info {
+    position: static;
+    width: auto;
+    padding: 0;
+    background: none;
+  }
+
+  .projects-grid .card:not(.card-featured) .card-info h3 {
+    margin: 0 0 2px;
+    font-size: 16px;
+  }
+
+  .projects-grid .card:not(.card-featured) .tags span {
+    font-size: 13px;
+    opacity: 0.65;
+    white-space: normal;
+  }
+
+  .projects-grid .card:not(.card-featured) .tags span:not(:last-child)::after {
+    content: ",";
+    margin: 0;
+    opacity: 1;
+  }
+
+  .projects-grid .card:not(.card-featured) .card-overlay-icon {
+    position: static;
+    opacity: 1;
+    transform: none;
+    font-size: 18px;
+    color: #5ddcff;
+  }
+
+  .phone-contact {
+    display: block;
+  }
+
+  .phone-contact-links {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 0 20px;
+  }
+}
+
+@media (max-width: 640px) and (prefers-reduced-motion: reduce) {
+  .phone-bar-inner {
+    transition: none;
+  }
+}

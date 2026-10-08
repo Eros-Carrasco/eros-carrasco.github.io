@@ -13,7 +13,9 @@
   const app = new pc.Application(canvas, {
     graphicsDeviceOptions: { alpha: true, antialias: false },
     mouse: new pc.Mouse(canvas),
-    touch: new pc.TouchDevice(canvas),
+    // No pc.TouchDevice: it cancels every touchmove on the canvas, so on a
+    // phone a swipe over the splat could not scroll the page. The drag below
+    // runs on pointer events, which touch sends anyway.
   });
   app.setCanvasFillMode(pc.FILLMODE_NONE);
   app.setCanvasResolution(pc.RESOLUTION_AUTO);
