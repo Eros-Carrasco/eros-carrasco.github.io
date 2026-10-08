@@ -248,9 +248,13 @@
   // rings, so it slides along with the animal.
   const ALONG = 10, ACROSS = 6;
   const featherTemplate = (ratio) => {
+    // A feather's outline, not a leaf's: a narrow quill, vanes that widen
+    // past the middle, a rounded tip. The fringe at the edge is cut by the
+    // atlas's alpha, not by the mesh.
     const hw = (t) => {
-      let w = Math.max(0.12, Math.pow(Math.sin(Math.PI * Math.pow(t, 0.75)), 0.65));
-      if (t > 0.35) w *= 1 - 0.10 * Math.pow(Math.max(0, Math.sin(t * 22 * Math.PI)), 2);
+      let w = Math.pow(Math.sin(Math.PI * Math.pow(t, 0.62)), 0.55);
+      if (t > 0.88) w *= Math.sqrt(Math.max(0, 1 - Math.pow((t - 0.88) / 0.12, 2))) * 0.75 + 0.25;
+      w = Math.max(0.09 + 0.10 * t, w);
       return w * ratio;
     };
     const P = (sIn, tIn, face) => {
@@ -302,7 +306,7 @@
     return { pos, nrm, uv, idx };
   };
   const TPL = { crest: featherTemplate(0.34), ruff: featherTemplate(0.26), tail: featherTemplate(0.20) };
-  const BANDS = 4;   // emerald, crimson, gold, bare stone, in the atlas
+  const BANDS = 6;   // emerald, deep emerald, crimson, gold, cream, teal: the atlas
   let bodyRings = null;
   // The body at a distance d behind the head: its centre, the way it runs
   // (toward the head), and a frame round it. D is the back: away from him,
@@ -347,7 +351,10 @@
       const d = 0.07 + (i / (N_CREST - 1)) * 0.86;
       const f = ringAt(d);
       const row = i % 2 ? 1 : -1;
-      const lift = 0.45;
+      // alive: a slow wave runs down the crest, each feather lifting a few
+      // degrees and settling, so the plumage moves while the stone does not
+      const wT = (typeof performance !== "undefined" ? performance.now() : Date.now()) * 0.001;
+      const lift = 0.45 + 0.07 * Math.sin(wT * 1.7 - d * 9.0) + 0.03 * Math.sin(wT * 2.9 + i);
       const Y = mixv(f.T, f.D, -Math.cos(lift), Math.sin(lift));
       let Z = mixv(f.D, f.T, Math.cos(lift), Math.sin(lift));
       Z = rotAround(Z, Y, row * 0.42);
@@ -355,7 +362,8 @@
       const off = (v, a, b) => [f.c[0] + f.D[0] * a + f.S[0] * b, f.c[1] + f.D[1] * a + f.S[1] * b, f.c[2] + f.D[2] * a + f.S[2] * b];
       const root = off(f.c, f.g * 0.85, row * f.g * 0.28);
       const len = Math.max(0.07, f.g * 2.0);
-      const band = i % 7 === 3 ? 3 : i % 4 === 1 ? 2 : 0;
+      // greens mostly, in three shades, a gold one in seven, a cream one in eleven
+      const band = i % 11 === 5 ? 4 : i % 7 === 3 ? 3 : [0, 1, 5][i % 3];
       place(out, TPL.crest, root, X, Y, Z, len, band);
     }
     // the ruff: a ring round the neck, radiating out and leaning back, the
@@ -370,7 +378,7 @@
       const Z = mixv(f.T, R, Math.cos(back), Math.sin(back));
       const X = norm(cross(Y, Z));
       const root = [f.c[0] + R[0] * f.g * 0.9, f.c[1] + R[1] * f.g * 0.9, f.c[2] + R[2] * f.g * 0.9];
-      place(out, TPL.ruff, root, X, Y, Z, f.g * 1.5, i % 2 ? 2 : 1);
+      place(out, TPL.ruff, root, X, Y, Z, f.g * 1.5, i % 2 ? 3 : 2);
     }
     // the plume at the tail: long feathers fanning back off the last of it
     for (let i = 0; i < N_TAIL; i++) {
@@ -384,7 +392,7 @@
       const X = norm(cross(Y, Z));
       const root = [f.c[0] + R[0] * f.g * 0.5, f.c[1] + R[1] * f.g * 0.5, f.c[2] + R[2] * f.g * 0.5];
       const len = 0.42 + 0.22 * (1 - Math.abs(spread) / 0.75);
-      place(out, TPL.tail, root, X, Y, Z, len, i === 3 ? 1 : i % 2 ? 2 : 0);
+      place(out, TPL.tail, root, X, Y, Z, len, i === 3 ? 2 : i % 2 ? 5 : 1);
     }
     return out;
   };
@@ -471,7 +479,10 @@
     // of its ruff, and the paint sits in the plumes with the stone showing
     // between them and worn through on their ridges, which is what the head
     // looks like up close.
-    const paint = [0.13, 0.40, 0.31], stone = [0.58, 0.54, 0.44], ochre = [0.44, 0.30, 0.17];
+    // Stone first. The paint used to be the ruff's full teal and the body
+    // competed with the feathers, which carry the colour now: this is grey
+    // green stone with the paint worn down into the hollows.
+    const paint = [0.33, 0.42, 0.37], stone = [0.58, 0.54, 0.44], ochre = [0.44, 0.30, 0.17];
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const h = hAt(x, y);
       // groove and stone ground below 0.3, paint on the plume body, stone
@@ -531,9 +542,20 @@
   // carving catches the light the way the body's plumes do.
   const featherAtlas = (device) => {
     const W = 128, BH = 256, H = BH * BANDS;
-    // the head's own paints, measured off its texture, not brighter ones
-    const paints = [[0.12, 0.34, 0.24], [0.44, 0.13, 0.09], [0.54, 0.37, 0.17], [0.60, 0.56, 0.47]];
-    const stone = [0.60, 0.56, 0.47];
+    // Alive, not stone: the body is the stone now, the plumage carries the
+    // colour. Each band runs from a darker base to a brighter tip, and the
+    // edges shift toward the next hue round, the way a quetzal's green goes
+    // blue at the margins: flat primaries read as plastic, which is what the
+    // first pass of these did.
+    const paints = [
+      { base: [0.04, 0.26, 0.15], tip: [0.10, 0.62, 0.34], edge: [0.05, 0.40, 0.48] },   // emerald
+      { base: [0.03, 0.18, 0.11], tip: [0.07, 0.44, 0.26], edge: [0.04, 0.30, 0.38] },   // deep emerald
+      { base: [0.38, 0.04, 0.07], tip: [0.86, 0.14, 0.12], edge: [0.60, 0.08, 0.20] },   // crimson
+      { base: [0.62, 0.34, 0.06], tip: [0.98, 0.78, 0.26], edge: [0.90, 0.52, 0.12] },   // gold
+      { base: [0.70, 0.66, 0.56], tip: [0.95, 0.93, 0.86], edge: [0.80, 0.80, 0.78] },   // cream
+      { base: [0.03, 0.22, 0.30], tip: [0.10, 0.52, 0.62], edge: [0.08, 0.36, 0.60] },   // teal
+    ];
+    const quill = [0.93, 0.88, 0.70];
     const col = document.createElement("canvas"); col.width = W; col.height = H;
     const cc = col.getContext("2d"); const img = cc.createImageData(W, H);
     const nc = document.createElement("canvas"); nc.width = W; nc.height = H;
@@ -541,27 +563,44 @@
     const height = (x, y) => {
       const u = x / W, v = (y % BH) / BH;
       const sv = (u - 0.5) * 2;
-      const rachis = Math.exp(-(sv / 0.10) * (sv / 0.10)) * (1 - 0.5 * v);
-      // barbs: fine, slanting, and uneven, or they read as corduroy
+      const rachis = Math.exp(-(sv / 0.08) * (sv / 0.08)) * (1 - 0.5 * v);
+      // barbs: fine, slanting toward the tip, and uneven
       const wob = Math.sin(v * 23.0 + sv * 7.0) * 0.5 + Math.sin(v * 61.0 - sv * 3.0) * 0.25;
       const along = v * 64 - Math.abs(sv) * 9 + wob;
       const barb = 0.5 + 0.5 * Math.sin(along * Math.PI * 2);
-      return Math.min(1, 0.40 + 0.07 * barb + 0.50 * rachis);
+      return Math.min(1, 0.40 + 0.12 * barb + 0.50 * rachis);
+    };
+    // The fringe: where the vane ends, barb by barb. Inside the vane alpha
+    // is one, outside it is zero, and the edge between them is cut into
+    // fine teeth that get longer toward the tip, where barbs come apart.
+    const inside = (u, v) => {
+      const sa = Math.abs((u - 0.5) * 2);
+      if (v < 0.10) return sa < 0.10 + v * 1.2;                      // the quill
+      // teeth coarse enough to be seen, and barbs coming apart at the tip
+      const tooth = 0.5 + 0.5 * Math.sin(v * 44 * Math.PI + Math.sin(v * 13.0) * 2.5);
+      const fray = 0.06 + 0.30 * Math.max(0, (v - 0.62) / 0.38);
+      const split = v > 0.74 && Math.sin(v * 120 * Math.PI + sa * 9.0) > 0.86 && sa > 0.35 ? 0.35 : 0;
+      const edge = 1 - fray * tooth - (v > 0.92 ? (v - 0.92) * 4.0 : 0);
+      return sa < edge - split;
     };
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const band = Math.floor(y / BH), u = x / W, v = (y % BH) / BH;
       const sa = Math.abs((u - 0.5) * 2);
       const h = height(x, y);
       const paint = paints[band];
-      const grain = 0.88 + Math.random() * 0.24;
-      const edge = Math.max(0, (sa - 0.80) / 0.20);
-      const wear = Math.min(1, Math.max(0, (h - 0.80) / 0.20) * 0.8 + edge * 0.5 + (v > 0.92 ? 0.5 : 0));
+      const grain = 0.92 + Math.random() * 0.16;
+      // the rachis pale, like a quill, the rest the paint lit by the barbs
+      const onQuill = Math.min(1, Math.max(0, (h - 0.78) / 0.14));
+      const toTip = Math.min(1, Math.max(0, (v - 0.10) / 0.80));
+      const toEdge = Math.pow(sa, 2.2);
       const i = (y * W + x) * 4;
       for (let ch = 0; ch < 3; ch++) {
-        const painted = paint[ch] * (0.80 + 0.35 * h);
-        img.data[i + ch] = Math.min(255, (painted * (1 - wear) + stone[ch] * 1.05 * wear) * grain * 255);
+        const along = paint.base[ch] + (paint.tip[ch] - paint.base[ch]) * toTip;
+        const hue = along + (paint.edge[ch] - along) * toEdge * 0.7;
+        const painted = hue * (0.80 + 0.40 * (h - 0.4));
+        img.data[i + ch] = Math.min(255, Math.max(0, (painted * (1 - onQuill) + quill[ch] * onQuill) * grain * 255));
       }
-      img.data[i + 3] = 255;
+      img.data[i + 3] = inside(u, v) ? 255 : 0;
       const dx = (height(Math.min(W - 1, x + 1), y) - height(Math.max(0, x - 1), y)) * 3.0;
       const dy = (height(x, Math.min(H - 1, y + 1)) - height(x, Math.max(0, y - 1))) * 3.0;
       const l = Math.hypot(dx, dy, 1);
@@ -629,8 +668,8 @@
     // The head's own hue, 150, not the teal this was. It is the colour of the
     // shadow side and of the glow on arrival, and at hue 173 it was pulling
     // the whole body colder than the head.
-    mat.emissive = new pc.Color(0.025, 0.085, 0.058);
-    mat.emissiveIntensity = 0.7;
+    mat.emissive = new pc.Color(0.035, 0.045, 0.040);
+    mat.emissiveIntensity = 0.6;
     // Opaque, and this is not a style choice. Transparent, it never wrote depth,
     // and neither does the splat pass, so there was nothing for either to test
     // against and whichever drew last won the whole frame. In practice the
@@ -651,12 +690,17 @@
     matF.diffuseMapTiling = new pc.Vec2(1, 1);
     matF.normalMap = fmaps.normal;
     matF.normalMapTiling = new pc.Vec2(1, 1);
-    matF.bumpiness = 1.3;
-    // the same stone as the body: matte, painted
-    matF.specular = new pc.Color(0.20, 0.19, 0.14);
-    matF.gloss = 0.30;
+    matF.bumpiness = 1.1;
+    // cut to the fringe by the atlas's alpha; still opaque where it is drawn,
+    // so it writes depth and wraps round him like the body does
+    matF.opacityMap = fmaps.diffuse;
+    matF.opacityMapChannel = "a";
+    matF.alphaTest = 0.5;
+    // a feather's sheen, more than the stone body has, short of plastic
+    matF.specular = new pc.Color(0.20, 0.21, 0.18);
+    matF.gloss = 0.38;
     matF.useMetalness = false;
-    matF.emissive = new pc.Color(0.025, 0.05, 0.04);
+    matF.emissive = new pc.Color(0.02, 0.03, 0.02);
     matF.emissiveIntensity = 0.5;
     matF.blendType = pc.BLEND_NONE;
     matF.depthWrite = true;
