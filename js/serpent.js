@@ -436,12 +436,16 @@
     // full strength, and the lines between scales and between scutes are
     // white. Both are meant to stand out.
     const seam = white;
+    // Wide, solid, and lit from inside: "sin miedo", his words. They also go
+    // into an emissive map, so they glow a little on their own.
     const lines = [
-      { v: 0.000, hw: 0.010, col: maya, worn: 0.18 },
-      { v: 0.500, hw: 0.010, col: maya, worn: 0.18 },
-      { v: 0.130, hw: 0.007, col: maya, worn: 0.22 },
-      { v: 0.370, hw: 0.007, col: maya, worn: 0.22 },
+      { v: 0.000, hw: 0.024, col: maya, worn: 0 },
+      { v: 0.500, hw: 0.024, col: maya, worn: 0 },
+      { v: 0.130, hw: 0.012, col: maya, worn: 0 },
+      { v: 0.370, hw: 0.012, col: maya, worn: 0 },
     ];
+    const emi = document.createElement("canvas"); emi.width = W; emi.height = H;
+    const ec = emi.getContext("2d"); const eimg = ec.createImageData(W, H);
     const col = document.createElement("canvas"); col.width = W; col.height = H;
     const cc = col.getContext("2d"); const img = cc.createImageData(W, H);
     const hgt = new Float32Array(W * H);
@@ -467,21 +471,24 @@
         r = green[0] * k * (1 - gb) + seam[0] * gb; g = green[1] * k * (1 - gb) + seam[1] * gb; b = green[2] * k * (1 - gb) + seam[2] * gb;
       }
       if (seedF(x * 3.1, y * 1.7) > 0.994) { r = ochre[0]; g = ochre[1]; b = ochre[2]; }
+      let glow = 0;
       for (const ln of lines) {
         const dv = Math.min(Math.abs(v - ln.v), Math.abs(v - ln.v + 1), Math.abs(v - ln.v - 1));
         if (dv > ln.hw + 0.004) continue;
         const edge = Math.min(1, Math.max(0, (ln.hw + 0.004 - dv) / 0.005));
         const wear = smooth(x, y + 300, 9) * 0.6 + smooth(x, y + 900, 37) * 0.4;
-        const k = edge * Math.min(1, Math.max(0, (wear - ln.worn) / (1 - ln.worn) * 2.2));
-        const tone = 0.94 + 0.10 * smooth(x, y + 77, 5);
+        const k = edge * (ln.worn > 0 ? Math.min(1, Math.max(0, (wear - ln.worn) / (1 - ln.worn) * 2.2)) : 1);
+        const tone = 0.96 + 0.06 * smooth(x, y + 77, 5);
         r = r * (1 - k) + ln.col[0] * tone * k; g = g * (1 - k) + ln.col[1] * tone * k; b = b * (1 - k) + ln.col[2] * tone * k;
         h -= 0.10 * edge;
+        glow = Math.max(glow, k);
       }
       hgt[y * W + x] = h;
       const i = (y * W + x) * 4;
       img.data[i] = Math.min(255, r * 255); img.data[i + 1] = Math.min(255, g * 255); img.data[i + 2] = Math.min(255, b * 255); img.data[i + 3] = 255;
+      eimg.data[i] = maya[0] * glow * 255; eimg.data[i + 1] = maya[1] * glow * 255; eimg.data[i + 2] = maya[2] * glow * 255; eimg.data[i + 3] = 255;
     }
-    cc.putImageData(img, 0, 0);
+    cc.putImageData(img, 0, 0); ec.putImageData(eimg, 0, 0);
     const hAt = (x, y) => hgt[((y + H) % H) * W + ((x + W) % W)];
     const nrm = document.createElement("canvas"); nrm.width = W; nrm.height = H;
     const nc = nrm.getContext("2d"); const nimg = nc.createImageData(W, H);
@@ -503,7 +510,7 @@
       t.setSource(src);
       return t;
     };
-    return { diffuse: mk(col), normal: mk(nrm) };
+    return { diffuse: mk(col), normal: mk(nrm), emissive: mk(emi) };
   };
 
   // The feathers' atlas, six bands: every barb drawn as its own stroke out
@@ -643,8 +650,12 @@
     // The head's own hue, 150, not the teal this was. It is the colour of the
     // shadow side and of the glow on arrival, and at hue 173 it was pulling
     // the whole body colder than the head.
-    mat.emissive = new pc.Color(0.015, 0.045, 0.025);
-    mat.emissiveIntensity = 0.5;
+    // the blue lines glow a little on their own, through the emissive map;
+    // heat() scales this through the climb
+    mat.emissiveMap = maps.emissive;
+    mat.emissiveMapTiling = new pc.Vec2(3, 1);
+    mat.emissive = new pc.Color(1, 1, 1);
+    mat.emissiveIntensity = 0.55;
     // Opaque, and this is not a style choice. Transparent, it never wrote depth,
     // and neither does the splat pass, so there was nothing for either to test
     // against and whichever drew last won the whole frame. In practice the
