@@ -62,7 +62,7 @@
 
     // ---- the clock ----
     let t = -1;                  // seconds since the idle pose landed
-    let swapped = false, released = false;
+    let swapped = false, released = false, cleared = false;
     let yaw = 0, aimed = false;
 
     // Two debug handles on the url, both no ops for a visitor.
@@ -175,6 +175,8 @@
       // after one try left the capture standing in the idle pose for good.
       // A swap that lands late is visible for a moment; a swap that never
       // lands loses the whole point of the burst.
+      // the first pose goes the instant the box is all steam
+      if (!cleared && t >= T_COVER) { scene.clear(); cleared = true; }
       if (!swapped && t >= T_SWAP) {
         swapped = scene.swap();
         // and from here the camera holds still, facing him, until the

@@ -348,6 +348,12 @@
       // Called from inside the flash. Nothing happens if the second pose has
       // not finished downloading, which keeps a slow line from showing a cut.
       hold: (on) => { held = !!on; },
+      // The first pose leaves the scene the moment the steam fills the box,
+      // whether or not the second has arrived: it used to stay until the
+      // swap, and the swap waits for the second pose, so on a slow line he
+      // stood under the steam for as long as the download took. The steam
+      // copies of him stay; they are the steam.
+      clear: () => { if (current) { current.destroy(); current = null; } },
       swap: () => {
         if (!pending) return false;
         index = 1;
