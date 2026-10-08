@@ -324,7 +324,10 @@
     for (let i = 0; i < uv.length; i += 2) out.uv.push(uv[i], (band + uv[i + 1]) / BANDS);
     for (const k of idx) out.idx.push(base + k);
   };
-  const N_ROW = 46, N_RUFF = 22, N_TAIL = 5;
+  // Twice the feathers in each row, his call. They are all one mesh, one
+  // draw, rebuilt each frame, so the cost is a little more work on the CPU
+  // placing them and nothing to speak of on the GPU.
+  const N_ROW = 92, N_RUFF = 22, N_TAIL = 5;
   const buildFeathers = (e) => {
     const out = { pos: [], nrm: [], uv: [], idx: [] };
     if (!bodyRings) return out;
@@ -347,7 +350,7 @@
         const root = [f.c[0] + f.D[0] * f.g * 0.80 + f.S[0] * row * f.g * 0.42,
                       f.c[1] + f.D[1] * f.g * 0.80 + f.S[1] * row * f.g * 0.42,
                       f.c[2] + f.D[2] * f.g * 0.80 + f.S[2] * row * f.g * 0.42];
-        const len = Math.max(0.06, f.g * 1.7);
+        const len = Math.max(0.055, f.g * 1.5);
         // green only, in its two shades
         place(out, TPL.crest, root, X, Y, Z, len, (i + row) & 1);
       }
@@ -436,13 +439,14 @@
     // full strength, and the lines between scales and between scutes are
     // white. Both are meant to stand out.
     const seam = white;
-    // Wide, solid, and lit from inside: "sin miedo", his words. They also go
-    // into an emissive map, so they glow a little on their own.
+    // Solid, half again as wide as they started, and lit from inside: what
+    // he asked for was light, not width, so most of it is in the emissive
+    // map they also go into.
     const lines = [
-      { v: 0.000, hw: 0.024, col: maya, worn: 0 },
-      { v: 0.500, hw: 0.024, col: maya, worn: 0 },
-      { v: 0.130, hw: 0.012, col: maya, worn: 0 },
-      { v: 0.370, hw: 0.012, col: maya, worn: 0 },
+      { v: 0.000, hw: 0.015, col: maya, worn: 0 },
+      { v: 0.500, hw: 0.015, col: maya, worn: 0 },
+      { v: 0.130, hw: 0.0105, col: maya, worn: 0 },
+      { v: 0.370, hw: 0.0105, col: maya, worn: 0 },
     ];
     const emi = document.createElement("canvas"); emi.width = W; emi.height = H;
     const ec = emi.getContext("2d"); const eimg = ec.createImageData(W, H);
@@ -616,9 +620,11 @@
   window.makeSerpent = (app) => {
     const body = mesh(app, buildBody(0));
     const plume = mesh(app, buildFeathers(0));
-    const refresh = (m2, d) => {
+    const refresh = (m2, d, tangents = true) => {
       m2.setPositions(d.pos); m2.setNormals(d.nrm); m2.setUvs(0, d.uv); m2.setIndices(d.idx);
-      m2.setVertexStream(pc.SEMANTIC_TANGENT, pc.calculateTangents(d.pos, d.nrm, d.uv, d.idx), 4);
+      // the feathers carry no normal map now, so they skip the tangents,
+      // which were most of the cost of rebuilding them every frame
+      if (tangents) m2.setVertexStream(pc.SEMANTIC_TANGENT, pc.calculateTangents(d.pos, d.nrm, d.uv, d.idx), 4);
       m2.update(pc.PRIMITIVE_TRIANGLES);
     };
 
@@ -655,7 +661,7 @@
     mat.emissiveMap = maps.emissive;
     mat.emissiveMapTiling = new pc.Vec2(3, 1);
     mat.emissive = new pc.Color(1, 1, 1);
-    mat.emissiveIntensity = 0.55;
+    mat.emissiveIntensity = 1.1;
     // Opaque, and this is not a style choice. Transparent, it never wrote depth,
     // and neither does the splat pass, so there was nothing for either to test
     // against and whichever drew last won the whole frame. In practice the
@@ -919,7 +925,7 @@
         const e = ease(k);
         placeHead(k);
         refresh(body, buildBody(e));
-        refresh(plume, buildFeathers(e));
+        refresh(plume, buildFeathers(e), false);
       },
       // Scales what the materials already carry. It used to write fixed
       // numbers over them every frame, and the feathers' was 2.05, which is
