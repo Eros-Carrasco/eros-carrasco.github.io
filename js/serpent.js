@@ -153,6 +153,10 @@
   // vector, because a coil passes through vertical and a fixed up makes the
   // cross section flip over when it does.
   const L = 1 + RISE;
+  // The body is a little shorter than the head's travel, so the tail, and
+  // the plume on it, come up out of the floor as the head settles instead of
+  // staying under it for good.
+  const L_BODY = 0.90;
   const headAt = (e) => -RISE + Math.min(1, Math.max(0, e)) * L;
   // How far along the animal is at progress k: slow out of the floor, slow
   // into the shoulder, quickest through the middle. It used to ease out
@@ -182,7 +186,7 @@
     for (let i = 0; i <= RINGS; i++) {
       const sb = i / RINGS;                 // 0 at the tail, 1 at the head
       const d = 1 - sb;                     // distance from the head, as a share
-      const u = k - d * L;
+      const u = k - d * L_BODY;
       const c = curve(u);
       if (d < NECK) {
         const dist = Math.hypot(c[0] - nape[0], c[1] - nape[1], c[2] - nape[2]);
@@ -193,6 +197,7 @@
         centres.push(c);
       }
     }
+    bodyRings = centres;   // the feathers stand on these same rings
     const pos = [], nrm = [], uv = [], idx = [];
     let up = [0, 1, 0];
     for (let i = 0; i <= RINGS; i++) {
@@ -227,49 +232,161 @@
     return { pos, nrm, uv, idx };
   };
 
-  // The feathers: leaf blades standing off the spine in two ranks, each at a
-  // fixed distance behind the head, so they travel with the body.
-  const N_FEATHERS = 46;
-  const buildFeathers = (e) => {
-    const k = headAt(e);
+  // ---- the feathers ----
+  // His call, after the leaf blades and a silver accident: real feathers,
+  // carved in the same painted stone as the head, in the head's three paints
+  // (its emerald, its crimson, its ochre gold) with the bare stone on a few.
+  // Three places: a crest of overlapping feathers down the whole back, big
+  // at the nape and small toward the tail, in two rows lying to either side
+  // like the slopes of a roof; a ruff round the neck; a plume at the tail.
+  //
+  // One feather is built once, in its own space (y along it, x across, z out
+  // of the face), as a solid with a top face, a bottom face and a wall round
+  // the edge, so it has thickness like a carving. The vane widens and tapers,
+  // the edge is notched into barbs, the spine curls back and the rachis
+  // stands up as a ridge. Every frame each one is placed on the body's own
+  // rings, so it slides along with the animal.
+  const ALONG = 10, ACROSS = 6;
+  const featherTemplate = (ratio) => {
+    const hw = (t) => {
+      let w = Math.max(0.12, Math.pow(Math.sin(Math.PI * Math.pow(t, 0.75)), 0.65));
+      if (t > 0.35) w *= 1 - 0.10 * Math.pow(Math.max(0, Math.sin(t * 22 * Math.PI)), 2);
+      return w * ratio;
+    };
+    const P = (sIn, tIn, face) => {
+      const sC = Math.max(-1, Math.min(1, sIn)), tC = Math.max(0, Math.min(1, tIn));
+      const w = hw(tC);
+      let z = -0.35 * tC * tC
+            - 0.12 * sC * sC * w
+            + 0.10 * ratio * Math.exp(-(sC / 0.14) * (sC / 0.14)) * (1 - 0.6 * tC);
+      const th = 0.16 * ratio * (1 - 0.5 * tC);
+      if (face < 0) z -= th;
+      return [sC * w, tC, z];
+    };
     const pos = [], nrm = [], uv = [], idx = [];
-    let up = [0, 1, 0];
-    for (let i = 0; i < N_FEATHERS; i++) {
-      const d = 0.05 + (i / N_FEATHERS) * 0.90;     // distance from the head
-      const u = k - d * L;
-      const c = curve(u);
-      const tan = norm(sub(curve(u + .004), curve(u - .004)));
-      let side = norm(cross(tan, up));
-      up = norm(cross(side, tan));
-      const g = girthS(d);
-      const len = (0.07 + 0.16 * Math.sin((1 - d) * Math.PI * 0.9)) * (0.50 + 0.95 * ((i * 0.618) % 1));
-      // Splayed, and not the same pair twice. Two blades at a fixed angle the
-      // whole way along is a fin; the lean walks so they fan out.
-      const splay = 0.30 + 0.45 * ((i * 0.382) % 1);
-      for (const lean of [-splay, splay]) {
-        const bx = side[0] * lean + up[0], by = side[1] * lean + up[1], bz = side[2] * lean + up[2];
-        const bv = norm([bx, by, bz]);
-        const root = [c[0] + bv[0] * g * .8, c[1] + bv[1] * g * .8, c[2] + bv[2] * g * .8];
-        const tip = [root[0] + bv[0] * len, root[1] + bv[1] * len, root[2] + bv[2] * len];
-        // A leaf, not a spike: narrow at the root, widest at a third, tapered.
-        const w = g * 0.62;
+    const grid = (face) => {
+      const base = pos.length / 3;
+      for (let i = 0; i <= ALONG; i++) {
+        const t = i / ALONG;
+        for (let j = 0; j <= ACROSS; j++) {
+          const sv = j / ACROSS * 2 - 1;
+          const p = P(sv, t, face);
+          const ds = sub(P(sv + .02, t, face), P(sv - .02, t, face));
+          const dt = sub(P(sv, t + .02, face), P(sv, t - .02, face));
+          let n = norm(cross(ds, dt));
+          if (n[2] < 0) n = [-n[0], -n[1], -n[2]];
+          if (face < 0) n = [-n[0], -n[1], -n[2]];
+          pos.push(p[0], p[1], p[2]); nrm.push(n[0], n[1], n[2]); uv.push((sv + 1) / 2, t);
+        }
+      }
+      for (let i = 0; i < ALONG; i++) for (let j = 0; j < ACROSS; j++) {
+        const a = base + i * (ACROSS + 1) + j, b = a + ACROSS + 1;
+        idx.push(a, b, a + 1, a + 1, b, b + 1);
+      }
+      return base;
+    };
+    const top = grid(1), bot = grid(-1);
+    for (const j of [0, ACROSS]) {
+      for (let i = 0; i < ALONG; i++) {
+        const a = top + i * (ACROSS + 1) + j, b = a + ACROSS + 1;
+        const c = bot + i * (ACROSS + 1) + j, d = c + ACROSS + 1;
+        const at = (k) => pos.slice(k * 3, k * 3 + 3);
+        const pa = at(a), pb = at(b), pcv = at(c), pd = at(d);
+        let n = norm(cross(sub(pb, pa), sub(pcv, pa)));
+        if ((j === 0) === (n[0] > 0)) n = [-n[0], -n[1], -n[2]];
         const base = pos.length / 3;
-        const along = (t2) => [root[0] + (tip[0] - root[0]) * t2, root[1] + (tip[1] - root[1]) * t2, root[2] + (tip[2] - root[2]) * t2];
-        const SHAPE = [[0, .22], [.34, 1.0], [.72, .72], [1, 0]];
-        for (const [t2, half] of SHAPE) {
-          const c2 = along(t2);
-          pos.push(c2[0] - tan[0] * w * half, c2[1] - tan[1] * w * half, c2[2] - tan[2] * w * half);
-          pos.push(c2[0] + tan[0] * w * half, c2[1] + tan[1] * w * half, c2[2] + tan[2] * w * half);
-          nrm.push(bv[0], bv[1], bv[2]); nrm.push(bv[0], bv[1], bv[2]);
-          uv.push(0, t2); uv.push(1, t2);
-        }
-        for (let q = 0; q < SHAPE.length - 1; q++) {
-          const a0 = base + q * 2;
-          idx.push(a0, a0 + 2, a0 + 1, a0 + 1, a0 + 2, a0 + 3);
-        }
+        for (const p of [pa, pb, pcv, pd]) { pos.push(p[0], p[1], p[2]); nrm.push(n[0], n[1], n[2]); uv.push(j === 0 ? 0.02 : 0.98, (i + 0.5) / ALONG); }
+        idx.push(base, base + 1, base + 2, base + 1, base + 3, base + 2);
       }
     }
     return { pos, nrm, uv, idx };
+  };
+  const TPL = { crest: featherTemplate(0.34), ruff: featherTemplate(0.26), tail: featherTemplate(0.20) };
+  const BANDS = 4;   // emerald, crimson, gold, bare stone, in the atlas
+  let bodyRings = null;
+  // The body at a distance d behind the head: its centre, the way it runs
+  // (toward the head), and a frame round it. D is the back: away from him,
+  // since a snake wound round a man shows its back outward, and tilted up.
+  const ringAt = (d) => {
+    const i = Math.max(1, Math.min(RINGS - 1, Math.round((1 - d) * RINGS)));
+    const c = bodyRings[i];
+    const T = norm(sub(bodyRings[i + 1], bodyRings[i - 1]));
+    const out = norm([c[0], 0, c[2]]);
+    const raw = [out[0], out[1] + 0.7, out[2]];
+    const dt = raw[0] * T[0] + raw[1] * T[1] + raw[2] * T[2];
+    const D = norm([raw[0] - T[0] * dt, raw[1] - T[1] * dt, raw[2] - T[2] * dt]);
+    const S = norm(cross(T, D));
+    return { c, T, D, S, g: girthS(d) };
+  };
+  const rotAround = (v, axis, ang) => {
+    const c = Math.cos(ang), s2 = Math.sin(ang);
+    const d = axis[0] * v[0] + axis[1] * v[1] + axis[2] * v[2];
+    const cr = cross(axis, v);
+    return [v[0] * c + cr[0] * s2 + axis[0] * d * (1 - c), v[1] * c + cr[1] * s2 + axis[1] * d * (1 - c), v[2] * c + cr[2] * s2 + axis[2] * d * (1 - c)];
+  };
+  const mixv = (a, b, ca, cb) => norm([a[0] * ca + b[0] * cb, a[1] * ca + b[1] * cb, a[2] * ca + b[2] * cb]);
+  // one feather into the shared buffers: root, across X, along Y, face Z, size, paint
+  const place = (out, tpl, root, X, Y, Z, len, band) => {
+    const base = out.pos.length / 3;
+    const { pos, nrm, uv, idx } = tpl;
+    for (let i = 0; i < pos.length; i += 3) {
+      const x = pos[i] * len, y = pos[i + 1] * len, z = pos[i + 2] * len;
+      out.pos.push(root[0] + X[0] * x + Y[0] * y + Z[0] * z, root[1] + X[1] * x + Y[1] * y + Z[1] * z, root[2] + X[2] * x + Y[2] * y + Z[2] * z);
+      const nx = nrm[i], ny = nrm[i + 1], nz = nrm[i + 2];
+      out.nrm.push(X[0] * nx + Y[0] * ny + Z[0] * nz, X[1] * nx + Y[1] * ny + Z[1] * nz, X[2] * nx + Y[2] * ny + Z[2] * nz);
+    }
+    for (let i = 0; i < uv.length; i += 2) out.uv.push(uv[i], (band + uv[i + 1]) / BANDS);
+    for (const k of idx) out.idx.push(base + k);
+  };
+  const N_CREST = 44, N_RUFF = 14, N_TAIL = 7;
+  const buildFeathers = (e) => {
+    const out = { pos: [], nrm: [], uv: [], idx: [] };
+    if (!bodyRings) return out;
+    // the crest: two staggered rows lying back along the spine, overlapping
+    for (let i = 0; i < N_CREST; i++) {
+      const d = 0.07 + (i / (N_CREST - 1)) * 0.86;
+      const f = ringAt(d);
+      const row = i % 2 ? 1 : -1;
+      const lift = 0.45;
+      const Y = mixv(f.T, f.D, -Math.cos(lift), Math.sin(lift));
+      let Z = mixv(f.D, f.T, Math.cos(lift), Math.sin(lift));
+      Z = rotAround(Z, Y, row * 0.42);
+      const X = norm(cross(Y, Z));
+      const off = (v, a, b) => [f.c[0] + f.D[0] * a + f.S[0] * b, f.c[1] + f.D[1] * a + f.S[1] * b, f.c[2] + f.D[2] * a + f.S[2] * b];
+      const root = off(f.c, f.g * 0.85, row * f.g * 0.28);
+      const len = Math.max(0.07, f.g * 2.0);
+      const band = i % 7 === 3 ? 3 : i % 4 === 1 ? 2 : 0;
+      place(out, TPL.crest, root, X, Y, Z, len, band);
+    }
+    // the ruff: a ring round the neck, radiating out and leaning back, the
+    // faces toward the head
+    for (let i = 0; i < N_RUFF; i++) {
+      const d = 0.045 + (i % 2) * 0.02;
+      const f = ringAt(d);
+      const th = (i / N_RUFF) * TAU;
+      const R = mixv(f.D, f.S, Math.cos(th), Math.sin(th));
+      const back = 0.40;
+      const Y = mixv(R, f.T, Math.cos(back), -Math.sin(back));
+      const Z = mixv(f.T, R, Math.cos(back), Math.sin(back));
+      const X = norm(cross(Y, Z));
+      const root = [f.c[0] + R[0] * f.g * 0.9, f.c[1] + R[1] * f.g * 0.9, f.c[2] + R[2] * f.g * 0.9];
+      place(out, TPL.ruff, root, X, Y, Z, f.g * 1.5, i % 2 ? 2 : 1);
+    }
+    // the plume at the tail: long feathers fanning back off the last of it
+    for (let i = 0; i < N_TAIL; i++) {
+      const d = 0.985 - (i % 3) * 0.012;
+      const f = ringAt(d);
+      const spread = (i / (N_TAIL - 1) - 0.5) * 1.5;
+      const liftT = 1.05 + 0.25 * Math.abs(spread);
+      const R = rotAround(f.D, f.T, spread);
+      const Y = mixv(f.T, R, -Math.cos(liftT), Math.sin(liftT));
+      const Z = mixv(R, f.T, Math.cos(liftT), Math.sin(liftT));
+      const X = norm(cross(Y, Z));
+      const root = [f.c[0] + R[0] * f.g * 0.5, f.c[1] + R[1] * f.g * 0.5, f.c[2] + R[2] * f.g * 0.5];
+      const len = 0.42 + 0.22 * (1 - Math.abs(spread) / 0.75);
+      place(out, TPL.tail, root, X, Y, Z, len, i === 3 ? 1 : i % 2 ? 2 : 0);
+    }
+    return out;
   };
 
   // ---- surfaces ----
@@ -405,49 +522,62 @@
   // A standing feather, the same green stone as the ruff on the head, with a
   // ridge and a darker edge. Two tones, which is all that survives twenty
   // pixels across.
-  // Silver, with the shaft in one of the head's two other colours: its
-  // crimson or its gold. His call, after the teal ones. window.__featherShaft
-  // picks which, "crimson" unless told "gold"; the lab page sets it from the
-  // url so the two can be put side by side.
-  const SHAFT = {
-    crimson: ["rgba(142,31,42,0.95)", "rgba(190,52,62,0.95)"],
-    gold:    ["rgba(176,132,52,0.95)", "rgba(226,194,110,0.95)"],
-  };
-  const featherTexture = (device) => {
-    const W = 64, H = 256;
-    const cv = document.createElement("canvas");
-    cv.width = W; cv.height = H;
-    const c = cv.getContext("2d");
-    const g = c.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0.00, "#9a9ea8");
-    g.addColorStop(0.50, "#d3d6dc");
-    g.addColorStop(1.00, "#a4a8b1");
-    c.fillStyle = g;
-    c.fillRect(0, 0, W, H);
-    for (let i = 0; i < 1400; i++) {
-      const v = Math.random() < 0.5 ? "rgba(245,247,250,0.28)" : "rgba(60,64,72,0.22)";
-      c.fillStyle = v;
-      c.fillRect(Math.random() * W, Math.random() * H, 1.5, 1.5);
+  // The feathers' paint, four bands in one map: emerald, crimson, ochre gold
+  // and bare stone, the head's own three paints and the stone they sit on.
+  // Each band is one feather: the rachis as a pale ridge down the middle,
+  // barbs as fine strokes slanting out from it, the paint worn through to
+  // stone along the ridge, at the edges and at the tip, grain over all of
+  // it. A normal map of the barbs and the rachis goes with it, so the
+  // carving catches the light the way the body's plumes do.
+  const featherAtlas = (device) => {
+    const W = 128, BH = 256, H = BH * BANDS;
+    // the head's own paints, measured off its texture, not brighter ones
+    const paints = [[0.12, 0.34, 0.24], [0.44, 0.13, 0.09], [0.54, 0.37, 0.17], [0.60, 0.56, 0.47]];
+    const stone = [0.60, 0.56, 0.47];
+    const col = document.createElement("canvas"); col.width = W; col.height = H;
+    const cc = col.getContext("2d"); const img = cc.createImageData(W, H);
+    const nc = document.createElement("canvas"); nc.width = W; nc.height = H;
+    const nctx = nc.getContext("2d"); const nimg = nctx.createImageData(W, H);
+    const height = (x, y) => {
+      const u = x / W, v = (y % BH) / BH;
+      const sv = (u - 0.5) * 2;
+      const rachis = Math.exp(-(sv / 0.10) * (sv / 0.10)) * (1 - 0.5 * v);
+      // barbs: fine, slanting, and uneven, or they read as corduroy
+      const wob = Math.sin(v * 23.0 + sv * 7.0) * 0.5 + Math.sin(v * 61.0 - sv * 3.0) * 0.25;
+      const along = v * 64 - Math.abs(sv) * 9 + wob;
+      const barb = 0.5 + 0.5 * Math.sin(along * Math.PI * 2);
+      return Math.min(1, 0.40 + 0.07 * barb + 0.50 * rachis);
+    };
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const band = Math.floor(y / BH), u = x / W, v = (y % BH) / BH;
+      const sa = Math.abs((u - 0.5) * 2);
+      const h = height(x, y);
+      const paint = paints[band];
+      const grain = 0.88 + Math.random() * 0.24;
+      const edge = Math.max(0, (sa - 0.80) / 0.20);
+      const wear = Math.min(1, Math.max(0, (h - 0.80) / 0.20) * 0.8 + edge * 0.5 + (v > 0.92 ? 0.5 : 0));
+      const i = (y * W + x) * 4;
+      for (let ch = 0; ch < 3; ch++) {
+        const painted = paint[ch] * (0.80 + 0.35 * h);
+        img.data[i + ch] = Math.min(255, (painted * (1 - wear) + stone[ch] * 1.05 * wear) * grain * 255);
+      }
+      img.data[i + 3] = 255;
+      const dx = (height(Math.min(W - 1, x + 1), y) - height(Math.max(0, x - 1), y)) * 3.0;
+      const dy = (height(x, Math.min(H - 1, y + 1)) - height(x, Math.max(0, y - 1))) * 3.0;
+      const l = Math.hypot(dx, dy, 1);
+      nimg.data[i] = (-dx / l * 0.5 + 0.5) * 255;
+      nimg.data[i + 1] = (dy / l * 0.5 + 0.5) * 255;
+      nimg.data[i + 2] = (1 / l * 0.5 + 0.5) * 255;
+      nimg.data[i + 3] = 255;
     }
-    const e = c.createLinearGradient(0, 0, W, 0);
-    e.addColorStop(0.00, "rgba(40,44,52,0.70)");
-    e.addColorStop(0.22, "rgba(40,44,52,0.0)");
-    e.addColorStop(0.78, "rgba(40,44,52,0.0)");
-    e.addColorStop(1.00, "rgba(40,44,52,0.70)");
-    c.fillStyle = e;
-    c.fillRect(0, 0, W, H);
-    const shaft = SHAFT[(typeof window !== "undefined" && window.__featherShaft) || "crimson"] || SHAFT.crimson;
-    const sg = c.createLinearGradient(0, 0, 0, H);
-    sg.addColorStop(0.00, shaft[0]);
-    sg.addColorStop(0.45, shaft[1]);
-    sg.addColorStop(1.00, shaft[0]);
-    c.strokeStyle = sg;
-    c.lineWidth = 6;
-    c.beginPath(); c.moveTo(W / 2, 0); c.lineTo(W / 2, H * 0.92); c.stroke();
-    const t = new pc.Texture(device, { width: W, height: H, format: pc.PIXELFORMAT_RGBA8, mipmaps: true });
-    t.addressU = t.addressV = pc.ADDRESS_CLAMP_TO_EDGE;
-    t.setSource(cv);
-    return t;
+    cc.putImageData(img, 0, 0); nctx.putImageData(nimg, 0, 0);
+    const mk = (src) => {
+      const t = new pc.Texture(device, { width: W, height: H, format: pc.PIXELFORMAT_RGBA8, mipmaps: true });
+      t.addressU = t.addressV = pc.ADDRESS_CLAMP_TO_EDGE;
+      t.setSource(src);
+      return t;
+    };
+    return { diffuse: mk(col), normal: mk(nc) };
   };
 
   const mesh = (app, d) => {
@@ -466,7 +596,7 @@
     const body = mesh(app, buildBody(0));
     const plume = mesh(app, buildFeathers(0));
     const refresh = (m2, d) => {
-      m2.setPositions(d.pos); m2.setNormals(d.nrm); m2.setUvs(0, d.uv);
+      m2.setPositions(d.pos); m2.setNormals(d.nrm); m2.setUvs(0, d.uv); m2.setIndices(d.idx);
       m2.setVertexStream(pc.SEMANTIC_TANGENT, pc.calculateTangents(d.pos, d.nrm, d.uv, d.idx), 4);
       m2.update(pc.PRIMITIVE_TRIANGLES);
     };
@@ -515,15 +645,19 @@
     mat.update();
 
     const matF = mat.clone();
+    const fmaps = featherAtlas(app.graphicsDevice);
     matF.diffuse = new pc.Color(1, 1, 1);
-    matF.diffuseMap = featherTexture(app.graphicsDevice);
+    matF.diffuseMap = fmaps.diffuse;
     matF.diffuseMapTiling = new pc.Vec2(1, 1);
-    // silver: a sheen the stone body does not have, but not a mirror
-    matF.specular = new pc.Color(0.40, 0.40, 0.43);
-    matF.gloss = 0.42;
+    matF.normalMap = fmaps.normal;
+    matF.normalMapTiling = new pc.Vec2(1, 1);
+    matF.bumpiness = 1.3;
+    // the same stone as the body: matte, painted
+    matF.specular = new pc.Color(0.20, 0.19, 0.14);
+    matF.gloss = 0.30;
     matF.useMetalness = false;
-    matF.emissive = new pc.Color(0.03, 0.03, 0.035);
-    matF.emissiveIntensity = 0.35;
+    matF.emissive = new pc.Color(0.025, 0.05, 0.04);
+    matF.emissiveIntensity = 0.5;
     matF.blendType = pc.BLEND_NONE;
     matF.depthWrite = true;
     matF.cull = pc.CULLFACE_NONE;
