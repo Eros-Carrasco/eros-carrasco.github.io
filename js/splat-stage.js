@@ -264,7 +264,7 @@
     veilMat.setParameter("uAir", air);
     // the same white the backdrop paints, or his silhouette shows in the
     // steam as a greyer patch of his own shape
-    veilMat.setParameter("uTint", [1.01, 1.02, 1.05]);
+    veilMat.setParameter("uTint", [0.88, 0.91, 0.95]);
     const c = camera.getPosition();
     const tw = new pc.Vec3(c.x - pivot.x, c.y - pivot.y, c.z - pivot.z).normalize();
     veilMat.setParameter("uToward", [tw.x, tw.y, tw.z]);

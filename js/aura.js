@@ -39,13 +39,16 @@
   const T_THICK  = 2.97;  // it thickens and spreads
   const T_COVER  = 3.74;  // nothing in the box but steam
   const T_SWAP   = 3.79;  // the pose changes, the moment it is
-  const T_CLEAR  = 4.34;  // the steam starts to let go
-  const T_NIGHT  = 5.07;  // and the violet night is there, full of stars
-  const T_METEOR = 5.57;  // a star falls across it
-  const T_DEITY  = 6.27;  // the serpent starts climbing, under the violet
-  const T_HELD   = 6.37;  // the violet starts to turn, as slowly as it climbs
-  const T_SET    = 9.47;  // the serpent has resolved
-  const T_FAN    = 9.87;  // and come to rest on his shoulder
+  // The full cover holds a fifth of a second less and clears a fifth
+  // faster, his call, so the box is not a wall of grey for long; the beats
+  // after it move up by the same fifth.
+  const T_CLEAR  = 4.15;  // the steam starts to let go
+  const T_NIGHT  = 4.85;  // and the violet night is there, full of stars
+  const T_METEOR = 5.35;  // a star falls across it
+  const T_DEITY  = 6.05;  // the serpent starts climbing, under the violet
+  const T_HELD   = 6.15;  // the violet starts to turn, as slowly as it climbs
+  const T_SET    = 9.25;  // the serpent has resolved
+  const T_FAN    = 9.65;  // and come to rest on his shoulder
 
   function build(scene) {
     const { app, camera, el } = scene;
@@ -133,7 +136,7 @@
       const airA = .018 * thick * (1 - gone);
       // whiter as it thickens: at its gathering tint it read as grey smoke
       // against the pale steam the backdrop paints behind it
-      scene.aura(push, fade, [.84 + .32 * thick, .94 + .22 * thick, 1.0 + .16 * thick], grow, airA);
+      scene.aura(push, fade, [.84 + .12 * thick, .94 + .04 * thick, 1.0], grow, airA);
       // and the copy in front of him, which is what actually hides the swap.
       // Denser than the one behind: at the same weight he was a ghost under
       // it and the pose changed in plain view.

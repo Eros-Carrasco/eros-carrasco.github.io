@@ -177,7 +177,8 @@ void main() {
   // veil over him carries the same grain, so his outline does not show as
   // smooth beside grainy.
   float grain = fbm(p * 9.0 + vec2(-t * .07, t * .11)) - .5;
-  vec3 steamC = mix(vec3(.74, .77, .82), vec3(.90, .915, .94), clamp(vap, 0., 1.)) + grain * .07;
+  // Greyer again, his call: at 0.85 of white it still startled the eye.
+  vec3 steamC = mix(vec3(.60, .64, .70), vec3(.78, .81, .85), clamp(vap, 0., 1.)) + grain * .07;
   // A thin even haze comes up under the patches as they form, so the holes
   // between them show pale air and not the dark room: with the room showing
   // through, the steam read as black smoke while it was closing.
