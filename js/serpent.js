@@ -405,7 +405,7 @@
   // three quarters is the belly; the flanks sit at the seam and at the half.
   const skinMaps = (device) => {
     const W = 512, H = 256;
-    const green = [0.06, 0.30, 0.17], cream = [0.86, 0.82, 0.70], white = [0.96, 0.95, 0.91], maya = [0.45, 0.78, 0.92], ochre = [0.40, 0.27, 0.15];
+    const green = [0.06, 0.30, 0.17], cream = [0.86, 0.82, 0.70], white = [0.96, 0.95, 0.91], maya = [0.46, 0.78, 0.98], ochre = [0.40, 0.27, 0.15];
     const seedF = (x, y) => { const v = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453; return v - Math.floor(v); };
     const smooth = (x, y, sc) => {
       const fx = x / sc, fy = y / sc, ix = Math.floor(fx), iy = Math.floor(fy), tx = fx - ix, ty = fy - iy;
@@ -432,17 +432,15 @@
       const groove = Math.min(1, Math.max(0, 1 - Math.abs(1.0 - d) / 0.13));
       return { sc: inside * (0.65 + keel), groove };
     };
-    // The lines between scales and between scutes carry the blue: he said the
-    // blue had got lost, and that the scale divisions could take the second
-    // or the third colour. Full strength, not muted: these details are meant
-    // to stand out, his words. The white stays on the flank lines and the
-    // belly, so there is still more white than blue.
-    const seam = [0.48, 0.82, 0.97];
+    // Swapped on his call: the straight lines along the body are Maya blue,
+    // full strength, and the lines between scales and between scutes are
+    // white. Both are meant to stand out.
+    const seam = white;
     const lines = [
-      { v: 0.000, hw: 0.009, col: white, worn: 0.20 },
-      { v: 0.500, hw: 0.009, col: white, worn: 0.20 },
-      { v: 0.130, hw: 0.007, col: maya, worn: 0.24 },
-      { v: 0.370, hw: 0.007, col: maya, worn: 0.24 },
+      { v: 0.000, hw: 0.010, col: maya, worn: 0.18 },
+      { v: 0.500, hw: 0.010, col: maya, worn: 0.18 },
+      { v: 0.130, hw: 0.007, col: maya, worn: 0.22 },
+      { v: 0.370, hw: 0.007, col: maya, worn: 0.22 },
     ];
     const col = document.createElement("canvas"); col.width = W; col.height = H;
     const cc = col.getContext("2d"); const img = cc.createImageData(W, H);
