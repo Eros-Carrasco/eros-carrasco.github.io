@@ -242,9 +242,31 @@
   // exists while the steam fills the box, and it is built once, from the
   // first pose, since by the time it is on it is a cloud and not a shape.
   let veil = null, veilMat = null;
+  // what the veil was last told, so a veil rebuilt at the swap is set the
+  // same before it is ever drawn, and he is not uncovered for one frame
+  let lastVeil = null;
   const veilLayer = new pc.Layer({ name: "veil" });
   app.scene.layers.push(veilLayer);
   camera.camera.layers = camera.camera.layers.concat([veilLayer.id]);
+
+  const setVeil = (push, fade, grow, air) => {
+    lastVeil = [push, fade, grow, air];
+    if (!veilMat) return;
+    veil.enabled = fade > 0.001;
+    if (!veil.enabled) return;
+    veilMat.setParameter("uHeart", [pivot.x, pivot.y, pivot.z]);
+    veilMat.setParameter("uPush", push * subjectHeight);
+    veilMat.setParameter("uFade", fade);
+    veilMat.setParameter("uWind", performance.now() / 1000);
+    veilMat.setParameter("uGrow", grow);
+    veilMat.setParameter("uAir", air);
+    // the same white the backdrop paints, or his silhouette shows in the
+    // steam as a greyer patch of his own shape
+    veilMat.setParameter("uTint", [1.01, 1.02, 1.05]);
+    const c = camera.getPosition();
+    const tw = new pc.Vec3(c.x - pivot.x, c.y - pivot.y, c.z - pivot.z).normalize();
+    veilMat.setParameter("uToward", [tw.x, tw.y, tw.z]);
+  };
 
   const addShell = (asset, layers) => {
     const e = new pc.Entity(layers ? "aura-veil" : "aura-shell");
@@ -279,11 +301,15 @@
     if (shell) { shell.destroy(); shell = null; shellMat = null; }
     const s = addShell(asset);
     shell = s.e; shellMat = s.mat;
-    if (!veil) {
-      const v = addShell(asset, [veilLayer.id]);
-      veil = v.e; veilMat = v.mat;
-      veil.enabled = false;
-    }
+    // The veil is rebuilt from each pose as it arrives. Built once from the
+    // first, it kept the first pose's silhouette in the steam after the
+    // change, and he saw the first pose standing there for a moment. From
+    // the second pose it can only ever hint at what is about to come out.
+    if (veil) { veil.destroy(); veil = null; veilMat = null; }
+    const v = addShell(asset, [veilLayer.id]);
+    veil = v.e; veilMat = v.mat;
+    veil.enabled = false;
+    if (lastVeil) setVeil(...lastVeil);
     const e = new pc.Entity();
     e.addComponent("gsplat", { asset });
     app.root.addChild(e);
@@ -318,23 +344,7 @@
       },
       // The copy in front of him, for the steam that fills the box. Off
       // whenever it carries nothing, so it costs nothing outside its beat.
-      veil: (push, fade, grow, air) => {
-        if (!veilMat) return;
-        veil.enabled = fade > 0.001;
-        if (!veil.enabled) return;
-        veilMat.setParameter("uHeart", [pivot.x, pivot.y, pivot.z]);
-        veilMat.setParameter("uPush", push * subjectHeight);
-        veilMat.setParameter("uFade", fade);
-        veilMat.setParameter("uWind", performance.now() / 1000);
-        veilMat.setParameter("uGrow", grow);
-        veilMat.setParameter("uAir", air);
-        // the same white the backdrop paints, or his silhouette shows in the
-        // steam as a greyer patch of his own shape
-        veilMat.setParameter("uTint", [1.01, 1.02, 1.05]);
-        const c = camera.getPosition();
-        const tw = new pc.Vec3(c.x - pivot.x, c.y - pivot.y, c.z - pivot.z).normalize();
-        veilMat.setParameter("uToward", [tw.x, tw.y, tw.z]);
-      },
+      veil: (push, fade, grow, air) => setVeil(push, fade, grow, air),
       // Called from inside the flash. Nothing happens if the second pose has
       // not finished downloading, which keeps a slow line from showing a cut.
       hold: (on) => { held = !!on; },
