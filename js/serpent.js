@@ -428,13 +428,20 @@
       const d = Math.pow(Math.abs(dx), 1.6) + Math.pow(Math.abs(dy), 1.6);
       const inside = Math.min(1, Math.max(0, (1.0 - d) / 0.22));
       const keel = Math.exp(-dy * dy * 6.0) * 0.35;
-      return inside * (0.65 + keel);
+      // and the groove between scales, 1 on the line, for the blue
+      const groove = Math.min(1, Math.max(0, 1 - Math.abs(1.0 - d) / 0.10));
+      return { sc: inside * (0.65 + keel), groove };
     };
+    // The lines between scales and between scutes carry the blue: he said the
+    // blue had got lost, and that the scale divisions could take the second
+    // or the third colour. The white stays on the flank lines and the belly,
+    // so there is still more white than blue.
+    const seam = [0.30, 0.56, 0.70];
     const lines = [
       { v: 0.000, hw: 0.009, col: white, worn: 0.20 },
       { v: 0.500, hw: 0.009, col: white, worn: 0.20 },
-      { v: 0.130, hw: 0.005, col: maya, worn: 0.28 },
-      { v: 0.370, hw: 0.005, col: maya, worn: 0.28 },
+      { v: 0.130, hw: 0.007, col: maya, worn: 0.24 },
+      { v: 0.370, hw: 0.007, col: maya, worn: 0.24 },
     ];
     const col = document.createElement("canvas"); col.width = W; col.height = H;
     const cc = col.getContext("2d"); const img = cc.createImageData(W, H);
@@ -450,13 +457,15 @@
         const groove = Math.min(1, Math.max(0, (2.5 - Math.min(along, SCUTE - along)) / 1.5));
         const edge = Math.min(1, Math.max(0, Math.min(v - B0, B1 - v) / 0.012));
         h = 0.58 - 0.22 * groove - 0.10 * (1 - edge);
-        const k = (1 - 0.45 * groove) * grain * (0.80 + 0.20 * edge);
-        r = cream[0] * k; g = cream[1] * k; b = cream[2] * k;
+        const k = grain * (0.80 + 0.20 * edge);
+        const gb = groove * 0.85;
+        r = cream[0] * k * (1 - gb) + seam[0] * gb; g = cream[1] * k * (1 - gb) + seam[1] * gb; b = cream[2] * k * (1 - gb) + seam[2] * gb;
       } else {
-        const sc = scaleAt(x, y);
+        const { sc, groove } = scaleAt(x, y);
         h = 0.42 + 0.30 * sc + (smooth(x, y, 3) - 0.5) * 0.05;
         const k = (0.62 + 0.55 * sc) * grain;
-        r = green[0] * k; g = green[1] * k; b = green[2] * k;
+        const gb = groove * 0.80;
+        r = green[0] * k * (1 - gb) + seam[0] * gb; g = green[1] * k * (1 - gb) + seam[1] * gb; b = green[2] * k * (1 - gb) + seam[2] * gb;
       }
       if (seedF(x * 3.1, y * 1.7) > 0.994) { r = ochre[0]; g = ochre[1]; b = ochre[2]; }
       for (const ln of lines) {
