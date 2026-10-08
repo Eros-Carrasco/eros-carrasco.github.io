@@ -383,21 +383,20 @@
     for (let i = 0; i < N_TAIL; i++) {
       const layer = i < N_TAIL / 2 ? 0 : 1;
       const j = i % (N_TAIL / 2);
-      // two layers, the inner one further up the tail, both rooted inside
-      // it and lying along it, so they grow out of the tail instead of
-      // standing off its tip
-      const d = 0.970 - layer * 0.02 - (j % 2) * 0.006;
+      // The feathers are the end of the tail, his words: they sit at the very
+      // tip and a little before it, all round the axis and nearly along it,
+      // reaching past the tip, so from any side the tail ends in feathers and
+      // no bare tip shows under them. Lifted off the axis and fanned to one
+      // side, as they were, the tip ran on under the fan.
+      const d = 0.994 - layer * 0.018;
       const f = ringAt(d);
-      const spread = (j / (N_TAIL / 2 - 1) - 0.5) * 1.0 + (layer ? 0.10 : 0);
-      // lying along the tail, lifting only a little, and with the bare quill
-      // inside it so the vane begins at the tail: they kept reading as
-      // separate from it
-      const liftT = 0.42 + 0.20 * Math.abs(spread) + 0.03 * Math.sin(wT * 1.3 + i);
+      const spread = (j / (N_TAIL / 2)) * TAU + (layer ? Math.PI / N_TAIL * 2 : 0);
+      const liftT = (layer ? 0.30 : 0.16) + 0.03 * Math.sin(wT * 1.3 + i);
       const R = rotAround(f.D, f.T, spread);
       const Y = mixv(f.T, R, -Math.cos(liftT), Math.sin(liftT));
       const Z = mixv(R, f.T, Math.cos(liftT), Math.sin(liftT));
       const X = norm(cross(Y, Z));
-      const len = (0.62 + 0.30 * (1 - Math.abs(spread) / 0.5)) * (layer ? 0.8 : 1);
+      const len = (0.70 + 0.16 * Math.cos(spread)) * (layer ? 0.78 : 1);
       const skin = [f.c[0] + R[0] * f.g * 0.6, f.c[1] + R[1] * f.g * 0.6, f.c[2] + R[2] * f.g * 0.6];
       const root = [skin[0] - Y[0] * len * 0.25, skin[1] - Y[1] * len * 0.25, skin[2] - Y[2] * len * 0.25];
       // orange, like the ruff
