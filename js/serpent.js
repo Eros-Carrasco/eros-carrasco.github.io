@@ -199,34 +199,38 @@
     }
     bodyRings = centres;   // the feathers stand on these same rings
     const pos = [], nrm = [], uv = [], idx = [];
-    let up = [0, 1, 0];
     for (let i = 0; i <= RINGS; i++) {
       const sb = i / RINGS;
       const c = centres[i];
       const ahead = centres[Math.min(RINGS, i + 1)], behind = centres[Math.max(0, i - 1)];
       const tan = norm(sub(ahead, behind));
-      let side = cross(tan, up);
-      if (Math.hypot(side[0], side[1], side[2]) < 1e-4) side = cross(tan, [1, 0, 0]);
-      side = norm(side);
-      up = norm(cross(side, tan));
+      // The ring's frame is the back and the flank, the same D and S the
+      // feathers stand on, so a quarter of the way round the texture is
+      // always the back and three quarters is always the belly. It used to
+      // be carried along from the tail, and twisted; a painted band could
+      // not have stayed on the belly.
+      const fr = frameOf(c, tan);
       const g = girthS(1 - sb);
-      for (let sd = 0; sd < SIDES; sd++) {
+      for (let sd = 0; sd <= SIDES; sd++) {
         const a2 = (sd / SIDES) * TAU;
         const ca = Math.cos(a2), sa = Math.sin(a2);
         // The belly is flatter than the back, the way a snake's is.
         const squash = 0.78 + 0.22 * Math.abs(ca);
-        const nx = side[0] * ca + up[0] * sa;
-        const ny = side[1] * ca + up[1] * sa;
-        const nz = side[2] * ca + up[2] * sa;
+        const nx = fr.S[0] * ca + fr.D[0] * sa;
+        const ny = fr.S[1] * ca + fr.D[1] * sa;
+        const nz = fr.S[2] * ca + fr.D[2] * sa;
         pos.push(c[0] + nx * g * squash, c[1] + ny * g * squash, c[2] + nz * g * squash);
         nrm.push(nx, ny, nz);
+        // the last vertex sits on the first, so the texture has a real seam
+        // instead of the whole of it squeezed into the closing strip
         uv.push(sb, sd / SIDES);
       }
     }
+    const RS = SIDES + 1;
     for (let i = 0; i < RINGS; i++) {
       for (let sd = 0; sd < SIDES; sd++) {
-        const a2 = i * SIDES + sd, b2 = i * SIDES + (sd + 1) % SIDES;
-        idx.push(a2, a2 + SIDES, b2, b2, a2 + SIDES, b2 + SIDES);
+        const a2 = i * RS + sd, b2 = a2 + 1;
+        idx.push(a2, a2 + RS, b2, b2, a2 + RS, b2 + RS);
       }
     }
     return { pos, nrm, uv, idx };
@@ -285,15 +289,19 @@
   // The body at a distance d behind the head: its centre, the way it runs
   // (toward the head), and a frame round it. D is the back: away from him,
   // since a snake wound round a man shows its back outward, and tilted up.
-  const ringAt = (d) => {
-    const i = Math.max(1, Math.min(RINGS - 1, Math.round((1 - d) * RINGS)));
-    const c = bodyRings[i];
-    const T = norm(sub(bodyRings[i + 1], bodyRings[i - 1]));
-    const out = norm([c[0], 0, c[2]]);
+  const frameOf = (c, T) => {
+    const out = Math.hypot(c[0], c[2]) > 1e-4 ? norm([c[0], 0, c[2]]) : [1, 0, 0];
     const raw = [out[0], out[1] + 0.7, out[2]];
     const dt = raw[0] * T[0] + raw[1] * T[1] + raw[2] * T[2];
     const D = norm([raw[0] - T[0] * dt, raw[1] - T[1] * dt, raw[2] - T[2] * dt]);
     const S = norm(cross(T, D));
+    return { D, S };
+  };
+  const ringAt = (d) => {
+    const i = Math.max(1, Math.min(RINGS - 1, Math.round((1 - d) * RINGS)));
+    const c = bodyRings[i];
+    const T = norm(sub(bodyRings[i + 1], bodyRings[i - 1]));
+    const { D, S } = frameOf(c, T);
     return { c, T, D, S, g: girthS(d) };
   };
   const rotAround = (v, axis, ang) => {
@@ -383,132 +391,68 @@
   // most of why ours reads as plastic. Both of these are drawn once into a
   // canvas and handed over as a map.
 
-  // What the body is made of was settled by a reference and not by taste: a
-  // Cleveland Museum feathered serpent in basalt, public domain. Its body has
-  // no scales at all. It is plumes, long ones, carved in low relief and laid
-  // over each other like tiles along the coils, each with a ridge down its
-  // middle, in matte grainy stone. The head he generated reads as painted
-  // stone, and this is the same stone, painted the green of its ruff.
+  // The body is dark stone, smooth, with paint on it. It was carved plumes in
+  // low relief, laid like tiles, off a basalt reference; he said the division
+  // into scales and patches was not for him, and that the details should be
+  // lines, not patches. So: one dark grainy stone, and painted on it a cream
+  // band along the belly and white lines along the flanks, with a thinner
+  // line of Maya blue beside each, the white much more than the blue, his
+  // order of colours. The lines are incised a little, so the light finds
+  // their edges, and the paint is worn, so they are not vector lines.
   //
-  // The relief is real: a height field is drawn once, the colour comes from
-  // it, and a normal map is derived from it, so the plumes catch the key
-  // light the way carving does rather than being a flat pattern.
-  const plumeMaps = (device) => {
+  // Round the body: a quarter of the way is the back (under the crest),
+  // three quarters is the belly; the flanks sit at the seam and at the half.
+  const stoneMaps = (device) => {
     const W = 512, H = 256;
-    const cv = document.createElement("canvas");
-    cv.width = W; cv.height = H;
-    const c = cv.getContext("2d");
-    // the stone, low and grainy
-    c.fillStyle = "#808080";
-    c.fillRect(0, 0, W, H);
-    for (let i = 0; i < W * H / 9; i++) {
-      const x = Math.random() * W, y = Math.random() * H;
-      const v = 110 + Math.random() * 40;
-      c.fillStyle = `rgb(${v},${v},${v})`;
-      c.fillRect(x, y, 1.5, 1.5);
-    }
-    // the plumes, four rows round the body, long along it, overlapping by
-    // half, laid from the tail end forward so each sits on the one behind it
-    // Big enough to read: three rows round the body and three plumes to a
-    // tile, with the tile a third of the body. At four rows and five to a
-    // tile they were twenty pixels long on the page and read as scratches.
-    // Shorter and more of them, overlapping along the body by a third. Long
-    // ones read as segments of cane; these read as plumage.
-    const rows = 4, per = 5;
-    const rh = H / rows, pl = W / per * 1.35, pw = rh * 1.05;
-    // Which plumes carry the blue. His call: the white and the blue details
-    // belong on the body, not on the feathers. A second canvas is drawn with
-    // the same plumes in the same order, white where a plume is blue, so the
-    // colour pass can tell them apart under the same overlaps.
-    const idc = document.createElement("canvas");
-    idc.width = W; idc.height = H;
-    const ic = idc.getContext("2d");
-    ic.fillStyle = "#000"; ic.fillRect(0, 0, W, H);
-    for (let r = 0; r < rows; r++) {
-      const cy = (r + 0.5) * rh;
-      for (let k = per + 1; k >= -1; k--) {
-        const cx = (k + (r % 2 ? 0.5 : 0)) * (W / per);
-        const blueTile = ((r * 7 + ((k + per) % per) * 3) % 5) === 2;
-        ic.beginPath(); ic.ellipse(cx, cy, pl / 2 + 3, pw / 2 + 3, 0, 0, Math.PI * 2); ic.fillStyle = "#000"; ic.fill();
-        ic.beginPath(); ic.ellipse(cx, cy, pl / 2, pw / 2, 0, 0, Math.PI * 2); ic.fillStyle = blueTile ? "#fff" : "#000"; ic.fill();
-        // the groove round it, carved into the stone
-        c.beginPath();
-        c.ellipse(cx, cy, pl / 2 + 3, pw / 2 + 3, 0, 0, Math.PI * 2);
-        c.fillStyle = "#262626";
-        c.fill();
-        // the plume, highest along its ridge, falling to its edges, and
-        // falling away toward its tip
-        const g = c.createLinearGradient(0, cy - pw / 2, 0, cy + pw / 2);
-        g.addColorStop(0.00, "#585858");
-        g.addColorStop(0.50, "#e6e6e6");
-        g.addColorStop(1.00, "#585858");
-        c.beginPath();
-        c.ellipse(cx, cy, pl / 2, pw / 2, 0, 0, Math.PI * 2);
-        c.fillStyle = g;
-        c.fill();
-        const tipFade = c.createLinearGradient(cx - pl / 2, 0, cx + pl / 2, 0);
-        tipFade.addColorStop(0.0, "rgba(60,60,60,0.55)");
-        tipFade.addColorStop(0.35, "rgba(60,60,60,0.0)");
-        tipFade.addColorStop(1.0, "rgba(60,60,60,0.0)");
-        c.fillStyle = tipFade;
-        c.fill();
-        // the shaft, a fine ridge
-        c.strokeStyle = "rgba(235,235,235,0.9)";
-        c.lineWidth = 2;
-        c.beginPath(); c.moveTo(cx - pl * 0.42, cy); c.lineTo(cx + pl * 0.46, cy); c.stroke();
-      }
-    }
-    const hgt = c.getImageData(0, 0, W, H).data;
-    const hAt = (x, y) => hgt[(((y + H) % H) * W + ((x + W) % W)) * 4] / 255;
-    const ids = ic.getImageData(0, 0, W, H).data;
-    const blueAt = (x, y) => ids[(y * W + x) * 4] > 128;
-
-    // colour from the height: paint sits in the hollows, the stone shows on
-    // the ridges where it has worn. Taken from the head's palette.
-    const col = document.createElement("canvas");
-    col.width = W; col.height = H;
-    const cc = col.getContext("2d");
-    const img = cc.createImageData(W, H);
-    // The stone is the cream grey of the head's face, the paint is the teal
-    // of its ruff, and the paint sits in the plumes with the stone showing
-    // between them and worn through on their ridges, which is what the head
-    // looks like up close.
-    // Stone first. The paint used to be the ruff's full teal and the body
-    // competed with the feathers, which carry the colour now: this is grey
-    // green stone with the paint worn down into the hollows.
-    // Dark, like the basalt the reference is carved from: at a pale grey
-    // green he said it looked washed out and vegetable.
-    const paint = [0.13, 0.21, 0.17], stone = [0.31, 0.30, 0.26], ochre = [0.40, 0.27, 0.15];
-    // the details: one plume in five painted blue, and the ridges and shafts
-    // worn through to a pale cream that reads as white lines over the dark
-    const blue = [0.10, 0.28, 0.62], cream = [0.82, 0.78, 0.68];
+    const stone = [0.19, 0.21, 0.19], cream = [0.84, 0.80, 0.70], white = [0.90, 0.88, 0.82], maya = [0.42, 0.72, 0.86], ochre = [0.40, 0.27, 0.15];
+    // noise along the body, for the wear on the paint and the grain
+    const seedF = (x, y) => { const v = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453; return v - Math.floor(v); };
+    const smooth = (x, y, sc) => {
+      const fx = x / sc, fy = y / sc, ix = Math.floor(fx), iy = Math.floor(fy), tx = fx - ix, ty = fy - iy;
+      const a = seedF(ix, iy), b = seedF(ix + 1, iy), c2 = seedF(ix, iy + 1), d2 = seedF(ix + 1, iy + 1);
+      const u = tx * tx * (3 - 2 * tx), v = ty * ty * (3 - 2 * ty);
+      return (a * (1 - u) + b * u) * (1 - v) + (c2 * (1 - u) + d2 * u) * v;
+    };
+    // where the paint is, as (v centre, half width, colour, how worn)
+    // A band with edge lines and paired flank lines read as a road with its
+    // markings. One band, one line a flank, one blue line above each.
+    const lines = [
+      { v: 0.750, hw: 0.075, col: cream, worn: 0.40 },   // the belly band, worn
+      { v: 0.000, hw: 0.007, col: white, worn: 0.42 },   // one white line a flank
+      { v: 0.500, hw: 0.007, col: white, worn: 0.42 },
+      { v: 0.130, hw: 0.004, col: maya, worn: 0.48 },    // the blue, thinner, between the white and the crest
+      { v: 0.370, hw: 0.004, col: maya, worn: 0.48 },
+    ];
+    const col = document.createElement("canvas"); col.width = W; col.height = H;
+    const cc = col.getContext("2d"); const img = cc.createImageData(W, H);
+    const hgt = new Float32Array(W * H);
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const h = hAt(x, y);
-      // groove and stone ground below 0.3, paint on the plume body, stone
-      // worn through above 0.9 at the ridge
-      const onPlume = Math.min(1, Math.max(0, (h - 0.30) / 0.12));
-      const wear = Math.max(0, (h - 0.88) / 0.12);
-      const grain = 0.86 + Math.random() * 0.28;
-      const o = Math.random() < 0.010 ? 1 : 0;
-      const i = (y * W + x) * 4;
-      const pc2 = blueAt(x, y) ? blue : paint;
-      for (let ch = 0; ch < 3; ch++) {
-        const painted = pc2[ch] * (0.70 + 0.55 * h);
-        const ground = stone[ch] * (0.55 + 0.60 * h);
-        let v = (ground * (1 - onPlume) + painted * onPlume) * (1 - wear) + cream[ch] * wear;
-        v = v * (1 - o) + ochre[ch] * o;
-        img.data[i + ch] = Math.min(255, v * grain * 255);
+      const v = y / H;
+      const grain = 0.86 + 0.28 * smooth(x, y, 2.3) * 0.5 + 0.14 * smooth(x, y, 11);
+      let h = 0.5 + (smooth(x, y, 3) - 0.5) * 0.08 + (smooth(x, y, 23) - 0.5) * 0.10;
+      let r = stone[0] * grain, g = stone[1] * grain, b = stone[2] * grain;
+      // an ochre fleck now and then, the head has them
+      if (seedF(x * 3.1, y * 1.7) > 0.992) { r = ochre[0]; g = ochre[1]; b = ochre[2]; }
+      for (const ln of lines) {
+        const dv = Math.min(Math.abs(v - ln.v), Math.abs(v - ln.v + 1), Math.abs(v - ln.v - 1));
+        if (dv > ln.hw + 0.004) continue;
+        // soft at the edge, and worn through along the body
+        const edge = Math.min(1, Math.max(0, (ln.hw + 0.004 - dv) / 0.006));
+        const wear = smooth(x, y + 300, 9) * 0.6 + smooth(x, y + 900, 37) * 0.4;
+        const k = edge * Math.min(1, Math.max(0, (wear - ln.worn) / (1 - ln.worn) * 1.6));
+        const tone = 0.90 + 0.18 * smooth(x, y + 77, 5);
+        r = r * (1 - k) + ln.col[0] * tone * k; g = g * (1 - k) + ln.col[1] * tone * k; b = b * (1 - k) + ln.col[2] * tone * k;
+        h -= 0.16 * edge;   // incised
       }
-      img.data[i + 3] = 255;
+      hgt[y * W + x] = h;
+      const i = (y * W + x) * 4;
+      img.data[i] = Math.min(255, r * 255); img.data[i + 1] = Math.min(255, g * 255); img.data[i + 2] = Math.min(255, b * 255); img.data[i + 3] = 255;
     }
     cc.putImageData(img, 0, 0);
-
-    // normals from the height, tangent space, +Y up
-    const nrm = document.createElement("canvas");
-    nrm.width = W; nrm.height = H;
-    const nc = nrm.getContext("2d");
-    const nimg = nc.createImageData(W, H);
-    const STRENGTH = 4.0;
+    const hAt = (x, y) => hgt[((y + H) % H) * W + ((x + W) % W)];
+    const nrm = document.createElement("canvas"); nrm.width = W; nrm.height = H;
+    const nc = nrm.getContext("2d"); const nimg = nc.createImageData(W, H);
+    const STRENGTH = 3.0;
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const dx = (hAt(x + 1, y) - hAt(x - 1, y)) * STRENGTH;
       const dy = (hAt(x, y + 1) - hAt(x, y - 1)) * STRENGTH;
@@ -520,7 +464,6 @@
       nimg.data[i + 3] = 255;
     }
     nc.putImageData(nimg, 0, 0);
-
     const mk = (src) => {
       const t = new pc.Texture(device, { width: W, height: H, format: pc.PIXELFORMAT_RGBA8, mipmaps: true });
       t.addressU = t.addressV = pc.ADDRESS_REPEAT;
@@ -530,9 +473,6 @@
     return { diffuse: mk(col), normal: mk(nrm) };
   };
 
-  // A standing feather, the same green stone as the ruff on the head, with a
-  // ridge and a darker edge. Two tones, which is all that survives twenty
-  // pixels across.
   // The feathers' atlas, six bands: every barb drawn as its own stroke out
   // from the rachis on a slant toward the tip, in clumps that part now and
   // then, thinning at the edge, with down round the base of the quill and
@@ -648,13 +588,13 @@
     // At one, not 0.8: the map's greens were measured off the head, and a
     // multiplier under one was darkening them by a fifth before the light
     // touched them.
-    const maps = plumeMaps(app.graphicsDevice);
+    const maps = stoneMaps(app.graphicsDevice);
     mat.diffuse = new pc.Color(1, 1, 1);
     mat.diffuseMap = maps.diffuse;
     mat.diffuseMapTiling = new pc.Vec2(3, 1);
     mat.normalMap = maps.normal;
     mat.normalMapTiling = new pc.Vec2(3, 1);
-    mat.bumpiness = 1.6;
+    mat.bumpiness = 1.0;
     mat.specular = new pc.Color(0.20, 0.19, 0.14);
     // Matte, like the head. At metalness 0.72 and gloss 0.8 the map only had
     // 28 percent of the surface and the rest was one bright line of highlight
