@@ -371,7 +371,8 @@ const PROJECTS = {
           name: "Future Reality Lab",
           lead: "Research with Ken Perlin on how AR glasses will integrate into desktop workflows, collaboration, and work with 3D data.",
           bullets: [
-            "Contributing to the lab's XR framework, which moves content between the desktop screen and 3D space. My piece is the registration that anchors your monitor in virtual space.",
+            "Contributing to the lab's XR framework, which moves content between the desktop screen and 3D space.",
+            "My piece is the registration that anchors your monitor in virtual space.",
             "Targeting publication at SIGGRAPH and CHI."
           ]
         }
@@ -805,7 +806,7 @@ function renderAbout(p) {
       ` : ""}
 
       ${p.links?.length ? `
-        <section class="project-section">
+        <section class="project-section links-section">
           <h2 class="section-title">Links</h2>
           ${linksHTML(p.links)}
         </section>
