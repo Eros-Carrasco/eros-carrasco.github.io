@@ -312,11 +312,11 @@
   };
   const mixv = (a, b, ca, cb) => norm([a[0] * ca + b[0] * cb, a[1] * ca + b[1] * cb, a[2] * ca + b[2] * cb]);
   // one feather into the shared buffers: root, across X, along Y, face Z, size, paint
-  const place = (out, tpl, root, X, Y, Z, len, band) => {
+  const place = (out, tpl, root, X, Y, Z, len, band, wide = 1) => {
     const base = out.pos.length / 3;
     const { pos, nrm, uv, idx } = tpl;
     for (let i = 0; i < pos.length; i += 3) {
-      const x = pos[i] * len, y = pos[i + 1] * len, z = pos[i + 2] * len;
+      const x = pos[i] * len * wide, y = pos[i + 1] * len, z = pos[i + 2] * len * wide;
       out.pos.push(root[0] + X[0] * x + Y[0] * y + Z[0] * z, root[1] + X[1] * x + Y[1] * y + Z[1] * z, root[2] + X[2] * x + Y[2] * y + Z[2] * z);
       const nx = nrm[i], ny = nrm[i + 1], nz = nrm[i + 2];
       out.nrm.push(X[0] * nx + Y[0] * ny + Z[0] * nz, X[1] * nx + Y[1] * ny + Z[1] * nz, X[2] * nx + Y[2] * ny + Z[2] * nz);
@@ -350,29 +350,34 @@
         const root = [f.c[0] + f.D[0] * f.g * 0.80 + f.S[0] * row * f.g * 0.42,
                       f.c[1] + f.D[1] * f.g * 0.80 + f.S[1] * row * f.g * 0.42,
                       f.c[2] + f.D[2] * f.g * 0.80 + f.S[2] * row * f.g * 0.42];
-        // the middle row twice the size of the two beside it, his call
+        // the middle row twice as tall as the two beside it and no wider,
+        // his call: twice the size all round it hid the other two rows
         const len = Math.max(0.055, f.g * (row === 0 ? 3.0 : 1.5));
         // green only, in its two shades
-        place(out, TPL.crest, root, X, Y, Z, len, (i + row) & 1);
+        place(out, TPL.crest, root, X, Y, Z, len, (i + row) & 1, row === 0 ? 0.5 : 1);
       }
     }
     // the ruff: two staggered rings round the neck, radiating out and leaning
     // back, the faces toward the head
     for (let i = 0; i < N_RUFF; i++) {
       const ring = i % 2;
-      const d = 0.040 + ring * 0.025;
+      // the second ring almost on top of the first, his call
+      const d = 0.045 + ring * 0.006;
       const f = ringAt(d);
       const th = ((i + ring * 0.5) / N_RUFF) * TAU;
       const R = mixv(f.D, f.S, Math.cos(th), Math.sin(th));
-      const back = 0.55 + ring * 0.15;
+      const back = 0.55 + ring * 0.07;
       const Y = mixv(R, f.T, Math.cos(back), -Math.sin(back));
       const Z = mixv(f.T, R, Math.cos(back), Math.sin(back));
       const X = norm(cross(Y, Z));
-      // rooted inside the body, so the bare quill is buried and the vane
-      // starts at the skin: rooted on the surface they looked unattached
-      const root = [f.c[0] + R[0] * f.g * 0.45, f.c[1] + R[1] * f.g * 0.45, f.c[2] + R[2] * f.g * 0.45];
+      const len = f.g * (2.2 - ring * 0.2);
+      // rooted so the bare quill, the first quarter, lies inside the body
+      // and the vane begins at the skin: rooted on the surface they looked
+      // unattached
+      const skin = [f.c[0] + R[0] * f.g * 0.9, f.c[1] + R[1] * f.g * 0.9, f.c[2] + R[2] * f.g * 0.9];
+      const root = [skin[0] - Y[0] * len * 0.25, skin[1] - Y[1] * len * 0.25, skin[2] - Y[2] * len * 0.25];
       // orange, all of them: the white and the blue went to the body, his call
-      place(out, TPL.ruff, root, X, Y, Z, f.g * (2.2 - ring * 0.4), 2);
+      place(out, TPL.ruff, root, X, Y, Z, len, 2);
     }
     // the plume at the tail: a few long streamers, like a quetzal's
     for (let i = 0; i < N_TAIL; i++) {
@@ -381,16 +386,20 @@
       // two layers, the inner one further up the tail, both rooted inside
       // it and lying along it, so they grow out of the tail instead of
       // standing off its tip
-      const d = 0.975 - layer * 0.03 - (j % 2) * 0.008;
+      const d = 0.970 - layer * 0.02 - (j % 2) * 0.006;
       const f = ringAt(d);
-      const spread = (j / (N_TAIL / 2 - 1) - 0.5) * 1.3 + (layer ? 0.12 : 0);
-      const liftT = 0.70 + 0.25 * Math.abs(spread) + 0.04 * Math.sin(wT * 1.3 + i);
+      const spread = (j / (N_TAIL / 2 - 1) - 0.5) * 1.0 + (layer ? 0.10 : 0);
+      // lying along the tail, lifting only a little, and with the bare quill
+      // inside it so the vane begins at the tail: they kept reading as
+      // separate from it
+      const liftT = 0.42 + 0.20 * Math.abs(spread) + 0.03 * Math.sin(wT * 1.3 + i);
       const R = rotAround(f.D, f.T, spread);
       const Y = mixv(f.T, R, -Math.cos(liftT), Math.sin(liftT));
       const Z = mixv(R, f.T, Math.cos(liftT), Math.sin(liftT));
       const X = norm(cross(Y, Z));
-      const root = [f.c[0] + R[0] * f.g * 0.2, f.c[1] + R[1] * f.g * 0.2, f.c[2] + R[2] * f.g * 0.2];
-      const len = (0.62 + 0.30 * (1 - Math.abs(spread) / 0.65)) * (layer ? 0.8 : 1);
+      const len = (0.62 + 0.30 * (1 - Math.abs(spread) / 0.5)) * (layer ? 0.8 : 1);
+      const skin = [f.c[0] + R[0] * f.g * 0.6, f.c[1] + R[1] * f.g * 0.6, f.c[2] + R[2] * f.g * 0.6];
+      const root = [skin[0] - Y[0] * len * 0.25, skin[1] - Y[1] * len * 0.25, skin[2] - Y[2] * len * 0.25];
       // orange, like the ruff
       place(out, TPL.tail, root, X, Y, Z, len, 2);
     }
