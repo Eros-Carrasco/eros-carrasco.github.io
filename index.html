@@ -148,8 +148,12 @@
       <!-- TRANSFR CARD -->
       <a class="card card-featured" href="projects/transfr/" data-project="transfr">
         <div class="card-media">
-          <video src="assets/videos/transfr_hero.mp4" poster="assets/images/poster_transfr.jpg" muted loop playsinline
-            preload="none" tabindex="-1" aria-hidden="true"></video>
+          <video poster="assets/images/poster_transfr.jpg" muted loop playsinline
+            preload="none" tabindex="-1" aria-hidden="true">
+            <!-- Phones play a lighter copy of the same reel: 2 MB instead of 4.6 -->
+            <source src="assets/videos/transfr_hero_phone.mp4" type="video/mp4" media="(max-width: 640px)" />
+            <source src="assets/videos/transfr_hero.mp4" type="video/mp4" />
+          </video>
         </div>
 
         <div class="card-info">

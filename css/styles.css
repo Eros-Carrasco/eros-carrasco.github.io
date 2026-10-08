@@ -292,8 +292,9 @@ body.project-page {
   border:1.5px solid rgba(255,255,255,0.06);
 }
 
-/* A photo hero keeps the crop it was given, so nothing gets cut off. */
-.project-hero-media-image {
+/* A photo hero keeps the crop it was given, so nothing gets cut off. Both
+   classes, so this outranks the fixed height on .project-hero-media below. */
+.project-hero-media.project-hero-media-image {
   height: auto;
   aspect-ratio: 1.95;
 }
@@ -408,6 +409,26 @@ body.project-page {
   }
 }
 
+/* On a phone a card inside a card leaves the text a narrow column. Drop the
+   inner card and let a rule between the two labs do the separating. */
+@media (max-width: 640px) {
+  .lab-grid {
+    gap: 22px;
+  }
+
+  .lab-card {
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .lab-card + .lab-card {
+    padding-top: 22px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+}
+
 /* two-column on desktop */
 @media (min-width: 900px) {
   .project-sections {
@@ -451,6 +472,17 @@ body.project-page {
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.08);
   opacity: 0.9;
+}
+
+/* A little smaller on a phone, so the About pills take two rows, not three. */
+@media (max-width: 640px) {
+  .project-meta {
+    gap: 6px;
+  }
+
+  .pill {
+    padding: 5px 9px;
+  }
 }
 
 /* gallery */
@@ -550,6 +582,24 @@ body.project-page {
   background: rgba(255,255,255,0.12);
   border-color: rgba(255,255,255,0.2);
   transform: translateY(-2px);
+}
+
+/* Four links on a phone: two by two, so Email is not left alone on a row,
+   and tall enough for a thumb. */
+@media (max-width: 640px) {
+  .project-section.links-section .links-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .links-list a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    box-sizing: border-box;
+  }
 }
 
 .recognition-list {
