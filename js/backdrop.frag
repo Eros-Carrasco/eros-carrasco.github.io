@@ -64,7 +64,12 @@ void main() {
 
   // The frame shivers a little as the pressure comes up. It used to shake
   // hard for an explosion that is no longer coming.
-  vec2 p = vPos.xy;
+  // In the box's own proportions, not a square's: the portfolio's box is
+  // square and nothing changes there, but on the page that is nothing but
+  // this animation the box is the viewport, and without this the night and
+  // the steam stretched with it.
+  float aspect = uSize.y > 0. ? uSize.x / uSize.y : 1.;
+  vec2 p = vec2(vPos.x * aspect, vPos.y);
   float shake = c * c * c * .010;
   p += vec2(noise(vec2(t * 37., 4.1)) - .5, noise(vec2(9.3, t * 31.)) - .5) * shake;
 
@@ -138,7 +143,7 @@ void main() {
   // it is never cut off at either end.
   float meteor = 0.;
   if (met > .001 && met < .999) {
-    vec2  m0  = vec2(-1.05, .92), m1 = vec2(1.12, .16);   // off the right edge
+    vec2  m0  = vec2(-1.05 * aspect, .92), m1 = vec2(1.12 * aspect, .16);   // edge to edge, whatever the shape
     vec2  dir = normalize(m1 - m0);
     vec2  hp  = mix(m0, m1, met);
     vec2  rel = p - hp;

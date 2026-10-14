@@ -23,7 +23,18 @@
   // browser upscales it, which reads as a soft, low resolution capture.
   app.graphicsDevice.maxPixelRatio = Math.min(window.devicePixelRatio || 1, 2);
 
-  const resize = () => app.resizeCanvas(stage.clientWidth, stage.clientHeight);
+  // On a box taller than it is wide the camera backs off, so the coil round
+  // him fits across a phone held upright; on the portfolio's square box this
+  // is one. Capped, so a very tall strip does not shrink him to nothing.
+  const fit = () => {
+    const ar = stage.clientWidth / Math.max(1, stage.clientHeight);
+    return ar < 1 ? Math.min(1.7, 1 / ar) : 1;
+  };
+  let baseDist = 0;
+  const resize = () => {
+    app.resizeCanvas(stage.clientWidth, stage.clientHeight);
+    if (baseDist) { dist = baseDist * fit(); place(); }
+  };
   new ResizeObserver(resize).observe(stage);
   resize();
 
@@ -128,7 +139,8 @@
     const height = b.halfExtents.y * 2;
     subjectHeight = height;
     pivot = new pc.Vec3(b.center.x, b.center.y + height * 0.03, b.center.z);
-    dist = (height * 0.5) / Math.tan((32 * Math.PI) / 360) * 1.15;
+    baseDist = (height * 0.5) / Math.tan((32 * Math.PI) / 360) * 1.15;
+    dist = baseDist * fit();
     place();
   };
 
