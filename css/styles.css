@@ -536,6 +536,17 @@ body.project-page {
   display: block;
 }
 
+/* the salsa dancer: room for its panel beside it, and under it on a phone */
+.embed-salsa {
+  aspect-ratio: 16 / 10;
+}
+
+@media (max-width: 640px) {
+  .embed-salsa {
+    aspect-ratio: 9 / 16;
+  }
+}
+
 .links-list {
   list-style: none;
   padding: 0;

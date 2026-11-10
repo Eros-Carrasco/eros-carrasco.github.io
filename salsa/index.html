@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Salsa, live | Eros Carrasco</title>
+<meta name="robots" content="noindex">
+<style>
+  :root { --accent: #5ddcff; --ink: rgba(255,255,255,.92); --dim: rgba(255,255,255,.55); --line: rgba(255,255,255,.10);
+    --s-forward: #5ddcff; --s-in-place: #b48cff; --s-left-turn: #ff8ad8; --s-right-turn: #ffb45e;
+    --s-sides: #7ee8a0; --s-spin: #ffe36e; --s-suzie-q: #6ea8ff; }
+  html, body { margin: 0; height: 100%; background: #0d1117; color: var(--ink); font-family: system-ui, -apple-system, sans-serif; }
+  #stage { display: grid; grid-template-columns: minmax(0, 1fr) 300px; height: 100%; box-sizing: border-box; }
+  .scene { position: relative; min-height: 0; }
+  #dance { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .panel { padding: 18px 20px; overflow: auto; border-left: 1px solid var(--line); box-sizing: border-box; font-size: 13px; }
+  .no-gl .scene::after { content: "This needs WebGL2."; position: absolute; inset: 0; display: grid; place-items: center; color: var(--dim); }
+  h3 { margin: 0 0 8px; font-size: 13.5px; line-height: 1.35; color: var(--ink); font-weight: 600; }
+  .uplabel { margin: 12px 0 5px; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
+  #tempo-row { font-size: 10px; letter-spacing: .1em; color: var(--dim); }
+  .block + .block { margin-top: 18px; }
+  .now { margin: 0 0 6px; font-size: 20px; font-weight: 700; }
+  .track { height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; margin-bottom: 10px; }
+  #bar { display: block; height: 100%; width: 0; background: var(--accent); }
+  #queue { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+  #queue li { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); color: var(--dim); }
+  #queue li.now { color: var(--ink); border-color: rgba(255,255,255,.22); }
+  #queue li.mine { font-weight: 600; }
+  #queue li::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--c, var(--accent)); flex: none; }
+  .adders { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  button { font: inherit; color: var(--ink); background: rgba(255,255,255,.04); border: 1px solid var(--line); border-radius: 8px;
+    padding: 7px 9px; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 7px; }
+  button:hover { background: rgba(255,255,255,.09); }
+  button em { font-style: normal; color: var(--c, var(--accent)); font-weight: 700; width: 12px; }
+  button.on { border-color: var(--accent); background: rgba(93,220,255,.10); }
+  .song { grid-column: span 2; }
+  .counts { display: flex; gap: 4px; margin-bottom: 8px; }
+  .counts i { flex: 1; text-align: center; font-style: normal; padding: 5px 0; border-radius: 6px; border: 1px solid var(--line); color: var(--dim); }
+  .counts i.strong { color: var(--ink); border-color: rgba(255,255,255,.22); }
+  .counts i.lit { background: var(--accent); color: #0b1016; border-color: var(--accent); }
+  .tempo { display: flex; align-items: baseline; gap: 6px; margin: 0 0 6px; }
+  .tempo b { font-size: 20px; }
+  .tempo span { color: var(--dim); }
+  #tempo-row { display: block; }
+  #tempo-row.hidden { display: none; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .s-forward { --c: var(--s-forward); } .s-in-place { --c: var(--s-in-place); } .s-left-turn { --c: var(--s-left-turn); }
+  .s-right-turn { --c: var(--s-right-turn); } .s-sides { --c: var(--s-sides); } .s-spin { --c: var(--s-spin); } .s-suzie-q { --c: var(--s-suzie-q); }
+  .now.s-forward, .now.s-in-place, .now.s-left-turn, .now.s-right-turn, .now.s-sides, .now.s-spin, .now.s-suzie-q { color: var(--c); }
+  #bar.s-forward, #bar.s-in-place, #bar.s-left-turn, #bar.s-right-turn, #bar.s-sides, #bar.s-spin, #bar.s-suzie-q { background: var(--c); }
+  @media (max-width: 640px) {
+    #stage { grid-template-columns: 1fr; grid-template-rows: minmax(0, 55fr) minmax(0, 45fr); }
+    .panel { border-left: 0; border-top: 1px solid var(--line); }
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="scene"><canvas id="dance"></canvas></div>
+  <aside class="panel">
+    <div class="block">
+      <h3>Build your own dance!</h3>
+      <div class="track"><i id="bar"></i></div>
+      <p class="uplabel">Playing in order</p>
+      <ol id="queue"></ol>
+    </div>
+    <div class="block">
+      <h3>Choose a salsa step and add it to your choreography!</h3>
+      <div id="steps" class="adders"></div>
+    </div>
+    <div class="block">
+      <h3>See the steps at different tempos!</h3>
+      <div id="counts" class="counts"></div>
+      <p class="tempo"><b id="bpm">170</b><span>counts/min</span></p>
+      <label id="tempo-row"><input type="range" id="tempo" min="85" max="255" value="170" aria-label="Tempo">TEMPO (NO MUSIC)</label>
+    </div>
+    <div class="block" id="songs-block">
+      <h3>Try a song! Turn the volume up and dance along!</h3>
+      <div id="songs" class="adders"></div>
+      <audio id="player" loop preload="none"></audio>
+    </div>
+  </aside>
+</div>
+<script src="data/salsa.js"></script>
+<script src="data/songs.js"></script>
+<script>window.SALSA = typeof SALSA !== "undefined" ? SALSA : null; window.SONGS = typeof SONGS !== "undefined" ? SONGS : [];</script>
+<script src="dance.js"></script>
+</body>
+</html>

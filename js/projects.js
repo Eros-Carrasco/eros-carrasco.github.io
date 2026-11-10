@@ -491,7 +491,12 @@ const PROJECTS = {
     ],
 
     gallery: [],
-    demo: null,
+    demo: {
+      type: "iframe",
+      src: `${BASE_URL}salsa/`,
+      title: "Salsa, live",
+      cls: "salsa",
+    },
   },
 
   ml: {
@@ -621,8 +626,8 @@ function demoHTML(demo) {
   if (!demo) return "";
   if (demo.type === "iframe") {
     return `
-      <div class="embed">
-        <iframe src="${demo.src}" title="${demo.title || "Demo"}" loading="lazy"></iframe>
+      <div class="embed${demo.cls ? " embed-" + demo.cls : ""}">
+        <iframe data-src="${demo.src}" title="${demo.title || "Demo"}"></iframe>
       </div>
     `;
   }
@@ -699,7 +704,22 @@ function youtubeGalleryHTML(videos = []) {
 
 // ===== RENDER FUNCTIONS =====
 
+// A demo at the bottom of a page loads when the visitor gets near it, not
+// before: the page sets the iframe's address when the box comes within
+// 800 pixels of view.
+function armLazyFrames() {
+  const frames = document.querySelectorAll("iframe[data-src]");
+  if (!frames.length) return;
+  const load = (f) => { if (f.dataset.src) { f.src = f.dataset.src; delete f.dataset.src; } };
+  if (!("IntersectionObserver" in window)) { frames.forEach(load); return; }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => { if (e.isIntersecting) { load(e.target); io.unobserve(e.target); } });
+  }, { rootMargin: "800px 0px" });
+  frames.forEach((f) => io.observe(f));
+}
+
 function renderProject(projectKey) {
+  setTimeout(armLazyFrames, 0);
   const p = PROJECTS[projectKey];
   if (!p) return `<p>Project not found.</p>`;
 
@@ -1134,6 +1154,14 @@ function renderMocap(p) {
           ${renderHowBlock(p.howItWorks?.runtime)}
         </div>
       </section>
+
+      ${p.demo ? `
+        <section class="project-section span-2">
+          <h2 class="section-title">Live demo</h2>
+          <p>Build the choreography yourself.</p>
+          ${demoHTML(p.demo)}
+        </section>
+      ` : ""}
 
     </div>
   `;
