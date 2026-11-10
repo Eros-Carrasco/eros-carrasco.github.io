@@ -536,14 +536,19 @@ body.project-page {
   display: block;
 }
 
-/* the salsa dancer: room for its panel beside it, and under it on a phone */
+/* the salsa dancer: the page inside sets the frame's height to fit its whole
+   panel, so nothing in it scrolls. These are only the heights before it loads. */
 .embed-salsa {
-  aspect-ratio: 16 / 10;
+  aspect-ratio: auto;
+}
+
+.embed-salsa iframe {
+  height: 720px;
 }
 
 @media (max-width: 640px) {
-  .embed-salsa {
-    aspect-ratio: 9 / 16;
+  .embed-salsa iframe {
+    height: 1100px;
   }
 }
 

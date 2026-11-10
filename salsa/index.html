@@ -52,7 +52,17 @@
     #stage { grid-template-columns: 1fr; grid-template-rows: minmax(0, 55fr) minmax(0, 45fr); }
     .panel { border-left: 0; border-top: 1px solid var(--line); }
   }
+  /* Inside the portfolio the page grows to its whole panel and the frame takes
+     that height, so the panel never scrolls. */
+  html.embedded, html.embedded body { height: auto; }
+  html.embedded #stage { height: auto; min-height: 62.5vw; }
+  html.embedded .panel { overflow: visible; }
+  @media (max-width: 640px) {
+    html.embedded #stage { grid-template-rows: auto auto; min-height: 0; }
+    html.embedded .scene { height: min(100vw, 440px); }
+  }
 </style>
+<script>if (window.frameElement) document.documentElement.classList.add("embedded");</script>
 </head>
 <body>
 <div id="stage">
@@ -85,5 +95,13 @@
 <script src="data/songs.js"></script>
 <script>window.SALSA = typeof SALSA !== "undefined" ? SALSA : null; window.SONGS = typeof SONGS !== "undefined" ? SONGS : [];</script>
 <script src="dance.js"></script>
+<script>
+  if (window.frameElement) {
+    const frame = window.frameElement, stage = document.getElementById("stage");
+    const fit = () => { frame.style.height = Math.ceil(stage.getBoundingClientRect().height) + "px"; };
+    new ResizeObserver(fit).observe(stage);
+    fit();
+  }
+</script>
 </body>
 </html>
