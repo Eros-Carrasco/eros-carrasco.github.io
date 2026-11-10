@@ -28,8 +28,13 @@
   <!-- PHONE BAR: slides in once the intro has scrolled away (phones only) -->
   <div class="phone-bar" id="phone-bar" aria-hidden="true">
     <div class="phone-bar-inner">
-      <span class="phone-bar-name">Eros Carrasco</span>
-      <a class="phone-btn phone-btn-primary phone-btn-sm" href="assets/Eros%20Carrasco%20-%20Resume.pdf" tabindex="-1">Resume</a>
+      <span class="phone-bar-name">Eros Carrasco<span class="bar-role"> · XR &amp; Computer Vision Engineer</span></span>
+      <nav class="bar-links" aria-label="Contact">
+        <a class="bar-link" href="https://github.com/Eros-Carrasco" tabindex="-1">GitHub</a>
+        <a class="bar-link" href="https://www.linkedin.com/in/eros-carrasco/" tabindex="-1">LinkedIn</a>
+        <a class="bar-link" href="mailto:ejj2059@nyu.edu" tabindex="-1">Email</a>
+        <a class="phone-btn phone-btn-primary phone-btn-sm" href="assets/Eros%20Carrasco%20-%20Resume.pdf" tabindex="-1">Resume</a>
+      </nav>
     </div>
   </div>
 
@@ -39,40 +44,48 @@
     <div class="left-column">
 
     <!-- ABOUT CARD -->
-    <a class="card card-about" href="about/" data-project="about">
-      <div class="card-media">
+    <!-- PROFILE CARD: who, why, what now, when, and how to reach him (desktop and tablet) -->
+    <section class="card card-about card-profile" id="profile" aria-label="Eros Carrasco">
+      <!-- The whole card opens About, as before; the buttons sit above this link. -->
+      <a class="profile-cover" href="about/" aria-label="About Eros Carrasco"></a>
+      <div class="profile-photo">
         <img src="assets/images/card_about.jpg" alt="Portrait of Eros Carrasco" width="1200" height="1355" />
       </div>
 
-      <div class="card-about-caption">
-        <h3 class="card-about-name">Eros Carrasco</h3>
-        <div class="tags">
-          <div class="tag-row">
-            <span>XR &amp; Computer Vision Engineer</span>
-          </div>
-          <div class="tag-row">
-            <span>Gaussian Splatting</span>
-            <span>CUDA</span>
-          </div>
-          <div class="tag-row">
-            <span>Researcher @ NYU</span>
-          </div>
+      <div class="profile-body">
+        <p class="profile-eyebrow">XR &amp; Computer Vision Engineer</p>
+        <h1 class="profile-name">Eros Carrasco</h1>
+        <p class="profile-lede">I build the systems and pipelines that let people create art and express emotion in XR.</p>
+        <p class="profile-now">Now researching Gaussian splats for XR production at the Brooklyn Navy Yard, and AR glasses with Ken Perlin at NYU&#8217;s Future Reality Lab.</p>
+        <p class="profile-status">Available full-time from January 2027.</p>
+
+        <div class="profile-actions" id="profile-actions">
+          <a class="profile-btn profile-btn-primary" href="assets/Eros%20Carrasco%20-%20Resume.pdf">Resume</a>
+          <a class="profile-btn" href="mailto:ejj2059@nyu.edu">Email</a>
         </div>
+
+        <nav class="profile-links" aria-label="Elsewhere">
+          <a href="https://github.com/Eros-Carrasco">GitHub</a>
+          <a href="https://www.linkedin.com/in/eros-carrasco/">LinkedIn</a>
+        </nav>
       </div>
 
       <div class="card-overlay-icon" aria-hidden="true">↗</div>
-    </a>
+    </section>
 
     <div class="splat-stage" id="splat-stage">
       <canvas id="backdrop-canvas"></canvas>
       <canvas id="splat-canvas"></canvas>
+      <p class="splat-hint" id="splat-hint" aria-hidden="true">↻ Drag to turn</p>
     </div>
 
     <!-- PHONE INTRO: name and contact under the splat (phones only) -->
     <div class="phone-intro" id="phone-intro">
       <p class="phone-eyebrow">XR &amp; Computer Vision Engineer</p>
       <h1 class="phone-name">Eros Carrasco</h1>
-      <p class="phone-lede">Builds the real-time graphics and the computer vision that bring the real world into XR. Researcher at NYU.</p>
+      <p class="phone-lede">I build the systems and pipelines that let people create art and express emotion in XR.</p>
+      <p class="phone-lede phone-now">Now researching Gaussian splats for XR production at the Brooklyn Navy Yard, and AR glasses with Ken Perlin at NYU&#8217;s Future Reality Lab.</p>
+      <p class="phone-lede phone-status">Available full-time from January 2027.</p>
       <nav class="phone-actions" aria-label="Contact">
         <a class="phone-btn phone-btn-primary" href="assets/Eros%20Carrasco%20-%20Resume.pdf">Resume</a>
         <a class="phone-btn" href="mailto:ejj2059@nyu.edu">Email</a>

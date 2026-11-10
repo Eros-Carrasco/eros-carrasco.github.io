@@ -1,32 +1,13 @@
 // Homepage card behaviour.
-// Navigation lives in the markup as real <a href> links, so this file only
-// handles the hover preview. Cards work with JS disabled.
+// Navigation lives in the markup as real <a href> links, so cards work with
+// JS disabled. This file plays the clips, shows the bar and the splat hint.
 
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-if (!reduceMotion) {
-  document.querySelectorAll(".card").forEach((card) => {
-    const video = card.querySelector("video");
-    if (!video) return;
-
-    // Videos are preload="none", so the first play() also triggers the download.
-    // play() rejects if the pointer leaves before it resolves, so ignore that.
-    const start = () => {
-      video.currentTime = 0;
-      video.play().catch(() => {});
-    };
-
-    const stop = () => {
-      video.pause();
-      video.currentTime = 0;
-    };
-
-    card.addEventListener("mouseenter", start);
-    card.addEventListener("mouseleave", stop);
-    card.addEventListener("focus", start);
-    card.addEventListener("blur", stop);
-  });
-}
+// No hover needed: every project clip plays on its own
+// while it is on screen (on phones, only the four featured ones), so the page
+// is moving before the visitor does anything. Clips are preload="none", so a
+// clip downloads only once it first comes into view.
 
 // Inline transition clips: load and play only while on screen, pause when not.
 if (!reduceMotion && "IntersectionObserver" in window) {
@@ -50,27 +31,47 @@ if (!reduceMotion && "IntersectionObserver" in window) {
 const phone = window.matchMedia("(max-width: 640px)");
 
 if ("IntersectionObserver" in window) {
+  // The same bar serves desktop: there it slides in once the profile card's
+  // buttons have scrolled away.
   const bar = document.getElementById("phone-bar");
   const intro = document.getElementById("phone-intro");
-  if (bar && intro) {
-    const link = bar.querySelector("a");
-    new IntersectionObserver(([e]) => {
-      const on = phone.matches && !e.isIntersecting;
+  const actions = document.getElementById("profile-actions");
+  if (bar && intro && actions) {
+    const links = bar.querySelectorAll("a");
+    const seen = new Map();
+    const update = () => {
+      const watched = phone.matches ? intro : actions;
+      const on = seen.has(watched) && !seen.get(watched);
       bar.classList.toggle("is-on", on);
       bar.setAttribute("aria-hidden", on ? "false" : "true");
-      link.tabIndex = on ? 0 : -1;
-    }).observe(intro);
+      links.forEach((a) => (a.tabIndex = on ? 0 : -1));
+    };
+    const watch = new IntersectionObserver((entries) => {
+      entries.forEach((e) => seen.set(e.target, e.isIntersecting));
+      update();
+    });
+    watch.observe(intro);
+    watch.observe(actions);
+    phone.addEventListener("change", update);
   }
 
   if (!reduceMotion) {
     const io = new IntersectionObserver(
       (entries) => entries.forEach((e) => {
-        if (!phone.matches) return;
-        if (e.isIntersecting) e.target.play().catch(() => {});
+        const featured = e.target.closest(".card-featured");
+        if (e.isIntersecting && (featured || !phone.matches)) e.target.play().catch(() => {});
         else e.target.pause();
       }),
       { threshold: 0.6 }
     );
-    document.querySelectorAll(".card-featured video").forEach((v) => io.observe(v));
+    document.querySelectorAll(".projects-grid video").forEach((v) => io.observe(v));
   }
+}
+
+// Tell the visitor the splat turns. The hint goes for good on the
+// first drag.
+const hint = document.getElementById("splat-hint");
+const splatCanvas = document.getElementById("splat-canvas");
+if (hint && splatCanvas) {
+  splatCanvas.addEventListener("pointerdown", () => hint.classList.add("is-gone"), { once: true });
 }
