@@ -355,7 +355,7 @@ const PROJECTS = {
       src: `${BASE_URL}assets/images/about_hero.jpg`,
     },
     currently: {
-      lead: "Graduate researcher at NYU.",
+      lead: "Researcher at NYU.",
       labs: [
         {
           name: "Brooklyn Navy Yard",

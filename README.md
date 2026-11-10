@@ -1,6 +1,6 @@
 # eros-carrasco.github.io
 
-Personal portfolio of **Eros Carrasco**, Pipeline & Tools Engineer. Graduate
+Personal portfolio of **Eros Carrasco**, Pipeline & Tools Engineer.
 Researcher at NYU's Future Reality Lab and The Yard, working in XR and gaussian
 splatting.
 
