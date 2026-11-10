@@ -348,7 +348,7 @@ const PROJECTS = {
   about: {
     title: "Eros Carrasco",
     subtitle:
-      "Builds the real-time graphics and the computer vision that bring the real world into XR.",
+      "I build the systems and pipelines that let people create art and express emotion in XR.",
     pills: ["CUDA", "Gaussian Splatting", "Computer Vision", "Deep Learning", "Unity and Unreal"],
     hero: {
       type: "image",
@@ -383,7 +383,7 @@ const PROJECTS = {
       "Defined and documented the Spanish localization workflow for 30+ learning experiences, adopted by the team as its standard."
     ],
     currentFocus: [
-      "Graduating from NYU in May 2027 and available for full-time work from then.",
+      "Available for full-time work from January 2027.",
       "I want to work where the hard parts of real-time graphics are still unsolved."
     ],
     links: [
