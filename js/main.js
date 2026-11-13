@@ -1,6 +1,6 @@
 // Homepage card behaviour.
 // Navigation lives in the markup as real <a href> links, so cards work with
-// JS disabled. This file plays the clips, shows the bar and the splat hint.
+// JS disabled. This file plays the clips, the phone bar and the splat hint.
 
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -31,28 +31,16 @@ if (!reduceMotion && "IntersectionObserver" in window) {
 const phone = window.matchMedia("(max-width: 640px)");
 
 if ("IntersectionObserver" in window) {
-  // The same bar serves desktop: there it slides in once the profile card's
-  // buttons have scrolled away.
   const bar = document.getElementById("phone-bar");
   const intro = document.getElementById("phone-intro");
-  const actions = document.getElementById("profile-actions");
-  if (bar && intro && actions) {
-    const links = bar.querySelectorAll("a");
-    const seen = new Map();
-    const update = () => {
-      const watched = phone.matches ? intro : actions;
-      const on = seen.has(watched) && !seen.get(watched);
+  if (bar && intro) {
+    const link = bar.querySelector("a");
+    new IntersectionObserver(([e]) => {
+      const on = phone.matches && !e.isIntersecting;
       bar.classList.toggle("is-on", on);
       bar.setAttribute("aria-hidden", on ? "false" : "true");
-      links.forEach((a) => (a.tabIndex = on ? 0 : -1));
-    };
-    const watch = new IntersectionObserver((entries) => {
-      entries.forEach((e) => seen.set(e.target, e.isIntersecting));
-      update();
-    });
-    watch.observe(intro);
-    watch.observe(actions);
-    phone.addEventListener("change", update);
+      link.tabIndex = on ? 0 : -1;
+    }).observe(intro);
   }
 
   if (!reduceMotion) {
