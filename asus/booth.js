@@ -8,6 +8,9 @@
   const stage = document.getElementById("booth-stage");
   const canvas = document.getElementById("booth-canvas");
   const note = document.getElementById("booth-note");
+  const hint = document.getElementById("booth-hint");
+  const tag = document.getElementById("booth-tag");
+  const ring = document.getElementById("booth-ring");
   if (!stage || !canvas || typeof pc === "undefined") return;
 
   const app = new pc.Application(canvas, {
@@ -59,7 +62,7 @@
   // The people, where they stood when the picture for this page was taken.
   const people = [];
   const say = (t) => { if (note) note.textContent = t; };
-  const HINT = "Drag to look around. Scroll to come closer. Drag Kevin or Alice to move them.";
+  const HINT = "Scroll to come closer. Kevin and Alice can be dragged across the floor.";
   let got = [0, 0, 0];
   const SIZES = [30.0, 8.9, 6.2];
   const progress = (i) => (received, total) => {
@@ -77,14 +80,14 @@
     add(booth, "booth", 0, 0);
     if (kevin) people.push({ name: "Kevin", e: add(kevin, "kevin", -0.305, -2.989), tall: 1.86 });
     if (alice) people.push({ name: "Alice", e: add(alice, "alice", -1.124, -2.779), tall: 1.69 });
-    stage.dataset.ready = "1";
+    stage.classList.add("is-ready");
     say(HINT);
   });
 
   // The floor under the pointer, or null when the pointer is over the sky.
   const floorAt = (cx, cy) => {
     const r = canvas.getBoundingClientRect();
-    const sx = (cx - r.left) / r.width * canvas.width, sy = (cy - r.top) / r.height * canvas.height;
+    const sx = cx - r.left, sy = cy - r.top;      // the camera's screen is the canvas in CSS pixels
     const a = camera.camera.screenToWorld(sx, sy, 0.1), b = camera.camera.screenToWorld(sx, sy, 100);
     const dy = b.y - a.y;
     if (Math.abs(dy) < 1e-6) return null;
@@ -95,7 +98,7 @@
   // The person under the pointer: inside the box their body makes on the screen.
   const personAt = (cx, cy) => {
     const r = canvas.getBoundingClientRect();
-    const kx = r.width / canvas.width, ky = r.height / canvas.height;
+    const kx = 1, ky = 1;
     let best = null, bestDepth = 1e9;
     for (const p of people) {
       const at = p.e.getPosition();
@@ -111,14 +114,40 @@
     return best;
   };
 
+  // Who can be moved is shown where they stand: a ring on the floor round their feet and their
+  // name over their head, while the pointer is on them and while they are being carried.
+  let marked = null;
+  const mark = (p) => {
+    marked = p;
+    if (!tag || !ring) return;
+    if (!p) { tag.style.opacity = "0"; ring.style.opacity = "0"; return; }
+    const at = p.e.getPosition();
+    const feet = camera.camera.worldToScreen(new pc.Vec3(at.x, 0, at.z));
+    const head = camera.camera.worldToScreen(new pc.Vec3(at.x, p.tall + 0.08, at.z));
+    const side = camera.camera.worldToScreen(new pc.Vec3(at.x + camera.right.x * 0.42, 0, at.z + camera.right.z * 0.42));
+    if (feet.z <= 0) { tag.style.opacity = "0"; ring.style.opacity = "0"; return; }
+    const w = 2 * Math.hypot(side.x - feet.x, side.y - feet.y);
+    const h = Math.max(6, w * Math.sin(pitch * Math.PI / 180));
+    ring.style.width = w + "px"; ring.style.height = h + "px";
+    ring.style.left = (feet.x - w / 2) + "px"; ring.style.top = (feet.y - h / 2) + "px";
+    ring.style.opacity = "1";
+    tag.textContent = p.name;
+    tag.style.left = head.x + "px"; tag.style.top = head.y + "px";
+    tag.style.opacity = "1";
+  };
+  app.on("update", () => { if (marked) mark(marked); });
+
   let mode = null, lastX = 0, lastY = 0, held = null, grab = null;
   canvas.addEventListener("pointerdown", (e) => {
+    if (hint) hint.classList.add("is-gone");
     lastX = e.clientX; lastY = e.clientY;
     held = personAt(e.clientX, e.clientY);
     if (held) {
       const f = floorAt(e.clientX, e.clientY), at = held.e.getPosition();
       grab = f ? new pc.Vec3(at.x - f.x, 0, at.z - f.z) : new pc.Vec3();
       mode = "person";
+      mark(held);
+      canvas.style.cursor = "grabbing";
     } else {
       mode = "look";
     }
@@ -137,11 +166,19 @@
       pitch = Math.max(2, Math.min(75, pitch + (e.clientY - lastY) * 0.3));
       place();
     } else {
-      canvas.style.cursor = personAt(e.clientX, e.clientY) ? "grab" : "default";
+      const over = personAt(e.clientX, e.clientY);
+      canvas.style.cursor = over ? "grab" : "default";
+      if (over !== marked) mark(over);
     }
     lastX = e.clientX; lastY = e.clientY;
   });
-  const release = () => { mode = null; held = null; };
+  const release = (e) => {
+    mode = null; held = null;
+    const over = e && e.clientX !== undefined ? personAt(e.clientX, e.clientY) : null;
+    canvas.style.cursor = over ? "grab" : "default";
+    mark(over);
+  };
+  canvas.addEventListener("pointerleave", () => { if (!mode) mark(null); });
   canvas.addEventListener("pointerup", release);
   canvas.addEventListener("pointercancel", release);
   canvas.addEventListener("wheel", (e) => {
