@@ -4,8 +4,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Eros Carrasco · ROG XREAL R1</title>
-  <meta name="description" content="A note from Eros Carrasco about building AR glasses demos together." />
+  <title>Eros Carrasco</title>
+  <meta name="description" content="A note from Eros Carrasco." />
   <!-- Shared by link only: kept out of search and off the homepage. -->
   <meta name="robots" content="noindex, nofollow" />
   <link rel="icon" type="image/png" href="../assets/images/favicon_0.png" />
@@ -162,13 +162,16 @@
     .booth-stage .booth-hint.is-gone { opacity: 0; animation: none; }
     @keyframes booth-nudge { 0%, 100% { transform: translateX(-50%); } 50% { transform: translateX(calc(-50% + 6px)); } }
     .booth-tag { position: absolute; z-index: 2; transform: translate(-50%, -100%); padding: 3px 10px; border-radius: 999px; background: rgba(10, 17, 23, 0.8); border: 1px solid rgba(255, 184, 107, 0.6); font-size: 12px; font-weight: 600; color: #ffb86b; letter-spacing: 0.02em; white-space: nowrap; opacity: 0; transition: opacity 0.15s; pointer-events: none; }
-    .booth-door { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 20px; background: rgba(8, 8, 10, 0.92); text-align: center; }
-    .booth-door[hidden] { display: none; }
+    .page-door { min-height: 80vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 20px; text-align: center; }
+    .page-door[hidden] { display: none; }
+    .letter[hidden] { display: none; }
+    .page-door input { width: 220px; max-width: 60vw; padding: 9px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.06); color: #fff; font-size: 15px; }
+    .page-door button { padding: 9px 16px; border-radius: 10px; border: 0; background: #ffb86b; color: #1a1206; font-size: 15px; font-weight: 700; cursor: pointer; }
     .booth-door-title { margin: 0; font-size: 20px; font-weight: 700; color: #fff; }
     .booth-door-text { margin: 0 0 6px; font-size: 14px; color: rgba(255, 255, 255, 0.7); }
     .booth-door-row { display: flex; gap: 8px; }
-    .booth-door input { width: 220px; max-width: 60vw; padding: 9px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.06); color: #fff; font-size: 15px; }
-    .booth-door button { padding: 9px 16px; border-radius: 10px; border: 0; background: #ffb86b; color: #1a1206; font-size: 15px; font-weight: 700; cursor: pointer; }
+    .unused-door input { width: 220px; max-width: 60vw; padding: 9px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.06); color: #fff; font-size: 15px; }
+    .unused-door button { padding: 9px 16px; border-radius: 10px; border: 0; background: #ffb86b; color: #1a1206; font-size: 15px; font-weight: 700; cursor: pointer; }
     .booth-door-wrong { min-height: 18px; margin: 4px 0 0; font-size: 13px; color: #ffb86b; }
     .booth-note { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; padding: 10px 14px; font-size: 13px; color: rgba(255, 255, 255, 0.8); background: linear-gradient(transparent, rgba(0, 0, 0, 0.55)); pointer-events: none; }
     .splats { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; margin-bottom: 40px; }
@@ -203,113 +206,16 @@
 </head>
 
 <body>
-  <main class="letter">
-
-    <p class="from"><strong>Eros Carrasco</strong> · XR &amp; Computer Vision Engineer at NYU</p>
-
-    <p>Hi! Thanks so much for having me at Adobe MAX. I really enjoyed working with you.</p>
-
-    <p>I would love to keep collaborating and build demos for the AR glasses too. Some ideas:</p>
-
-    <div class="idea">
-      <p class="idea-num">Idea 1</p>
-      <h2>Ask for a shot, get it in Premiere</h2>
-      <p>Plug the R1 into a ProArt. Blender and Premiere float in front of you. You ask for a shot, the camera moves on its own, and the clip lands on your timeline.</p>
-
-      <div class="lens">
-        <div class="lens-label">What you see in the R1</div>
-        <div class="screens">
-          <div class="screen">
-            <div class="screen-title">Agent</div>
-            <div class="screen-body">
-              <p class="bubble you">Slow orbit around the booth. End on the ProArt sign.</p>
-              <p class="bubble agent">Camera set in Blender. Rendering 12 s.</p>
-            </div>
-          </div>
-          <div class="screen">
-            <div class="screen-title">Blender &middot; your booth splat</div>
-            <div class="screen-body"><svg viewBox="0 0 160 110" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="80" cy="66" rx="62" ry="22" stroke="#5ddcff" stroke-width="1.6" stroke-dasharray="4 5" opacity="0.9"/><g stroke="rgba(255,255,255,0.8)" stroke-width="2"><path d="M80 30 L104 43 L104 69 L80 82 L56 69 L56 43 Z M56 43 L80 56 L104 43 M80 56 L80 82"/></g><g transform="translate(130 74)"><rect x="-9" y="-6" width="13" height="10" rx="2" fill="#5ddcff"/><path d="M4 -4 L10 -7 L10 7 L4 4 Z" fill="#5ddcff"/></g><path d="M126 72 L100 60" stroke="#5ddcff" stroke-width="1.2" stroke-dasharray="2 3"/></svg></div>
-          </div>
-          <div class="screen">
-            <div class="screen-title">Premiere</div>
-            <div class="screen-body"><svg viewBox="0 0 160 110" fill="none" aria-hidden="true"><rect x="6" y="8" width="148" height="44" rx="4" fill="#0b1218" stroke="rgba(255,255,255,0.15)"/><path d="M66 22 L66 38 L80 30 Z" fill="rgba(255,255,255,0.55)"/><rect x="6" y="62" width="62" height="10" rx="2" fill="rgba(255,255,255,0.22)"/><rect x="72" y="62" width="40" height="10" rx="2" fill="rgba(255,255,255,0.22)"/><rect x="116" y="62" width="38" height="10" rx="2" fill="#5ddcff"/><rect x="6" y="78" width="96" height="10" rx="2" fill="rgba(255,255,255,0.12)"/><rect x="6" y="94" width="148" height="8" rx="2" fill="rgba(255,255,255,0.08)"/><path d="M118 56 L118 106" stroke="#ffb86b" stroke-width="1.6"/></svg></div>
-          </div>
-        </div>
-        <p class="device">Running on a ProArt GR1X. No monitor, just the glasses.</p>
-      </div>
-
-      <p class="steps">You ask <b>&rarr;</b> the camera moves <b>&rarr;</b> the clip is in Premiere</p>
-
+  <form class="page-door" id="page-door" autocomplete="off">
+    <p class="booth-door-title">A note from Eros Carrasco</p>
+    <p class="booth-door-text">This page is only for you. Enter the password I sent you.</p>
+    <div class="booth-door-row">
+      <input type="password" id="page-password" aria-label="Password" placeholder="Password" required autofocus />
+      <button type="submit">Open</button>
     </div>
-
-    <div class="idea">
-      <p class="idea-num">Idea 2</p>
-      <h2>Review a scene together, glasses or not</h2>
-      <p>The person in the R1 sees the scene big, right in front of them. Everyone else joins from a browser link. Same scene, same pointers, live.</p>
-
-      <div class="room">
-        <div class="lens">
-          <div class="lens-label">In the R1</div>
-          <svg viewBox="0 0 200 120" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M30 92 L100 112 L170 92 L100 72 Z" fill="rgba(93,220,255,0.06)" stroke="rgba(255,255,255,0.12)"/><g stroke="rgba(255,255,255,0.85)" stroke-width="2"><path d="M100 22 L128 37 L128 69 L100 84 L72 69 L72 37 Z M72 37 L100 52 L128 37 M100 52 L100 84"/></g><path d="M56 46 L56 64 L61 59 L65 67 L68 66 L64 58 L71 58 Z" fill="#5ddcff"/><path d="M140 54 L140 72 L145 67 L149 75 L152 74 L148 66 L155 66 Z" fill="#ffb86b"/></svg>
-        </div>
-        <div class="browsers">
-          <div class="browser"><div class="browser-bar"><i></i><i></i><i></i><em>Editor, New York</em></div><svg viewBox="0 0 200 120" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M30 92 L100 112 L170 92 L100 72 Z" fill="rgba(93,220,255,0.06)" stroke="rgba(255,255,255,0.12)"/><g stroke="rgba(255,255,255,0.85)" stroke-width="2"><path d="M100 22 L128 37 L128 69 L100 84 L72 69 L72 37 Z M72 37 L100 52 L128 37 M100 52 L100 84"/></g><path d="M56 46 L56 64 L61 59 L65 67 L68 66 L64 58 L71 58 Z" fill="#5ddcff"/><path d="M140 54 L140 72 L145 67 L149 75 L152 74 L148 66 L155 66 Z" fill="#ffb86b"/></svg></div>
-          <div class="browser"><div class="browser-bar"><i></i><i></i><i></i><em>Booth team</em></div><svg viewBox="0 0 200 120" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M30 92 L100 112 L170 92 L100 72 Z" fill="rgba(93,220,255,0.06)" stroke="rgba(255,255,255,0.12)"/><g stroke="rgba(255,255,255,0.85)" stroke-width="2"><path d="M100 22 L128 37 L128 69 L100 84 L72 69 L72 37 Z M72 37 L100 52 L128 37 M100 52 L100 84"/></g><path d="M56 46 L56 64 L61 59 L65 67 L68 66 L64 58 L71 58 Z" fill="#5ddcff"/><path d="M140 54 L140 72 L145 67 L149 75 L152 74 L148 66 L155 66 Z" fill="#ffb86b"/></svg></div>
-        </div>
-      </div>
-
-      <p class="example"><strong>Example:</strong> the booth team and an editor in New York walk through the booth splat together before the next event.</p>
-
-    </div>
-
-    <p>This is my experience with XR:</p>
-
-    <div class="pair">
-      <figure>
-        <video src="../assets/videos/transfr_hero.mp4" poster="../assets/images/poster_transfr.jpg"
-          controls playsinline preload="metadata"></video>
-        <figcaption><strong>Transfr.</strong> Two years shipping VR simulations in Unity, used in real classrooms.</figcaption>
-      </figure>
-      <figure>
-        <video src="../assets/videos/mrandarin_hero.mp4" poster="../assets/images/poster_mrandarin.jpg"
-          controls playsinline preload="metadata"></video>
-        <figcaption><strong>MRandarin.</strong> The Quest 3 sends what it sees to a PC, and the PC reads the handwriting. The R1 with a laptop works the same way.</figcaption>
-      </figure>
-    </div>
-
-    <figure>
-      <video src="../assets/videos/frl_hero.mp4" poster="../assets/images/poster_frl.jpg"
-        controls playsinline preload="metadata"></video>
-      <figcaption><strong>Future Reality Lab, NYU.</strong> We made this video to apply for Google&#8217;s Project Aura glasses. The lab has a framework for multiplayer AR experiences.</figcaption>
-    </figure>
-
-    <h2 class="section">Adobe MAX</h2>
-    <p class="todo">[Your text about the event.]</p>
-    <div class="booth-stage" id="booth-stage">
-      <canvas id="booth-canvas"></canvas>
-      <div class="booth-tag" id="booth-tag" aria-hidden="true"></div>
-      <p class="booth-hint" id="booth-hint" aria-hidden="true">&#8635; Drag to turn</p>
-      <form class="booth-door" id="booth-door" autocomplete="off">
-        <p class="booth-door-title">The ASUS booth, in 3D</p>
-        <p class="booth-door-text">This one is only for you. Enter the password I sent you.</p>
-        <div class="booth-door-row">
-          <input type="password" id="booth-password" aria-label="Password" placeholder="Password" required />
-          <button type="submit">Open</button>
-        </div>
-        <p class="booth-door-wrong" id="booth-wrong" role="status"></p>
-      </form>
-      <p class="booth-note" id="booth-note"></p>
-    </div>
-
-    <p class="sign">Count me in to keep collaborating!<br />Eros</p>
-
-    <nav class="links" aria-label="Contact">
-      <a class="primary" href="mailto:ejj2059@nyu.edu">Email me</a>
-      <a href="../assets/Eros%20Carrasco%20-%20Resume.pdf">Resume</a>
-      <a href="../">Portfolio</a>
-    </nav>
-
-  </main>
+    <p class="booth-door-wrong" id="page-wrong" role="status"></p>
+  </form>
+  <main class="letter" id="letter" hidden></main>
   <script src="../js/vendor/playcanvas.min.js"></script>
   <script src="booth.js"></script>
 </body>
