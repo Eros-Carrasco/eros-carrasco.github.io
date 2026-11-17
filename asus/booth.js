@@ -228,15 +228,16 @@
       });
     };
 
-    // The floor under the pointer, or null when the pointer is over the sky.
-    const floorAt = (cx, cy) => {
+    // Where the pointer's ray meets the level plane at height h (the floor at 0), or null when it
+    // never does. Too far off is refused too: near the horizon a pixel is metres of floor.
+    const floorAt = (cx, cy, h = 0) => {
       const r = canvas.getBoundingClientRect();
       const sx = cx - r.left, sy = cy - r.top;      // the camera's screen is the canvas in CSS pixels
       const a = camera.camera.screenToWorld(sx, sy, 0.1), b = camera.camera.screenToWorld(sx, sy, 100);
       const dy = b.y - a.y;
       if (Math.abs(dy) < 1e-6) return null;
-      const t = -a.y / dy;
-      if (t <= 0 || t > 1) return null;
+      const t = (h - a.y) / dy;
+      if (t <= 0 || t > 0.25) return null;          // within 25 m of the eye
       return new pc.Vec3(a.x + (b.x - a.x) * t, 0, a.z + (b.z - a.z) * t);
     };
     // The person under the pointer: inside the box their body makes on the screen.
@@ -281,14 +282,32 @@
     };
     app.on("update", () => { if (marked) mark(marked); });
 
-    let mode = null, lastX = 0, lastY = 0, held = null, grab = null;
+    // A person is carried by the spot they were taken by: the pointer's ray is met at that spot's
+    // own height, not at the floor behind it, so they move as far as the hand does and no farther.
+    // They then walk to where they are wanted, at a person's pace, so a flick cannot throw them.
+    let mode = null, lastX = 0, lastY = 0, held = null, grab = null, grabH = 0, goal = null, walker = null;
+    const PACE = 3.0;                                // metres a second, at most
+    app.on("update", (dt) => {
+      if (!walker || !goal) return;
+      const at = walker.e.getPosition();
+      const dx = goal.x - at.x, dz = goal.z - at.z, d = Math.hypot(dx, dz);
+      if (d < 0.002) { if (mode !== "person") { walker = null; goal = null; } return; }
+      const step = Math.min(d, Math.max(PACE * dt, d * Math.min(1, dt * 10)), PACE * dt * 2);
+      walker.e.setPosition(at.x + dx / d * step, 0, at.z + dz / d * step);
+    });
     canvas.addEventListener("pointerdown", (e) => {
       if (hint) hint.classList.add("is-gone");
       lastX = e.clientX; lastY = e.clientY;
       held = personAt(e.clientX, e.clientY);
       if (held) {
-        const f = floorAt(e.clientX, e.clientY), at = held.e.getPosition();
+        const at = held.e.getPosition(), r = canvas.getBoundingClientRect();
+        const feet = camera.camera.worldToScreen(new pc.Vec3(at.x, 0, at.z));
+        const head = camera.camera.worldToScreen(new pc.Vec3(at.x, held.tall, at.z));
+        const up = (feet.y - (e.clientY - r.top)) / Math.max(1, feet.y - head.y);     // 0 at the feet, 1 at the head
+        grabH = Math.max(0, Math.min(1, up)) * held.tall;
+        const f = floorAt(e.clientX, e.clientY, grabH);
         grab = f ? new pc.Vec3(at.x - f.x, 0, at.z - f.z) : new pc.Vec3();
+        walker = held; goal = new pc.Vec3(at.x, 0, at.z);
         mode = "person";
         mark(held);
         canvas.style.cursor = "grabbing";
@@ -300,11 +319,10 @@
     });
     canvas.addEventListener("pointermove", (e) => {
       if (mode === "person") {
-        const f = floorAt(e.clientX, e.clientY);
+        const f = floorAt(e.clientX, e.clientY, grabH);
         if (f) {
           // Kept within reach of the booth, so nobody is lost across the hall.
-          const x = Math.max(-9, Math.min(9, f.x + grab.x)), z = Math.max(-9, Math.min(9, f.z + grab.z));
-          held.e.setPosition(x, 0, z);
+          goal = new pc.Vec3(Math.max(-9, Math.min(9, f.x + grab.x)), 0, Math.max(-9, Math.min(9, f.z + grab.z)));
         }
       } else if (mode === "look") {
         yaw -= (e.clientX - lastX) * 0.3;
@@ -370,6 +388,16 @@
     letter.hidden = false;
     viewer(password);
   };
+  const eye = document.getElementById("page-eye");
+  if (eye && field) {
+    eye.addEventListener("click", () => {
+      const shown = field.type === "text";
+      field.type = shown ? "password" : "text";
+      eye.setAttribute("aria-pressed", shown ? "false" : "true");
+      eye.setAttribute("aria-label", shown ? "Show the password" : "Hide the password");
+      field.focus();
+    });
+  }
   if (door && letter) {
     door.addEventListener("submit", (e) => { e.preventDefault(); enter(field.value, false); });
     let kept = null;

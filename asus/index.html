@@ -168,6 +168,12 @@
     .page-door { min-height: 80vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 20px; text-align: center; }
     .page-door[hidden] { display: none; }
     .letter[hidden] { display: none; }
+    .page-field { position: relative; display: inline-flex; }
+    .page-door .page-field input { padding-right: 40px; }
+    .page-door button.page-eye { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border-radius: 8px; background: transparent; color: rgba(255, 255, 255, 0.6); }
+    .page-door button.page-eye:hover { color: #fff; }
+    .page-door button.page-eye[aria-pressed="true"] { color: #ffb86b; }
+    .page-door button.page-eye[aria-pressed="true"] .page-eye-off { display: none; }
     .page-door input { width: 220px; max-width: 60vw; padding: 9px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.06); color: #fff; font-size: 15px; }
     .page-door button { padding: 9px 16px; border-radius: 10px; border: 0; background: #ffb86b; color: #1a1206; font-size: 15px; font-weight: 700; cursor: pointer; }
     .booth-door-title { margin: 0; font-size: 20px; font-weight: 700; color: #fff; }
@@ -213,7 +219,14 @@
     <p class="booth-door-title">A note from Eros Carrasco</p>
     <p class="booth-door-text">This page is only for you. Enter the password I sent you.</p>
     <div class="booth-door-row">
-      <input type="password" id="page-password" aria-label="Password" placeholder="Password" required autofocus />
+      <span class="page-field">
+        <input type="password" id="page-password" aria-label="Password" placeholder="Password" required autofocus />
+        <button type="button" class="page-eye" id="page-eye" aria-label="Show the password" aria-pressed="false">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /><path class="page-eye-off" d="M4 4l16 16" />
+          </svg>
+        </button>
+      </span>
       <button type="submit">Open</button>
     </div>
     <p class="booth-door-wrong" id="page-wrong" role="status"></p>
