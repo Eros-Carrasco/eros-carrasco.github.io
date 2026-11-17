@@ -156,7 +156,10 @@
     h2.section { margin: 56px 0 10px; font-size: 24px; color: #fff; }
     .todo { color: #ffb86b; }
     .booth-stage { position: relative; aspect-ratio: 16 / 9; margin-bottom: 40px; border-radius: 14px; overflow: hidden; background: #08080a; }
-    .booth-stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+    .booth-stage canvas { position: relative; z-index: 1; display: block; width: 100%; height: 100%; touch-action: none; }
+    .booth-sky { position: absolute; left: 0; top: 0; width: 100%; height: 400%; z-index: 0; pointer-events: none; will-change: transform;
+      background: linear-gradient(to bottom, #04051a 0%, #0c0f3a 30%, #2a1763 41%, #6a2277 46%, #c23a72 48.6%, #ff8a4c 49.7%, #ffd89a 50%, #0b1024 50.05%, #070b18 56%, #04060e 100%); }
+    .booth-town { position: absolute; left: 0; width: 100%; background-repeat: repeat-x; }
     .booth-hint { position: absolute; left: 50%; bottom: 44px; z-index: 2; margin: 0; padding: 6px 12px; border-radius: 999px; background: rgba(10, 17, 23, 0.7); border: 1px solid rgba(255, 255, 255, 0.12); font-size: 13px; font-weight: 600; color: rgba(255, 255, 255, 0.85); white-space: nowrap; transform: translateX(-50%); opacity: 0; transition: opacity 0.4s; pointer-events: none; }
     .booth-stage.is-ready .booth-hint { opacity: 1; animation: booth-nudge 2.4s ease-in-out 1s infinite; }
     .booth-stage .booth-hint.is-gone { opacity: 0; animation: none; }
@@ -173,7 +176,7 @@
     .unused-door input { width: 220px; max-width: 60vw; padding: 9px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.06); color: #fff; font-size: 15px; }
     .unused-door button { padding: 9px 16px; border-radius: 10px; border: 0; background: #ffb86b; color: #1a1206; font-size: 15px; font-weight: 700; cursor: pointer; }
     .booth-door-wrong { min-height: 18px; margin: 4px 0 0; font-size: 13px; color: #ffb86b; }
-    .booth-note { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; padding: 10px 14px; font-size: 13px; color: rgba(255, 255, 255, 0.8); background: linear-gradient(transparent, rgba(0, 0, 0, 0.55)); pointer-events: none; }
+    .booth-note { position: absolute; z-index: 2; left: 0; right: 0; bottom: 0; margin: 0; padding: 10px 14px; font-size: 13px; color: rgba(255, 255, 255, 0.8); background: linear-gradient(transparent, rgba(0, 0, 0, 0.55)); pointer-events: none; }
     .splats { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; margin-bottom: 40px; }
     .splat-slot {
       display: flex;

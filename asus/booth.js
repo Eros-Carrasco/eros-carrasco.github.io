@@ -51,7 +51,7 @@
     if (!stage || !canvas) return;
 
     const app = new pc.Application(canvas, {
-      graphicsDeviceOptions: { alpha: false, antialias: false },
+      graphicsDeviceOptions: { alpha: true, antialias: false },   // the sky shows through, behind the booth
     });
     app.setCanvasFillMode(pc.FILLMODE_NONE);
     app.setCanvasResolution(pc.RESOLUTION_AUTO);
@@ -60,7 +60,7 @@
     const FOV = 60;
     const camera = new pc.Entity("camera");
     camera.addComponent("camera", {
-      clearColor: new pc.Color(0.03, 0.03, 0.04, 1),
+      clearColor: new pc.Color(0, 0, 0, 0),
       fov: FOV, nearClip: 0.1, farClip: 200,
     });
     app.root.addChild(camera);
@@ -69,13 +69,55 @@
     // Where the booth's own page starts: in front of the ProArt counter, a little above.
     const pivot = new pc.Vec3(-0.585, 1.07, -0.68);
     let yaw = -165.6, pitch = 14.7, dist = 6.4;
+    // Behind the booth, where the hall's neighbours were cut away: a dusk sky with a far skyline,
+    // drawn by the page itself (no photograph). It is at infinity, so it turns with the view and
+    // nothing else: one degree of yaw moves it one degree across the screen, and the horizon
+    // rises and falls with the camera's tilt.
+    const sky = document.createElement("div");
+    sky.className = "booth-sky";
+    const town = document.createElement("div");
+    town.className = "booth-town";
+    sky.appendChild(town);
+    stage.insertBefore(sky, stage.firstChild);
+    const TOWN_DEG = 14;                     // how many degrees of sky the skyline's strip covers
+    (() => {
+      // The same town every time: a small fixed generator, so it does not change between visits.
+      let seed = 20261110;
+      const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+      let shapes = "";
+      for (let a = 0; a < 360;) {
+        const dense = 0.35 + 0.65 * Math.pow(Math.sin((a / 360) * Math.PI * 3), 2);   // three clusters round the horizon
+        const w = 0.5 + rnd() * 1.6, h = (0.4 + rnd() * rnd() * 7.5) * dense;
+        if (rnd() < 0.82) shapes += '<rect x="' + a.toFixed(2) + '" y="' + (TOWN_DEG - h).toFixed(2) + '" width="' + w.toFixed(2) + '" height="' + h.toFixed(2) + '"/>';
+        a += w + rnd() * 0.5;
+      }
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 ' + TOWN_DEG + '" preserveAspectRatio="none">' +
+        '<defs><radialGradient id="g" cx="0.5" cy="1" r="1"><stop offset="0" stop-color="#ffe2a8" stop-opacity="0.95"/>' +
+        '<stop offset="0.25" stop-color="#ff9a5a" stop-opacity="0.55"/><stop offset="1" stop-color="#ff5a7a" stop-opacity="0"/></radialGradient></defs>' +
+        '<ellipse cx="205" cy="' + TOWN_DEG + '" rx="26" ry="' + TOWN_DEG + '" fill="url(#g)"/>' +
+        '<g fill="#150d2e">' + shapes + '</g></svg>';
+      town.style.backgroundImage = 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '")';
+    })();
+    const drawSky = () => {
+      const W = stage.clientWidth, H = stage.clientHeight;
+      if (!W || !H) return;
+      const half = Math.tan(FOV * Math.PI / 360);                          // the lens' half height, at one unit away
+      const perDeg = W / (2 * Math.atan(half * W / H) * 180 / Math.PI);    // pixels a degree of yaw moves the far sky
+      const horizon = H / 2 - Math.tan(pitch * Math.PI / 180) / half * H / 2;
+      sky.style.transform = "translateY(" + (horizon - 2 * H) + "px)";    // the sky is four stages tall, its horizon half way down
+      town.style.height = (TOWN_DEG * perDeg) + "px";
+      town.style.top = (2 * H - TOWN_DEG * perDeg) + "px";
+      town.style.backgroundSize = (360 * perDeg) + "px 100%";
+      town.style.backgroundPositionX = (yaw * perDeg) + "px";
+    };
     const place = () => {
       const y = yaw * Math.PI / 180, p = pitch * Math.PI / 180;
       camera.setPosition(pivot.x + dist * Math.cos(p) * Math.sin(y), pivot.y + dist * Math.sin(p),
                          pivot.z + dist * Math.cos(p) * Math.cos(y));
       camera.lookAt(pivot);
+      drawSky();
     };
-    const resize = () => { app.resizeCanvas(stage.clientWidth, stage.clientHeight); };
+    const resize = () => { app.resizeCanvas(stage.clientWidth, stage.clientHeight); drawSky(); };
     new ResizeObserver(resize).observe(stage);
     resize();
     place();
@@ -162,7 +204,7 @@
     const people = [];
     const say = (t) => { if (note) note.textContent = t; };
     const HINT = "Scroll to zoom in. Kevin and Alice are here too: feel free to move them around!";
-    const SIZES = [29.2, 8.9, 6.2];
+    const SIZES = [27.0, 8.9, 6.2];
     const show = (password) => {
       const got = [0, 0, 0];
       const progress = (i) => (received, total) => {
@@ -293,8 +335,8 @@
     show(password);
   };
 
-  // The door: a password, tried on a few bytes before anything else is fetched. It is kept for
-  // this tab only, so a reload does not ask again, and it is never sent anywhere.
+  // The door: a password, tried on a few bytes before anything else is fetched. It is kept in this
+  // browser, so whoever was sent the page is asked once on each device, and it is never sent anywhere.
   const door = document.getElementById("page-door");
   const field = document.getElementById("page-password");
   const wrong = document.getElementById("page-wrong");
@@ -311,11 +353,11 @@
     if (!window.crypto || !crypto.subtle) { if (wrong) wrong.textContent = "This browser cannot open it (it needs a secure page)."; return; }
     if (wrong) wrong.textContent = quiet ? "" : "Checking...";
     if (!(await tryPassword(password))) {
-      try { sessionStorage.removeItem("booth-password"); } catch (err) { /* private mode */ }
+      try { localStorage.removeItem("booth-password"); } catch (err) { /* private mode */ }
       if (wrong) wrong.textContent = quiet ? "" : "That is not the password.";
       return;
     }
-    try { sessionStorage.setItem("booth-password", password); } catch (err) { /* private mode */ }
+    try { localStorage.setItem("booth-password", password); } catch (err) { /* private mode */ }
     try {
       const html = new TextDecoder().decode(await open(await fetchAll("content.html.enc"), password));
       letter.innerHTML = html;
@@ -331,7 +373,7 @@
   if (door && letter) {
     door.addEventListener("submit", (e) => { e.preventDefault(); enter(field.value, false); });
     let kept = null;
-    try { kept = sessionStorage.getItem("booth-password"); } catch (err) { /* private mode */ }
+    try { kept = localStorage.getItem("booth-password"); } catch (err) { /* private mode */ }
     if (kept) enter(kept, true);
   }
 })();
