@@ -163,6 +163,14 @@
     @keyframes booth-nudge { 0%, 100% { transform: translateX(-50%); } 50% { transform: translateX(calc(-50% + 6px)); } }
     .booth-ring { position: absolute; z-index: 1; border-radius: 50%; border: 2px solid rgba(255, 184, 107, 0.95); box-shadow: 0 0 14px rgba(255, 184, 107, 0.55), inset 0 0 10px rgba(255, 184, 107, 0.35); opacity: 0; transition: opacity 0.15s; pointer-events: none; }
     .booth-tag { position: absolute; z-index: 2; transform: translate(-50%, -100%); padding: 3px 10px; border-radius: 999px; background: rgba(10, 17, 23, 0.8); border: 1px solid rgba(255, 184, 107, 0.6); font-size: 12px; font-weight: 600; color: #ffb86b; white-space: nowrap; opacity: 0; transition: opacity 0.15s; pointer-events: none; }
+    .booth-door { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 20px; background: rgba(8, 8, 10, 0.92); text-align: center; }
+    .booth-door[hidden] { display: none; }
+    .booth-door-title { margin: 0; font-size: 20px; font-weight: 700; color: #fff; }
+    .booth-door-text { margin: 0 0 6px; font-size: 14px; color: rgba(255, 255, 255, 0.7); }
+    .booth-door-row { display: flex; gap: 8px; }
+    .booth-door input { width: 220px; max-width: 60vw; padding: 9px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.06); color: #fff; font-size: 15px; }
+    .booth-door button { padding: 9px 16px; border-radius: 10px; border: 0; background: #ffb86b; color: #1a1206; font-size: 15px; font-weight: 700; cursor: pointer; }
+    .booth-door-wrong { min-height: 18px; margin: 4px 0 0; font-size: 13px; color: #ffb86b; }
     .booth-note { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; padding: 10px 14px; font-size: 13px; color: rgba(255, 255, 255, 0.8); background: linear-gradient(transparent, rgba(0, 0, 0, 0.55)); pointer-events: none; }
     .splats { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; margin-bottom: 40px; }
     .splat-slot {
@@ -283,6 +291,15 @@
       <div class="booth-ring" id="booth-ring" aria-hidden="true"></div>
       <div class="booth-tag" id="booth-tag" aria-hidden="true"></div>
       <p class="booth-hint" id="booth-hint" aria-hidden="true">&#8635; Drag to turn</p>
+      <form class="booth-door" id="booth-door" autocomplete="off">
+        <p class="booth-door-title">The ASUS booth, in 3D</p>
+        <p class="booth-door-text">This one is only for you. Enter the password I sent you.</p>
+        <div class="booth-door-row">
+          <input type="password" id="booth-password" aria-label="Password" placeholder="Password" required />
+          <button type="submit">Open</button>
+        </div>
+        <p class="booth-door-wrong" id="booth-wrong" role="status"></p>
+      </form>
       <p class="booth-note" id="booth-note"></p>
     </div>
 

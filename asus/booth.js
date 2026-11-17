@@ -43,14 +43,53 @@
   resize();
   place();
 
-  const load = (url, onProgress) => new Promise((resolve) => {
-    const a = new pc.Asset(url, "gsplat", { url });
-    if (onProgress) a.on("progress", onProgress);
-    a.once("load", () => resolve(a));
-    a.once("error", (err) => { console.error("[booth]", url, err); resolve(null); });
-    app.assets.add(a);
-    app.assets.load(a);
-  });
+  // The splats are published locked (effects/web_lock.py in the splatlab repo): "SPLK1", a salt,
+  // a nonce, then AES-256-GCM of the file, the key drawn from the password by PBKDF2. Without the
+  // password what this page fetches is noise. Everything is opened here, in the visitor's browser.
+  const ROUNDS = 310000;
+  const open = async (buf, password) => {
+    const b = new Uint8Array(buf);
+    if (new TextDecoder().decode(b.subarray(0, 5)) !== "SPLK1") throw new Error("not a locked file");
+    const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]);
+    const key = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: b.subarray(5, 21), iterations: ROUNDS, hash: "SHA-256" },
+      base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+    return crypto.subtle.decrypt({ name: "AES-GCM", iv: b.subarray(21, 33) }, key, b.subarray(33));
+  };
+  // A file fetched whole, telling how far it is as it comes.
+  const fetchAll = async (url, onProgress) => {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(url + ": " + res.status);
+    const total = +res.headers.get("Content-Length") || 0;
+    if (!res.body || !total) return res.arrayBuffer();
+    const reader = res.body.getReader(), parts = [];
+    let got = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      parts.push(value); got += value.length;
+      if (onProgress) onProgress(got, total);
+    }
+    const all = new Uint8Array(got);
+    let at = 0;
+    for (const part of parts) { all.set(part, at); at += part.length; }
+    return all.buffer;
+  };
+  const load = async (name, password, onProgress) => {
+    try {
+      const plain = await open(await fetchAll("splats/" + name + ".ply.enc", onProgress), password);
+      const url = URL.createObjectURL(new Blob([plain]));
+      return await new Promise((resolve) => {
+        const a = new pc.Asset(name, "gsplat", { url, filename: name + ".ply" });
+        a.once("load", () => { URL.revokeObjectURL(url); resolve(a); });
+        a.once("error", (err) => { console.error("[booth]", name, err); resolve(null); });
+        app.assets.add(a);
+        app.assets.load(a);
+      });
+    } catch (err) {
+      console.error("[booth]", name, err);
+      return null;
+    }
+  };
   const add = (asset, name, x, z) => {
     const e = new pc.Entity(name);
     e.addComponent("gsplat", { asset });
@@ -63,26 +102,60 @@
   const people = [];
   const say = (t) => { if (note) note.textContent = t; };
   const HINT = "Scroll to come closer. Kevin and Alice can be dragged across the floor.";
-  let got = [0, 0, 0];
-  const SIZES = [30.0, 8.9, 6.2];
-  const progress = (i) => (received, total) => {
-    got[i] = total ? received / total : 0;
-    const done = got.reduce((s, g, k) => s + g * SIZES[k], 0) / SIZES.reduce((s, v) => s + v, 0);
-    say("Loading the booth: " + Math.round(done * 100) + "%");
+  const SIZES = [29.2, 8.9, 6.2];
+  const show = (password) => {
+    const got = [0, 0, 0];
+    const progress = (i) => (received, total) => {
+      got[i] = total ? received / total : 0;
+      const done = got.reduce((s, g, k) => s + g * SIZES[k], 0) / SIZES.reduce((s, v) => s + v, 0);
+      say("Loading the booth: " + Math.round(done * 100) + "%");
+    };
+    say("Loading the booth: 0%");
+    Promise.all([
+      load("booth", password, progress(0)),
+      load("kevin", password, progress(1)),
+      load("alice", password, progress(2)),
+    ]).then(([booth, kevin, alice]) => {
+      if (!booth) { say("The booth could not be loaded."); return; }
+      add(booth, "booth", 0, 0);
+      if (kevin) people.push({ name: "Kevin", e: add(kevin, "kevin", -0.305, -2.989), tall: 1.86 });
+      if (alice) people.push({ name: "Alice", e: add(alice, "alice", -1.124, -2.779), tall: 1.69 });
+      stage.classList.add("is-ready");
+      say(HINT);
+    });
   };
-  say("Loading the booth: 0%");
-  Promise.all([
-    load("splats/booth.ply", progress(0)),
-    load("splats/kevin.ply", progress(1)),
-    load("splats/alice.ply", progress(2)),
-  ]).then(([booth, kevin, alice]) => {
-    if (!booth) { say("The booth could not be loaded."); return; }
-    add(booth, "booth", 0, 0);
-    if (kevin) people.push({ name: "Kevin", e: add(kevin, "kevin", -0.305, -2.989), tall: 1.86 });
-    if (alice) people.push({ name: "Alice", e: add(alice, "alice", -1.124, -2.779), tall: 1.69 });
-    stage.classList.add("is-ready");
-    say(HINT);
-  });
+
+  // The door: a password, tried on a few bytes before anything large is fetched. It is kept for
+  // this tab only, so a reload does not ask again, and it is never sent anywhere.
+  const door = document.getElementById("booth-door");
+  const field = document.getElementById("booth-password");
+  const wrong = document.getElementById("booth-wrong");
+  const tryPassword = async (password) => {
+    try {
+      const plain = await open(await fetchAll("splats/check.enc"), password);
+      return new TextDecoder().decode(plain) === "splatlab booth";
+    } catch (err) {
+      return false;
+    }
+  };
+  const enter = async (password, quiet) => {
+    if (!window.crypto || !crypto.subtle) { if (wrong) wrong.textContent = "This browser cannot open it (it needs a secure page)."; return; }
+    if (wrong) wrong.textContent = quiet ? "" : "Checking...";
+    if (await tryPassword(password)) {
+      try { sessionStorage.setItem("booth-password", password); } catch (err) { /* private mode */ }
+      if (door) door.hidden = true;
+      show(password);
+    } else {
+      try { sessionStorage.removeItem("booth-password"); } catch (err) { /* private mode */ }
+      if (wrong) wrong.textContent = quiet ? "" : "That is not the password.";
+    }
+  };
+  if (door) {
+    door.addEventListener("submit", (e) => { e.preventDefault(); enter(field.value, false); });
+    let kept = null;
+    try { kept = sessionStorage.getItem("booth-password"); } catch (err) { /* private mode */ }
+    if (kept) enter(kept, true);
+  }
 
   // The floor under the pointer, or null when the pointer is over the sky.
   const floorAt = (cx, cy) => {
