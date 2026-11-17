@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Eros Carrasco</title>
+  <meta name="description" content="A note from Eros Carrasco." />
+  <!-- Shared by link only: kept out of search and off the homepage. -->
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/png" href="../assets/images/favicon_0.png" />
+
+  <style>
+    :root {
+      --bg: #0a1117;
+      --text: rgba(255, 255, 255, 0.92);
+      --muted: rgba(255, 255, 255, 0.6);
+      --line: rgba(255, 255, 255, 0.09);
+      --accent: #5ddcff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 19px;
+      line-height: 1.6;
+    }
+
+    .letter {
+      width: min(680px, 100%);
+      margin: 0 auto;
+      padding: 64px 24px 96px;
+    }
+
+    .from {
+      margin: 0 0 48px;
+      font-size: 15px;
+      color: var(--muted);
+    }
+    .from strong { color: #fff; font-weight: 600; }
+
+    p { margin: 0 0 22px; }
+
+    a { color: var(--accent); }
+
+    figure { margin: 32px 0 34px; }
+
+    video {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #000;
+    }
+
+    .sign { margin-top: 40px; }
+
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 28px;
+    }
+
+    .links a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 42px;
+      padding: 0 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .links a:hover { border-color: rgba(255, 255, 255, 0.4); }
+    .links a.primary { background: var(--accent); border-color: transparent; color: #04202b; }
+
+    figcaption { margin-top: 10px; font-size: 16px; color: var(--muted); }
+    figcaption strong { color: #fff; font-weight: 600; }
+
+    .idea {
+      margin: 26px 0 44px;
+      padding: 24px 22px 20px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: #0d151c;
+    }
+    .idea-num { margin: 0 0 4px; font-size: 14px; color: var(--muted); }
+    .idea h2 { margin: 0 0 10px; font-size: 24px; line-height: 1.2; color: #fff; }
+    .idea > p { margin: 0 0 18px; font-size: 17px; }
+    .idea .quiet { color: var(--muted); font-size: 16px; }
+    .idea .quiet strong { color: #fff; font-weight: 600; }
+
+    /* What you see in the R1: screens floating over a dark, see-through view. */
+    .lens {
+      position: relative;
+      padding: 30px 16px 18px;
+      border-radius: 26px;
+      background: radial-gradient(120% 140% at 50% 0%, #18303d 0%, #0b1218 70%);
+      box-shadow: inset 0 0 0 2px rgba(93, 220, 255, 0.28);
+    }
+    .lens-label {
+      position: absolute;
+      top: 9px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 12px;
+      color: rgba(93, 220, 255, 0.85);
+    }
+    .screens { display: grid; grid-template-columns: 1fr 1.25fr 1fr; gap: 10px; align-items: center; }
+    .screen {
+      border-radius: 10px;
+      background: rgba(18, 28, 37, 0.92);
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 10px 24px rgba(0, 0, 0, 0.45);
+      overflow: hidden;
+    }
+    .screen-title { padding: 6px 10px; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--line); }
+    .screen-body { padding: 10px; }
+    .screen svg { display: block; width: 100%; height: auto; }
+
+    .bubble { margin: 0 0 6px; padding: 6px 9px; border-radius: 10px; font-size: 12px; line-height: 1.35; }
+    .bubble.you { background: var(--accent); color: #04202b; margin-left: 14px; border-bottom-right-radius: 3px; }
+    .bubble.agent { background: #1c2a35; color: rgba(255, 255, 255, 0.85); margin-right: 14px; border-bottom-left-radius: 3px; }
+
+    .device { margin: 12px 0 0; text-align: center; font-size: 13px; color: var(--muted); }
+
+    .steps { margin: 16px 0 0; font-size: 15px; color: var(--muted); }
+    .steps b { color: var(--accent); font-weight: 600; }
+
+    .example { margin: 16px 0 0; font-size: 16px; color: var(--muted); }
+    .example strong { color: #fff; font-weight: 600; }
+
+
+    /* Idea 2: one person in glasses, the rest in a browser. */
+    .room { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; align-items: stretch; }
+    .room .lens { padding-top: 30px; display: flex; flex-direction: column; justify-content: center; }
+    .browsers { display: grid; gap: 12px; }
+    .browser { border-radius: 10px; background: #121c25; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1); overflow: hidden; }
+    .browser-bar { display: flex; gap: 5px; padding: 7px 9px; border-bottom: 1px solid var(--line); }
+    .browser-bar i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255, 255, 255, 0.2); }
+    .browser-bar em { margin-left: 6px; font-style: normal; font-size: 11px; color: var(--muted); }
+    .browser svg { display: block; width: 100%; height: auto; padding: 6px 10px 8px; }
+
+    .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .pair figure { margin: 0 0 34px; }
+    .pair video { aspect-ratio: 16 / 9; object-fit: cover; }
+
+    h2.section { margin: 56px 0 10px; font-size: 24px; color: #fff; }
+    .todo { color: #ffb86b; }
+    .booth-stage { position: relative; aspect-ratio: 16 / 9; margin-bottom: 40px; border-radius: 14px; overflow: hidden; background: #08080a; }
+    .booth-stage canvas { position: relative; z-index: 1; display: block; width: 100%; height: 100%; touch-action: none; }
+    .booth-sky { position: absolute; left: 0; top: 0; width: 100%; height: 400%; z-index: 0; pointer-events: none; will-change: transform;
+      background: linear-gradient(to bottom, #04051a 0%, #0c0f3a 30%, #2a1763 41%, #6a2277 46%, #c23a72 48.6%, #ff8a4c 49.7%, #ffd89a 50%, #0b1024 50.05%, #070b18 56%, #04060e 100%); }
+    .booth-town { position: absolute; left: 0; width: 100%; background-repeat: repeat-x; }
+    .booth-hint { position: absolute; left: 50%; bottom: 44px; z-index: 2; margin: 0; padding: 6px 12px; border-radius: 999px; background: rgba(10, 17, 23, 0.7); border: 1px solid rgba(255, 255, 255, 0.12); font-size: 13px; font-weight: 600; color: rgba(255, 255, 255, 0.85); white-space: nowrap; transform: translateX(-50%); opacity: 0; transition: opacity 0.4s; pointer-events: none; }
+    .booth-stage.is-ready .booth-hint { opacity: 1; animation: booth-nudge 2.4s ease-in-out 1s infinite; }
+    .booth-stage .booth-hint.is-gone { opacity: 0; animation: none; }
+    @keyframes booth-nudge { 0%, 100% { transform: translateX(-50%); } 50% { transform: translateX(calc(-50% + 6px)); } }
+    .booth-tag { position: absolute; z-index: 2; transform: translate(-50%, -100%); padding: 3px 10px; border-radius: 999px; background: rgba(10, 17, 23, 0.8); border: 1px solid rgba(255, 184, 107, 0.6); font-size: 12px; font-weight: 600; color: #ffb86b; letter-spacing: 0.02em; white-space: nowrap; opacity: 0; transition: opacity 0.15s; pointer-events: none; }
+    .page-door { min-height: 80vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 20px; text-align: center; }
+    .page-door[hidden] { display: none; }
+    .letter[hidden] { display: none; }
+    .page-door input { width: 220px; max-width: 60vw; padding: 9px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.06); color: #fff; font-size: 15px; }
+    .page-door button { padding: 9px 16px; border-radius: 10px; border: 0; background: #ffb86b; color: #1a1206; font-size: 15px; font-weight: 700; cursor: pointer; }
+    .booth-door-title { margin: 0; font-size: 20px; font-weight: 700; color: #fff; }
+    .booth-door-text { margin: 0 0 6px; font-size: 14px; color: rgba(255, 255, 255, 0.7); }
+    .booth-door-row { display: flex; gap: 8px; }
+    .unused-door input { width: 220px; max-width: 60vw; padding: 9px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.06); color: #fff; font-size: 15px; }
+    .unused-door button { padding: 9px 16px; border-radius: 10px; border: 0; background: #ffb86b; color: #1a1206; font-size: 15px; font-weight: 700; cursor: pointer; }
+    .booth-door-wrong { min-height: 18px; margin: 4px 0 0; font-size: 13px; color: #ffb86b; }
+    .booth-note { position: absolute; z-index: 2; left: 0; right: 0; bottom: 0; margin: 0; padding: 10px 14px; font-size: 13px; color: rgba(255, 255, 255, 0.8); background: linear-gradient(transparent, rgba(0, 0, 0, 0.55)); pointer-events: none; }
+    .splats { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; margin-bottom: 40px; }
+    .splat-slot {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 200px;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px dashed rgba(255, 184, 107, 0.5);
+      font-size: 14px;
+      color: #ffb86b;
+      text-align: center;
+    }
+
+    @media (max-width: 640px) {
+      .splats { grid-template-columns: 1fr; }
+      .pair { grid-template-columns: 1fr; }
+      .screens { grid-template-columns: 1fr; }
+      .room { grid-template-columns: 1fr; }
+      .browsers { grid-template-columns: 1fr 1fr; }
+      .idea { padding: 18px 16px 16px; }
+    }
+
+    @media (max-width: 640px) {
+      body { font-size: 17px; }
+      .letter { padding: 40px 16px 72px; }
+      .from { margin-bottom: 36px; }
+    }
+  </style>
+</head>
+
+<body>
+  <form class="page-door" id="page-door" autocomplete="off">
+    <p class="booth-door-title">A note from Eros Carrasco</p>
+    <p class="booth-door-text">This page is only for you. Enter the password I sent you.</p>
+    <div class="booth-door-row">
+      <input type="password" id="page-password" aria-label="Password" placeholder="Password" required autofocus />
+      <button type="submit">Open</button>
+    </div>
+    <p class="booth-door-wrong" id="page-wrong" role="status"></p>
+  </form>
+  <main class="letter" id="letter" hidden></main>
+  <script src="../js/vendor/playcanvas.min.js"></script>
+  <script src="booth.js"></script>
+</body>
+
+</html>
