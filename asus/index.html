@@ -161,8 +161,7 @@
     .booth-stage.is-ready .booth-hint { opacity: 1; animation: booth-nudge 2.4s ease-in-out 1s infinite; }
     .booth-stage .booth-hint.is-gone { opacity: 0; animation: none; }
     @keyframes booth-nudge { 0%, 100% { transform: translateX(-50%); } 50% { transform: translateX(calc(-50% + 6px)); } }
-    .booth-ring { position: absolute; z-index: 1; border-radius: 50%; border: 2px solid rgba(255, 184, 107, 0.95); box-shadow: 0 0 14px rgba(255, 184, 107, 0.55), inset 0 0 10px rgba(255, 184, 107, 0.35); opacity: 0; transition: opacity 0.15s; pointer-events: none; }
-    .booth-tag { position: absolute; z-index: 2; transform: translate(-50%, -100%); padding: 3px 10px; border-radius: 999px; background: rgba(10, 17, 23, 0.8); border: 1px solid rgba(255, 184, 107, 0.6); font-size: 12px; font-weight: 600; color: #ffb86b; white-space: nowrap; opacity: 0; transition: opacity 0.15s; pointer-events: none; }
+    .booth-tag { position: absolute; z-index: 2; transform: translate(-50%, -100%); padding: 3px 10px; border-radius: 999px; background: rgba(10, 17, 23, 0.8); border: 1px solid rgba(255, 184, 107, 0.6); font-size: 12px; font-weight: 600; color: #ffb86b; letter-spacing: 0.02em; white-space: nowrap; opacity: 0; transition: opacity 0.15s; pointer-events: none; }
     .booth-door { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 20px; background: rgba(8, 8, 10, 0.92); text-align: center; }
     .booth-door[hidden] { display: none; }
     .booth-door-title { margin: 0; font-size: 20px; font-weight: 700; color: #fff; }
@@ -288,7 +287,6 @@
     <p class="todo">[Your text about the event.]</p>
     <div class="booth-stage" id="booth-stage">
       <canvas id="booth-canvas"></canvas>
-      <div class="booth-ring" id="booth-ring" aria-hidden="true"></div>
       <div class="booth-tag" id="booth-tag" aria-hidden="true"></div>
       <p class="booth-hint" id="booth-hint" aria-hidden="true">&#8635; Drag to turn</p>
       <form class="booth-door" id="booth-door" autocomplete="off">

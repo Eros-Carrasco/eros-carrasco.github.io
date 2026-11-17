@@ -10,7 +10,6 @@
   const note = document.getElementById("booth-note");
   const hint = document.getElementById("booth-hint");
   const tag = document.getElementById("booth-tag");
-  const ring = document.getElementById("booth-ring");
   if (!stage || !canvas || typeof pc === "undefined") return;
 
   const app = new pc.Application(canvas, {
@@ -98,6 +97,60 @@
     return e;
   };
 
+  // Whoever can be moved turns to points of their own colour under the pointer, as things do in
+  // the booth's own program. The engine draws every splat of the page through one shared, sorted
+  // buffer; this is its hook for changing one object's splats on their way into that buffer, so
+  // a person still stands behind the counter when they are behind it.
+  const PICK_GLSL = `
+    uniform float uPick;      // 0 as scanned, 1 as points
+    uniform vec3 uAccent;
+    uniform float uPickTime;
+    void modifySplatCenter(inout vec3 center) {}
+    void modifySplatRotationScale(vec3 originalCenter, vec3 modifiedCenter, inout vec4 rotation, inout vec3 scale) {
+      scale *= mix(1.0, 0.32, uPick);
+    }
+    void modifySplatColor(vec3 center, inout vec4 color) {
+      float wave = 0.5 + 0.5 * sin(center.y * 9.0 - uPickTime * 3.0);
+      color.rgb = mix(color.rgb, uAccent, uPick * (0.30 + 0.45 * wave));
+    }
+  `;
+  const person = (name, asset, x, z, tall, accent) => {
+    const e = add(asset, name.toLowerCase(), x, z);
+    const p = { name, e, tall, accent, pick: 0, want: 0, settle: 0, points: false };
+    try {
+      if (e.gsplat.setWorkBufferModifier && e.gsplat.setParameter) {
+        e.gsplat.setWorkBufferModifier({ glsl: PICK_GLSL });
+        e.gsplat.setParameter("uPick", 0);
+        e.gsplat.setParameter("uAccent", accent);
+        e.gsplat.setParameter("uPickTime", 0);
+        p.points = true;
+      }
+    } catch (err) {
+      console.warn("[booth] no point effect in this engine", err);
+    }
+    return p;
+  };
+  const ALWAYS = pc.WORKBUFFER_UPDATE_ALWAYS !== undefined ? pc.WORKBUFFER_UPDATE_ALWAYS : 2;
+  const AUTO = pc.WORKBUFFER_UPDATE_AUTO !== undefined ? pc.WORKBUFFER_UPDATE_AUTO : 0;
+  app.on("update", (dt) => {
+    for (const p of people) {
+      if (!p.points) continue;
+      const moving = p.want > 0 || p.pick > 0.001;
+      if (moving) {
+        p.pick += (p.want - p.pick) * Math.min(1, dt * 10);
+        if (p.want === 0 && p.pick < 0.002) p.pick = 0;
+        p.e.gsplat.setParameter("uPick", p.pick);
+        p.e.gsplat.setParameter("uPickTime", performance.now() / 1000);
+        p.e.gsplat.workBufferUpdate = ALWAYS;
+        p.settle = 4;
+      } else if (p.settle > 0) {
+        // a few frames more, so the last one drawn is the person whole again
+        p.e.gsplat.setParameter("uPick", 0);
+        if (--p.settle === 0) p.e.gsplat.workBufferUpdate = AUTO;
+      }
+    }
+  });
+
   // The people, where they stood when the picture for this page was taken.
   const people = [];
   const say = (t) => { if (note) note.textContent = t; };
@@ -118,8 +171,8 @@
     ]).then(([booth, kevin, alice]) => {
       if (!booth) { say("The booth could not be loaded."); return; }
       add(booth, "booth", 0, 0);
-      if (kevin) people.push({ name: "Kevin", e: add(kevin, "kevin", -0.305, -2.989), tall: 1.86 });
-      if (alice) people.push({ name: "Alice", e: add(alice, "alice", -1.124, -2.779), tall: 1.69 });
+      if (kevin) people.push(person("Kevin", kevin, -0.305, -2.989, 1.86, [1.0, 0.72, 0.42]));
+      if (alice) people.push(person("Alice", alice, -1.124, -2.779, 1.69, [0.42, 0.88, 1.0]));
       stage.classList.add("is-ready");
       say(HINT);
     });
@@ -187,24 +240,24 @@
     return best;
   };
 
-  // Who can be moved is shown where they stand: a ring on the floor round their feet and their
-  // name over their head, while the pointer is on them and while they are being carried.
+  // Who can be moved is shown on themselves: they turn to points of their own colour and their
+  // name stands over their head, while the pointer is on them and while they are being carried.
   let marked = null;
+  const css = (c) => "rgb(" + c.map((v) => Math.round(v * 255)).join(",") + ")";
   const mark = (p) => {
+    if (p !== marked) {
+      if (marked) marked.want = 0;
+      if (p) p.want = 1;
+    }
     marked = p;
-    if (!tag || !ring) return;
-    if (!p) { tag.style.opacity = "0"; ring.style.opacity = "0"; return; }
+    if (!tag) return;
+    if (!p) { tag.style.opacity = "0"; return; }
     const at = p.e.getPosition();
-    const feet = camera.camera.worldToScreen(new pc.Vec3(at.x, 0, at.z));
     const head = camera.camera.worldToScreen(new pc.Vec3(at.x, p.tall + 0.08, at.z));
-    const side = camera.camera.worldToScreen(new pc.Vec3(at.x + camera.right.x * 0.42, 0, at.z + camera.right.z * 0.42));
-    if (feet.z <= 0) { tag.style.opacity = "0"; ring.style.opacity = "0"; return; }
-    const w = 2 * Math.hypot(side.x - feet.x, side.y - feet.y);
-    const h = Math.max(6, w * Math.sin(pitch * Math.PI / 180));
-    ring.style.width = w + "px"; ring.style.height = h + "px";
-    ring.style.left = (feet.x - w / 2) + "px"; ring.style.top = (feet.y - h / 2) + "px";
-    ring.style.opacity = "1";
+    if (head.z <= 0) { tag.style.opacity = "0"; return; }
     tag.textContent = p.name;
+    tag.style.color = css(p.accent);
+    tag.style.borderColor = css(p.accent);
     tag.style.left = head.x + "px"; tag.style.top = head.y + "px";
     tag.style.opacity = "1";
   };
