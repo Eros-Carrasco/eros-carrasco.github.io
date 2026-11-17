@@ -178,7 +178,7 @@
       ]).then(([booth, kevin, alice]) => {
         if (!booth) { say("The booth could not be loaded."); return; }
         add(booth, "booth", 0, 0);
-        if (kevin) people.push(person("Kevin", kevin, -0.305, -2.989, 1.86, [1.0, 0.72, 0.42]));
+        if (kevin) people.push(person("Kevin", kevin, -0.305, -2.989, 1.86, [0.72, 0.52, 1.0]));
         if (alice) people.push(person("Alice", alice, -1.124, -2.779, 1.69, [0.42, 0.88, 1.0]));
         stage.classList.add("is-ready");
         canvas.style.cursor = "grab";
