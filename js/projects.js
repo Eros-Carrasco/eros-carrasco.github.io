@@ -205,53 +205,53 @@ const PROJECTS = {
           heading: "Relighting",
           text: [
             "A surface direction for every gaussian, from its own shape, live. No retraining.",
-            "New light goes on top of the captured light, so the room still looks like itself."
+            "New light goes on top of the captured light, so the room still looks like itself.",
+            "A lamp darkens the room and lights what is near it: the same light you can carry in the breakroom above."
           ],
           figs: [{
             src: `${BASE_URL}assets/images/splatlab_normals.jpg`,
             alt: "A colonnade with every surface coloured according to the direction it faces",
             caption: "Colour is which way each blob faces."
-          }]
-        },
-        {
-          text: [
-            "A lamp darkens the room and lights what is near it: the same light you can carry in the breakroom above."
-          ],
-          figs: [{
+          }, {
             video: `${BASE_URL}assets/videos/splatlab_lamp.mp4`,
             alt: "The breakroom darkened, with a warm lamp floating through it and lighting the tables near it",
-            caption: "In my engine: the breakroom darkened and a warm lamp carried through it."
-          }, {
-            src: `${BASE_URL}assets/images/splatlab_relight.jpg`,
-            alt: "The same hall twice, once under a warm light and once under a cold one",
-            caption: "The same world under a warm key and a cold key, recorded in the Unreal integration; the engine does the same."
+            caption: "The breakroom darkened and a warm lamp carried through it."
           }]
         },
         {
           heading: "Transitions Between Worlds",
           text: [
-            "One world becomes another point by point, without a cut: paper burn, sweep, matrix columns, collapse brick by brick.",
-            "Top: my engine. Bottom: the Unreal integration."
+            "One world becomes another point by point, without a cut: paper burn, sweep, matrix columns, collapse brick by brick."
           ],
           clips: [
             { src: `${BASE_URL}assets/videos/splatlab_tr_peristyle.mp4`, alt: "A round courtyard of columns with a glowing figure, falling apart into blocks and then into the dark" },
-            { src: `${BASE_URL}assets/videos/splatlab_tr_breakroom.mp4`, alt: "A breakroom forming out of scattered points until its tables and chairs are solid" },
-            { src: `${BASE_URL}assets/videos/splatlab_tr_temple.mp4`, alt: "A temple crumbling into golden particles" },
-            { src: `${BASE_URL}assets/videos/splatlab_tr_cabin.mp4`, alt: "A cabin breaking into points behind a cyan sweep" }
+            { src: `${BASE_URL}assets/videos/splatlab_tr_breakroom.mp4`, alt: "A breakroom forming out of scattered points until its tables and chairs are solid" }
           ]
         }
       ]
     },
 
     extra: {
-      title: "Extra: Unreal Engine",
+      title: "Unreal Integration (C++, HLSL)",
       items: [
         {
-          heading: "Unreal Integration (C++, HLSL)",
           text: [
             "Where the work started: the same effects also run in Unreal Engine, through a splat plugin I extended.",
-            "Relighting and transitions run per gaussian in the plugin's shader, on the GPU."
+            "Relighting and transitions run per gaussian in the plugin's shader, on the GPU.",
+            "Next: bringing the whole engine into Unreal Engine and Unity for VR, starting with a multiplayer motion capture production."
+          ],
+          clips: [
+            { src: `${BASE_URL}assets/videos/splatlab_tr_temple.mp4`, alt: "A temple crumbling into golden particles" },
+            { src: `${BASE_URL}assets/videos/splatlab_tr_cabin.mp4`, alt: "A cabin breaking into points behind a cyan sweep" }
           ]
+        },
+        {
+          full: true,
+          figs: [{
+            src: `${BASE_URL}assets/images/splatlab_relight.jpg`,
+            alt: "The same hall twice, once under a warm light and once under a cold one",
+            caption: "The same world under a warm key and a cold key, in the plugin."
+          }]
         }
       ]
     },
@@ -1053,9 +1053,11 @@ function splatLabParts(sec) {
         <h2 class="section-title">${sec.title}</h2>
         ${sec.items.map((it) => `
           ${it.heading ? `<h3 class="part-title">${it.heading}</h3>` : ""}
-          ${it.clips
+          ${it.full
+            ? `<div class="part-media part-media-full">${it.figs.map(figureHTML).join("")}</div>`
+            : it.clips
             ? `<ul class="part-list">${it.text.map((t) => `<li>${t}</li>`).join("")}</ul>
-               <div class="mocap-grid${it.clips.length === 4 ? " clips-2x2" : ""}">${it.clips.map((c) => `<video src="${c.src}" aria-label="${c.alt}" autoplay muted loop playsinline></video>`).join("")}</div>`
+               <div class="mocap-grid${it.clips.length % 2 === 0 ? " clips-2x2" : ""}">${it.clips.map((c) => `<video src="${c.src}" aria-label="${c.alt}" autoplay muted loop playsinline></video>`).join("")}</div>`
             : `<div class="part-block${(it.figs || []).length ? ` part-block-media ${it.figs.length > 1 ? "part-block-row" : "part-block-side"}` : ""}">
                  <ul class="part-list">${it.text.map((t) => `<li>${t}</li>`).join("")}</ul>
                  ${(it.figs || []).length ? `<div class="part-media">${it.figs.map(figureHTML).join("")}</div>` : ""}
@@ -1081,6 +1083,10 @@ function renderSplatLab(p) {
         ${statsHTML(p.impactStats)}
       </section>
 
+      <!-- Three parts, each opened by its own marker: the engine, the booth where it was shown, the Unreal side. -->
+      <div class="splat-part"><b>01</b><h2>The Engine</h2></div>
+      <div id="splatlab-try"></div>
+
       ${p.hard ? `
         <section class="project-section span-2">
           <h2 class="section-title">${p.hard.title}</h2>
@@ -1090,9 +1096,11 @@ function renderSplatLab(p) {
 
       ${splatLabParts(p.work)}
 
+      <div class="splat-part"><b>02</b><h2>Shown Live at Adobe MAX 2026</h2></div>
       <section class="project-section span-2" id="splatlab-booth"></section>
 
-      ${p.extra ? splatLabParts(p.extra) : ""}
+      ${p.extra ? `<div class="splat-part"><b>03</b><h2>Unreal Engine and What Comes Next</h2></div>
+      ${splatLabParts(p.extra)}` : ""}
 
       ${proseSection(p.credits)}
     </div>
