@@ -120,7 +120,7 @@ const PROJECTS = {
     subtitle:
       "My own engine for Gaussian splats: it finds the objects in a scanned room, lets you move or remove them, fills in what the scanner never saw, and relights it. Real time and fully local, shown live at Adobe MAX 2026.",
 
-    pills: ["Gaussian Splatting", "My Own Engine", "Python, PyTorch, gsplat", "Local Vision Models"],
+    pills: ["Gaussian Splatting", "Spatial AI", "Python, PyTorch, gsplat", "Local Vision Models"],
 
     hero: {
       type: "video",
@@ -144,18 +144,17 @@ const PROJECTS = {
     },
 
     work: {
-      title: "The Engine",
+      title: "How It Works",
       items: [
         {
-          heading: "An Engine of My Own (Python, PyTorch, gsplat, CUDA)",
+          heading: "An Engine of My Own (Python, PyTorch, gsplat)",
           text: [
             "Every gaussian is a PyTorch tensor on top of gsplat, so a new effect is a few lines of maths, not a shader rewrite.",
-            "Runs on two ASUS Ascent GX10s: one draws the worlds in real time, the other runs the local vision and language models.",
-            "Puts a scanned, rigged, dancing person inside a scanned room."
+            "Runs on two ASUS Ascent GX10s: one draws the worlds in real time, the other runs the local vision and language models."
           ]
         },
         {
-          heading: "Object Understanding (Local Vision Models, Python)",
+          heading: "Object Understanding (Local Vision Models)",
           text: [
             "A vision model names the things; geometry decides where each one ends.",
             "Point at anything and it says what it is. When it does not know, it says so instead of guessing."
@@ -171,7 +170,7 @@ const PROJECTS = {
           }]
         },
         {
-          heading: "Rearranging and Repair (Python)",
+          heading: "Rearranging and Repair",
           text: [
             "Every object can be picked up and dragged across the floor, and one key clears the whole room.",
             "What the scanner never saw is filled in: the floor under a table, the wall behind a shelf.",
@@ -188,7 +187,7 @@ const PROJECTS = {
           }]
         },
         {
-          heading: "Spatial Analysis (Python)",
+          heading: "Spatial Analysis",
           text: [
             "Measure the floor, the ceiling, every wall and every thing, from the splat alone."
           ],
@@ -1049,7 +1048,7 @@ function splatLabParts(sec) {
           ${it.clips
             ? `<ul class="part-list">${it.text.map((t) => `<li>${t}</li>`).join("")}</ul>
                <div class="mocap-grid${it.clips.length === 4 ? " clips-2x2" : ""}">${it.clips.map((c) => `<video src="${c.src}" aria-label="${c.alt}" autoplay muted loop playsinline></video>`).join("")}</div>`
-            : `<div class="part-block${(it.figs || []).length ? " part-block-media" : ""}">
+            : `<div class="part-block${(it.figs || []).length ? ` part-block-media ${it.figs.length > 1 ? "part-block-row" : "part-block-side"}` : ""}">
                  <ul class="part-list">${it.text.map((t) => `<li>${t}</li>`).join("")}</ul>
                  ${(it.figs || []).length ? `<div class="part-media">${it.figs.map(figureHTML).join("")}</div>` : ""}
                </div>`}

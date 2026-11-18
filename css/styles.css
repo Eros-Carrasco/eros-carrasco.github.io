@@ -1235,6 +1235,17 @@ details.numbers[open] summary {
 @media (max-width: 760px) {
   .part-block-media { grid-template-columns: 1fr; gap: 14px; }
 }
+/* SplatLab: a part with two pictures puts them side by side under its points, so a short list never
+   floats beside a tall stack of pictures; a part with one keeps it beside, both tops aligned. */
+.part-block-side { align-items: start; }
+.part-block-row { display: block; }
+.part-block-row .part-list { margin-bottom: 18px; }
+.part-block-row .part-media { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+.part-block-row .fig { margin: 0; }
+.part-block-row .fig img { width: auto; max-width: 100%; max-height: 300px; }
+@media (max-width: 760px) {
+  .part-block-row .part-media { grid-template-columns: 1fr; gap: 14px; }
+}
 
 /* The splat under the about card. */
 .left-column {
