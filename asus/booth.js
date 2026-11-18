@@ -1,6 +1,6 @@
 // The ASUS page: a letter for the people it is sent to, with the booth at Adobe MAX as a gaussian
 // splat in it and the two colleagues who asked to be scanned standing there. Drag turns the view,
-// the wheel comes closer, and each person can be dragged across the floor.
+// the wheel or two fingers come closer, and each person can be dragged across the floor.
 // Nothing of it is published in the clear: the letter (content.html) and the three splats are
 // locked files, opened here, in the visitor's browser, with the password they were sent.
 // PlayCanvas is vendored in ../js/vendor, so nothing is fetched from anyone else.
@@ -380,9 +380,20 @@
     // own height, not at the floor behind it, so they move as far as the hand does and no farther.
     // They follow the pointer at once, and only over places where a person could stand: over a
     // counter or a wall they wait at the nearest free spot.
+    // Two fingers come closer and go back, as the wheel does; a person being carried is put down
+    // when the second finger lands (Eros, 2026-11-18: pinch to zoom, as in the breakroom).
     let mode = null, lastX = 0, lastY = 0, held = null, grab = null, grabH = 0;
+    const fingers = new Map();
+    let spread = 0;
     canvas.addEventListener("pointerdown", (e) => {
       if (hint) hint.classList.add("is-gone");
+      fingers.set(e.pointerId, [e.clientX, e.clientY]);
+      try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* a pointer already gone */ }
+      if (fingers.size >= 2) {
+        if (held) mark(null);
+        mode = "pinch"; held = null; spread = 0;
+        return;
+      }
       lastX = e.clientX; lastY = e.clientY;
       held = personAt(e.clientX, e.clientY);
       if (held) {
@@ -400,9 +411,21 @@
         mode = "look";
         canvas.style.cursor = "grabbing";
       }
-      canvas.setPointerCapture(e.pointerId);
     });
     canvas.addEventListener("pointermove", (e) => {
+      if (fingers.has(e.pointerId)) fingers.set(e.pointerId, [e.clientX, e.clientY]);
+      if (mode === "pinch" || mode === "wait") {
+        if (mode === "pinch" && fingers.size === 2) {
+          const [a, b] = Array.from(fingers.values());
+          const apart = Math.hypot(a[0] - b[0], a[1] - b[1]);
+          if (spread > 0 && apart > 0) {
+            dist = Math.max(2.2, Math.min(12, dist * spread / apart));
+            place();
+          }
+          spread = apart;
+        }
+        return;
+      }
       if (mode === "person") {
         const f = floorAt(e.clientX, e.clientY, grabH);
         if (f) {
@@ -421,6 +444,12 @@
       lastX = e.clientX; lastY = e.clientY;
     });
     const release = (e) => {
+      fingers.delete(e.pointerId);
+      spread = 0;
+      if (fingers.size) {                  // one finger of a pinch still down: wait for it, no jump
+        mode = "wait"; held = null;
+        return;
+      }
       mode = null; held = null;
       const over = e && e.clientX !== undefined ? personAt(e.clientX, e.clientY) : null;
       canvas.style.cursor = over ? "pointer" : "grab";
