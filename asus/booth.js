@@ -131,10 +131,25 @@
       town.style.backgroundSize = (360 * perDeg) + "px 100%";
       town.style.backgroundPositionX = (yaw * perDeg) + "px";
     };
-    const place = () => {
+    // How near the eye may come to a person. Nearer than this a face is drawn larger than its scan holds
+    // and loses its sharpness (seen once the stage was made larger, 2026-11-18): the eye backs away
+    // instead, and a person cannot be carried closer to it than this.
+    const NEAR = 2.6;
+    const eyeAt = (d) => {
       const y = yaw * Math.PI / 180, p = pitch * Math.PI / 180;
-      camera.setPosition(pivot.x + dist * Math.cos(p) * Math.sin(y), pivot.y + dist * Math.sin(p),
-                         pivot.z + dist * Math.cos(p) * Math.cos(y));
+      return [pivot.x + d * Math.cos(p) * Math.sin(y), pivot.y + d * Math.sin(p), pivot.z + d * Math.cos(p) * Math.cos(y)];
+    };
+    const nearest = (eye, x, z) => Math.hypot(eye[0] - x, eye[2] - z, Math.max(0, eye[1] - 1.7));   // to a standing person there, feet to head
+    const tooNear = (d) => {
+      const eye = eyeAt(d);
+      try {                                    // the people are made further down; before that nobody is near
+        return people.some((q) => { const at = q.e.getPosition(); return nearest(eye, at.x, at.z) < NEAR; });
+      } catch (err) { return false; }
+    };
+    const place = () => {
+      for (let i = 0; i < 80 && dist < 12 && tooNear(dist); i++) dist = Math.min(12, dist + 0.1);
+      const eye = eyeAt(dist);
+      camera.setPosition(eye[0], eye[1], eye[2]);
       camera.lookAt(pivot);
       drawSky();
     };
@@ -392,7 +407,7 @@
         const f = floorAt(e.clientX, e.clientY, grabH);
         if (f) {
           const to = standAt(f.x + grab.x, f.z + grab.z);
-          if (to) held.e.setPosition(to[0], 0, to[1]);
+          if (to && nearest(eyeAt(dist), to[0], to[1]) >= NEAR) held.e.setPosition(to[0], 0, to[1]);
         }
       } else if (mode === "look") {
         yaw -= (e.clientX - lastX) * 0.3;
@@ -416,7 +431,7 @@
     canvas.addEventListener("pointercancel", release);
     canvas.addEventListener("wheel", (e) => {
       e.preventDefault();
-      dist = Math.max(1.5, Math.min(12, dist * Math.exp(e.deltaY * 0.001)));
+      dist = Math.max(2.2, Math.min(12, dist * Math.exp(e.deltaY * 0.001)));
       place();
     }, { passive: false });
 
