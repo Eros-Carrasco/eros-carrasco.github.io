@@ -41,6 +41,27 @@
     return all.buffer;
   };
 
+  // The three splats start coming the moment the page is opened, while the password is still being
+  // typed. They are locked, so what arrives early is noise until the right password opens it. The
+  // booth comes first, since it is shown first; the two people after it.
+  const SIZES = { kevin: 8.9, alice: 6.2 };            // megabytes, to count the two people as one wait
+  const coming = {};
+  const watching = new Set();
+  const told = () => watching.forEach((f) => f());
+  const fetchSplat = (name) => {
+    if (!coming[name]) {
+      const c = coming[name] = { part: 0 };
+      c.buf = fetchAll("splats/" + name + ".ply.enc", (got, total) => { c.part = total ? got / total : 0; told(); })
+        .then((b) => { c.part = 1; told(); return b; });
+      c.buf.catch(() => { if (coming[name] === c) delete coming[name]; });      // asked for again when it is needed
+    }
+    return coming[name];
+  };
+  const part = (name) => (coming[name] ? coming[name].part : 0);
+  const prefetch = () => {
+    fetchSplat("booth").buf.then(() => { fetchSplat("kevin"); fetchSplat("alice"); }, () => {});
+  };
+
   // The booth, once the letter is on the page and its canvas exists.
   const viewer = (password) => {
     const stage = document.getElementById("booth-stage");
@@ -122,9 +143,10 @@
     resize();
     place();
 
-    const load = async (name, password, onProgress) => {
+    const load = async (name, password) => {
       try {
-        const plain = await open(await fetchAll("splats/" + name + ".ply.enc", onProgress), password);
+        const plain = await open(await fetchSplat(name).buf, password);
+        delete coming[name];                           // the locked copy is not needed twice
         const url = URL.createObjectURL(new Blob([plain]));
         return await new Promise((resolve) => {
           const a = new pc.Asset(name, "gsplat", { url, filename: name + ".ply" });
@@ -203,28 +225,53 @@
     // The people, where they stood when the picture for this page was taken.
     const people = [];
     const say = (t) => { if (note) note.textContent = t; };
-    const SIZES = [27.0, 8.9, 6.2];
+    // How far the booth is: large, in the middle of where it will stand.
+    const wait = document.createElement("div");
+    wait.className = "booth-wait";
+    wait.setAttribute("role", "status");
+    wait.innerHTML = '<span class="booth-wait-num">0%</span><span class="booth-wait-bar"><i></i></span>' +
+      '<span class="booth-wait-what">Loading the booth</span>';
+    stage.appendChild(wait);
+    const num = wait.querySelector(".booth-wait-num"), bar = wait.querySelector("i"), what = wait.querySelector(".booth-wait-what");
+    // The booth is shown as soon as it is here; Kevin and Alice walk in after it.
     const show = (password) => {
-      const got = [0, 0, 0];
-      const progress = (i) => (received, total) => {
-        got[i] = total ? received / total : 0;
-        const done = got.reduce((s, g, k) => s + g * SIZES[k], 0) / SIZES.reduce((s, v) => s + v, 0);
-        say("Loading the booth: " + Math.round(done * 100) + "%");
+      let boothIn = false, left = 2;
+      const tell = () => {
+        if (!boothIn) {
+          const p = Math.round(part("booth") * 100);
+          num.textContent = p + "%";
+          bar.style.width = p + "%";
+          what.textContent = p < 100 ? "Loading the booth" : "Opening the booth";
+        } else if (left > 0) {
+          const p = (part("kevin") * SIZES.kevin + part("alice") * SIZES.alice) / (SIZES.kevin + SIZES.alice);
+          say("Kevin and Alice are on their way: " + Math.round(p * 100) + "%");
+        }
       };
-      say("Loading the booth: 0%");
-      Promise.all([
-        load("booth", password, progress(0)),
-        load("kevin", password, progress(1)),
-        load("alice", password, progress(2)),
-      ]).then(([booth, kevin, alice]) => {
-        if (!booth) { say("The booth could not be loaded."); return; }
+      watching.add(tell);
+      tell();
+      const fetched = fetchSplat("booth").buf.catch(() => {});
+      const shown = load("booth", password).then((booth) => {
+        if (!booth) {
+          num.textContent = "";
+          wait.querySelector(".booth-wait-bar").style.display = "none";
+          what.textContent = "The booth could not be loaded.";
+          watching.delete(tell);
+          return false;
+        }
         add(booth, "booth", 0, 0);
-        if (kevin) people.push(person("Kevin", kevin, -0.305, -2.989, 1.86, [0.72, 0.52, 1.0]));
-        if (alice) people.push(person("Alice", alice, -1.124, -2.779, 1.69, [0.42, 0.88, 1.0]));
+        boothIn = true;
+        wait.remove();
         stage.classList.add("is-ready");
         canvas.style.cursor = "grab";
-        say("");                                     // what to do is written under the booth, in the letter
+        tell();
+        return true;
       });
+      const arrive = (name, make) => fetched.then(() => load(name, password)).then((asset) => shown.then((ok) => {
+        if (ok && asset) people.push(make(asset));
+        if (--left === 0) { say(""); watching.delete(tell); }       // what to do is written under the booth, in the letter
+      }));
+      arrive("kevin", (a) => person("Kevin", a, -0.305, -2.989, 1.86, [0.72, 0.52, 1.0]));
+      arrive("alice", (a) => person("Alice", a, -1.124, -2.779, 1.69, [0.42, 0.88, 1.0]));
     };
 
     // Where the pointer's ray meets the level plane at height h (the floor at 0), or null when it
@@ -352,8 +399,8 @@
     show(password);
   };
 
-  // The door: a password, tried on a few bytes before anything else is fetched. It is kept in this
-  // browser, so whoever was sent the page is asked once on each device, and it is never sent anywhere.
+  // The door: a password, tried on a few bytes. It is kept in this browser, so whoever was sent the
+  // page is asked once on each device, and it is never sent anywhere.
   const door = document.getElementById("page-door");
   const field = document.getElementById("page-password");
   const wrong = document.getElementById("page-wrong");
@@ -398,6 +445,7 @@
     });
   }
   if (door && letter) {
+    prefetch();
     door.addEventListener("submit", (e) => { e.preventDefault(); enter(field.value, false); });
     let kept = null;
     try { kept = localStorage.getItem("booth-password"); } catch (err) { /* private mode */ }
