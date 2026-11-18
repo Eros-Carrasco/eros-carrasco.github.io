@@ -328,6 +328,16 @@
     };
     app.on("update", () => { if (marked) mark(marked); });
 
+    // The floor is the booth's carpet and 1.25 m round it (web_ply.py --inside in the splatlab repo): its
+    // middle, its two axes and its half sizes, less the room a person takes.
+    const FLOOR = { c: [-1.0465, 0.7475], u: [0.01944, 0.99981], v: [0.99981, -0.01942], hu: 4.2948 - 0.35, hv: 5.845 - 0.35 };
+    const onFloor = (x, z) => {
+      const dx = x - FLOOR.c[0], dz = z - FLOOR.c[1];
+      const a = Math.max(-FLOOR.hu, Math.min(FLOOR.hu, dx * FLOOR.u[0] + dz * FLOOR.u[1]));
+      const b = Math.max(-FLOOR.hv, Math.min(FLOOR.hv, dx * FLOOR.v[0] + dz * FLOOR.v[1]));
+      return [FLOOR.c[0] + a * FLOOR.u[0] + b * FLOOR.v[0], FLOOR.c[1] + a * FLOOR.u[1] + b * FLOOR.v[1]];
+    };
+
     // A person is carried by the spot they were taken by: the pointer's ray is met at that spot's
     // own height, not at the floor behind it, so they move as far as the hand does and no farther.
     // They then walk to where they are wanted, at a person's pace, so a flick cannot throw them.
@@ -367,8 +377,9 @@
       if (mode === "person") {
         const f = floorAt(e.clientX, e.clientY, grabH);
         if (f) {
-          // Kept within reach of the booth, so nobody is lost across the hall.
-          goal = new pc.Vec3(Math.max(-9, Math.min(9, f.x + grab.x)), 0, Math.max(-9, Math.min(9, f.z + grab.z)));
+          // Kept on the floor there is, so nobody is carried out over the sky.
+          const [gx, gz] = onFloor(f.x + grab.x, f.z + grab.z);
+          goal = new pc.Vec3(gx, 0, gz);
         }
       } else if (mode === "look") {
         yaw -= (e.clientX - lastX) * 0.3;
