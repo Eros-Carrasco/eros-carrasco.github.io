@@ -267,7 +267,11 @@
         return true;
       });
       const arrive = (name, make) => fetched.then(() => load(name, password)).then((asset) => shown.then((ok) => {
-        if (ok && asset) people.push(make(asset));
+        if (ok && asset) {
+          const p = make(asset), at = p.e.getPosition(), to = standAt(at.x, at.z);
+          if (to) p.e.setPosition(to[0], 0, to[1]);
+          people.push(p);
+        }
         if (--left === 0) { say(""); watching.delete(tell); }       // what to do is written under the booth, in the letter
       }));
       arrive("kevin", (a) => person("Kevin", a, -0.305, -2.989, 1.86, [0.72, 0.52, 1.0]));
@@ -328,29 +332,40 @@
     };
     app.on("update", () => { if (marked) mark(marked); });
 
-    // The floor is the booth's carpet and 1.25 m round it (web_ply.py --inside in the splatlab repo): its
-    // middle, its two axes and its half sizes, less the room a person takes.
-    const FLOOR = { c: [-1.0465, 0.7475], u: [0.01944, 0.99981], v: [0.99981, -0.01942], hu: 4.2948 - 0.35, hv: 5.845 - 0.35 };
-    const onFloor = (x, z) => {
-      const dx = x - FLOOR.c[0], dz = z - FLOOR.c[1];
-      const a = Math.max(-FLOOR.hu, Math.min(FLOOR.hu, dx * FLOOR.u[0] + dz * FLOOR.u[1]));
-      const b = Math.max(-FLOOR.hv, Math.min(FLOOR.hv, dx * FLOOR.v[0] + dz * FLOOR.v[1]));
-      return [FLOOR.c[0] + a * FLOOR.u[0] + b * FLOOR.v[0], FLOOR.c[1] + a * FLOOR.u[1] + b * FLOOR.v[1]];
+    // Where a person can stand (effects/floor_box.py --map in the splatlab repo, from the booth's own splat):
+    // floor, with nothing between ankle and head height within a quarter of a metre, and that far from the
+    // floor's edge. A grid of 0.1 m cells in the floor's own axes; each row is its cells as hexadecimal, the
+    // first cell in the highest bit.
+    const WALK = { o: [-6.9740, -3.4330], u: [0.01944, 0.99981], v: [0.99981, -0.01942], cell: 0.1, n: [86, 117],
+      rows: "0000000000000000000000 0000000000000000000000 0000000000000000000000 1fffffffffffffffffffe0 1fffffffffffffffffffe0 1fffffffffffffffffffe0 1fffffffffffffffffffe0 1fffffffffffffffffffe0 1fffff80003fffffffffe0 1ff80000000fffffffffe0 1fe000000007ffffffffe0 1fc000000007ffffffffe0 1fc000000007ffffffffe0 1fc000000007ffffffffe0 1fc000000007ffffffffe0 1fc000000007ffffffffe0 1fc000000007ffffffffe0 1fc000000007fffcffffe0 1fc000000007fff03fffe0 1fc000000007ffe0003fe0 1fc000000007ffc0000fe0 1fc000000007ff800007e0 1fc000000007ff800007e0 1fc000000007ff800007e0 1fc000000007ff800007e0 1fc000000007ff800007e0 1fc000000007ff800007e0 1fc000000003ff800007e0 1fc000000003ff800007e0 1fc000000003ff800007e0 1fc000008003ff800007e0 1fc000000007ff800007e0 1fc000000007ff800007e0 1fc000000001ff800007e0 1fc000000000ff800007e0 1fc000000000ff800007e0 1fc000000000ff800007e0 1fc000000000ff800007e0 1fe000000000ff800007e0 1fc000000000ff800007e0 1fc000000000ff800007e0 1fc000000000ff800007e0 1fe000000001ff800007e0 1ff000000007ff800007e0 1ffc0018007fff800007e0 1ffffffc007fff800007e0 1ffffffc007fff800007e0 1ff0003e00ffff800007e0 1fc0000f83ffff800007e0 1f800007ffffff800007e0 1f800007ffffff800007e0 1f800007ffffff800007e0 1f800007ffffff800007e0 1f800007ffffff800007e0 1f800007ffffffc0000fe0 1f800007fffffff0003fe0 1f800007ffffffffefffe0 1f800007fff1ffffffffe0 1f800007ffc07fffffffe0 1f800007ff803fffffffe0 1f000007ff001fffffffe0 1e000007ff001fffffffe0 1e000007ff001fffffffe0 1e000007ff001fffffffe0 1e000007ff001fffffffe0 1e000007fc001fffffffe0 1e000007f0001fffffffe0 1e000007e0000fffe03fe0 1f000007e0000fff800fe0 1f800007c0000fe00007e0 1f80000780000f800007e0 1f80000780000f000007e0 1f800007000007000007e0 1f800007000003000007e0 1f800007000001000007e0 1f800007000001000007e0 1f000007800001000007e0 1f000007e00001000007e0 1f000007e00001000007e0 1f800007e00003000007e0 1f80000780000f000007e0 1f800007000007000007e0 1fc0000f000007000007e0 1ff0001f000007000007e0 1ffc001f000006000007e0 1ffc001f000006000007e0 1ffc001f000006000007e0 1ffc001f000007000007e0 1ffc001f000007800007e0 1ffc001f80000fe00007e0 1ffc001fe0003ff00007e0 1ffc001fe0007ff80007e0 1ffc001fc0003ffe0007e0 1ffc001f80003ffe0007e0 1ffc001f80001ffe0007e0 1ffc001000001ffe0007e0 1ffc00000000007e0007e0 1ffc00000000001f000fe0 1ffc00000000000fc03fe0 1ffe000000000007ffffe0 1fff000000000007ffffe0 1fffc00000000007ffffe0 1ffffe800000000fffffe0 1fffffe00000001fffffe0 1ffffff00000003fffffe0 1ffffffc0000007fffffe0 1ffffffffffffdffffffe0 1fffffffffffffffffffe0 1fffffffffffffffffffe0 1fffffffffffffffffffe0 1fffffffffffffffffffe0 1fffffffffffffffffffe0 1fffffffffffffffffffe0 1fffffffffffffffffffe0 0000000000000000000000 0000000000000000000000 0000000000000000000000".split(" ") };
+    const freeCell = (i, j) => i >= 0 && j >= 0 && i < WALK.n[0] && j < WALK.n[1] &&
+      ((parseInt(WALK.rows[j][i >> 2], 16) >> (3 - (i & 3))) & 1) === 1;
+    // The place to stand nearest to (x, z): itself where it is free, else the middle of the nearest free cell.
+    const standAt = (x, z) => {
+      const dx = x - WALK.o[0], dz = z - WALK.o[1];
+      const a = (dx * WALK.u[0] + dz * WALK.u[1]) / WALK.cell, b = (dx * WALK.v[0] + dz * WALK.v[1]) / WALK.cell;
+      const i = Math.floor(a), j = Math.floor(b);
+      if (freeCell(i, j)) return [x, z];
+      let best = null, far = 1e9;
+      for (let r = 1; r < 140 && (best === null || r <= Math.sqrt(far) + 1); r++) {
+        for (let di = -r; di <= r; di++) {
+          for (let dj = -r; dj <= r; dj += (Math.abs(di) === r ? 1 : 2 * r)) {
+            if (!freeCell(i + di, j + dj)) continue;
+            const d = (i + di + 0.5 - a) ** 2 + (j + dj + 0.5 - b) ** 2;
+            if (d < far) { far = d; best = [i + di, j + dj]; }
+          }
+        }
+      }
+      if (!best) return null;
+      const u = (best[0] + 0.5) * WALK.cell, v = (best[1] + 0.5) * WALK.cell;
+      return [WALK.o[0] + u * WALK.u[0] + v * WALK.v[0], WALK.o[1] + u * WALK.u[1] + v * WALK.v[1]];
     };
 
     // A person is carried by the spot they were taken by: the pointer's ray is met at that spot's
     // own height, not at the floor behind it, so they move as far as the hand does and no farther.
-    // They then walk to where they are wanted, at a person's pace, so a flick cannot throw them.
-    let mode = null, lastX = 0, lastY = 0, held = null, grab = null, grabH = 0, goal = null, walker = null;
-    const PACE = 3.0;                                // metres a second; twice that at most, to catch up
-    app.on("update", (dt) => {
-      if (!walker || !goal) return;
-      const at = walker.e.getPosition();
-      const dx = goal.x - at.x, dz = goal.z - at.z, d = Math.hypot(dx, dz);
-      if (d < 0.002) { if (mode !== "person") { walker = null; goal = null; } return; }
-      const step = Math.min(d, Math.max(PACE * dt, d * Math.min(1, dt * 10)), PACE * dt * 2);
-      walker.e.setPosition(at.x + dx / d * step, 0, at.z + dz / d * step);
-    });
+    // They follow the pointer at once, and only over places where a person could stand: over a
+    // counter or a wall they wait at the nearest free spot.
+    let mode = null, lastX = 0, lastY = 0, held = null, grab = null, grabH = 0;
     canvas.addEventListener("pointerdown", (e) => {
       if (hint) hint.classList.add("is-gone");
       lastX = e.clientX; lastY = e.clientY;
@@ -363,7 +378,6 @@
         grabH = Math.max(0, Math.min(1, up)) * held.tall;
         const f = floorAt(e.clientX, e.clientY, grabH);
         grab = f ? new pc.Vec3(at.x - f.x, 0, at.z - f.z) : new pc.Vec3();
-        walker = held; goal = new pc.Vec3(at.x, 0, at.z);
         mode = "person";
         mark(held);
         canvas.style.cursor = "grabbing";
@@ -377,9 +391,8 @@
       if (mode === "person") {
         const f = floorAt(e.clientX, e.clientY, grabH);
         if (f) {
-          // Kept on the floor there is, so nobody is carried out over the sky.
-          const [gx, gz] = onFloor(f.x + grab.x, f.z + grab.z);
-          goal = new pc.Vec3(gx, 0, gz);
+          const to = standAt(f.x + grab.x, f.z + grab.z);
+          if (to) held.e.setPosition(to[0], 0, to[1]);
         }
       } else if (mode === "look") {
         yaw -= (e.clientX - lastX) * 0.3;
