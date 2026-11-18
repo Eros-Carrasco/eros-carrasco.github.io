@@ -203,7 +203,6 @@
     // The people, where they stood when the picture for this page was taken.
     const people = [];
     const say = (t) => { if (note) note.textContent = t; };
-    const HINT = "Scroll to zoom in. Kevin and Alice are here too: feel free to move them around!";
     const SIZES = [27.0, 8.9, 6.2];
     const show = (password) => {
       const got = [0, 0, 0];
@@ -224,7 +223,7 @@
         if (alice) people.push(person("Alice", alice, -1.124, -2.779, 1.69, [0.42, 0.88, 1.0]));
         stage.classList.add("is-ready");
         canvas.style.cursor = "grab";
-        say(HINT);
+        say("");                                     // what to do is written under the booth, in the letter
       });
     };
 
@@ -286,7 +285,7 @@
     // own height, not at the floor behind it, so they move as far as the hand does and no farther.
     // They then walk to where they are wanted, at a person's pace, so a flick cannot throw them.
     let mode = null, lastX = 0, lastY = 0, held = null, grab = null, grabH = 0, goal = null, walker = null;
-    const PACE = 3.0;                                // metres a second, at most
+    const PACE = 3.0;                                // metres a second; twice that at most, to catch up
     app.on("update", (dt) => {
       if (!walker || !goal) return;
       const at = walker.e.getPosition();
