@@ -1099,7 +1099,7 @@ function renderSplatLab(p) {
       <div class="splat-part"><b>02</b><h2>Shown Live at Adobe MAX 2026</h2></div>
       <section class="project-section span-2" id="splatlab-booth"></section>
 
-      ${p.extra ? `<div class="splat-part"><b>03</b><h2>Unreal Engine and What Comes Next</h2></div>
+      ${p.extra ? `<div class="splat-part"><b>03</b><h2>Unreal Engine and Unity</h2></div>
       ${splatLabParts(p.extra)}` : ""}
 
       ${proseSection(p.credits)}

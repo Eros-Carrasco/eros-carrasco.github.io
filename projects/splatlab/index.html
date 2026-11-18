@@ -75,7 +75,16 @@
     .splat-part b { font-size: 13px; font-weight: 700; letter-spacing: 0.12em; color: #5ddcff; }
     .splat-part h2 { margin: 0; font-size: clamp(22px, 2.6vw, 30px); font-weight: 700; line-height: 1.2; color: #fff; }
     .splat-part::after { content: ""; flex: 1; height: 1px; background: rgba(255, 255, 255, 0.16); }
+    .part-media-full { margin-top: 14px; }
     .part-media-full .fig { margin: 0; }
+    /* Two pictures in a row stand at the same height: each takes width in proportion to its shape (set below once it loads),
+       so the captions start on one line. */
+    @media (min-width: 761px) {
+      .part-block-row .part-media { display: flex; flex-direction: row; gap: 24px; align-items: flex-start; }
+      .part-block-row .fig { flex: 1 1 0; min-width: 0; }
+      .part-block-row .fig a { display: block; }
+      .part-block-row .fig img, .part-block-row .fig video { width: 100%; height: auto; max-height: none; }
+    }
     .part-media-full .fig img { width: 100%; max-height: none; }
     /* Three things from the booth under its scan, one of each kind, all the same height: a visitor using it,
        me showing it, the badge. */
@@ -156,6 +165,12 @@
       if (tryIt) tryIt.replaceWith(document.getElementById("worlds-room").content);
       const slot = document.getElementById("splatlab-booth");
       if (slot) slot.appendChild(document.getElementById("worlds-booth").content);
+      // Each picture in a two-up row gets width in proportion to its shape, so both stand at the same height.
+      document.querySelectorAll(".part-block-row .part-media > .fig").forEach((fig) => {
+        const m = fig.querySelector("img, video"); if (!m) return;
+        const set = () => { const w = m.naturalWidth || m.videoWidth, h = m.naturalHeight || m.videoHeight; if (w && h) fig.style.flexGrow = (w / h).toFixed(3); };
+        set(); m.addEventListener(m.tagName === "IMG" ? "load" : "loadedmetadata", set);
+      });
       // The booth clip is far down the page: it downloads and plays only once it comes into view.
       document.querySelectorAll("video[data-play-when-seen]").forEach((v) => {
         new IntersectionObserver(([e]) => { if (e.isIntersecting) v.play().catch(() => {}); else v.pause(); }, { rootMargin: "200px" }).observe(v);
