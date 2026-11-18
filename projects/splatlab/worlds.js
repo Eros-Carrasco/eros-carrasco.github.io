@@ -4,6 +4,9 @@
 // is fetched: the second file comes when it is chosen, and stays once it is here.
 // PlayCanvas is vendored in ../../js/vendor, so nothing is fetched from anyone else.
 // The files are PlayCanvas compressed PLY, in metres (effects/web_ply.py in the splatlab repo).
+// In the breakroom some things can be carried across the floor, the room cleared, and a lamp
+// moved through it: the room comes in pieces (effects/web_room.py), the room bare with the floor
+// and walls made where things stood, what stays in it, and a small file for each thing.
 (() => {
   const stage = document.getElementById("worlds-stage");
   const canvas = document.getElementById("worlds-canvas");
@@ -18,6 +21,9 @@
   //   zoom    the nearest and farthest the eye may stand, in metres; tilt the lowest and highest pitch
   //   room    for a place seen from inside: its outline on the floor (x, z), how far off its walls
   //           the eye keeps, and the height the eye stays under
+  //   pieces  for a place in pieces: what stays in it (drawn over the room, gone when it is
+  //           cleared) and the things that can be carried (things.json: their files, where each
+  //           stands, its outline on the floor and its height, and the zone they may be carried in)
   const WORLDS = {
     // Already y up with its floor at 0. The view is the one the booth has on its own page.
     booth: {
@@ -26,18 +32,17 @@
       pivot: [-0.585, 1.07, -0.68], yaw: -165.6, pitch: 14.7, dist: 6.4,
       zoom: [1.5, 12], tilt: [2, 75],
     },
-    // The capture's up is -y and its floor is at y = 1.47 (its manifest, scenes/breakroom.json in
-    // the splatlab repo). The file was moved so the floor is at 0 and the middle of the manifest's
-    // box stands over the origin, and is still y down: the half turn about x here puts it upright.
-    // The pivot's place on the floor, the side the eye starts on and the outline are the ones the
-    // booth program has for this room (booth/breakroom-full.toml: its view and its clear_zone),
-    // carried from that program's frame (x, y, z up) to this one (x, z up, -y).
+    // The pieces are the booth program's room (booth/breakroom-full.toml in the splatlab repo), its
+    // frame (x, y, z up, the floor at 0) carried to this one (x, z up, -y) when they were written:
+    // already upright here. The pivot's place on the floor, the side the eye starts on and the
+    // outline are the ones that program has for this room (its view and its clear_zone).
     // Here the eye stays in the clear air of the room, measured on the file itself: over the tables
     // and chairs (the pivot is 1.2 m up) and under the lamps and panels that hang from 2.5 m (roof).
     // The outline's window side is brought in 1.6 m, past the tall pieces that stand along it.
     breakroom: {
-      file: "splats/breakroom.ply",
-      turn: [180, 0, 0],
+      file: "splats/breakroom/room.ply",
+      pieces: { rest: "splats/breakroom/rest.ply", things: "splats/breakroom/things.json" },
+      turn: [0, 0, 0],
       pivot: [-2.5, 1.2, -1.5], yaw: 90, pitch: 12, dist: 5.5,
       zoom: [1, 5.5], tilt: [2, 75],
       room: {
@@ -229,45 +234,344 @@
       fov: FOV, nearClip: 0.1, farClip: 200,
     });
     app.root.addChild(camera);
+    app.on("update", tick);
     app.start();
     const resize = () => { app.resizeCanvas(stage.clientWidth, stage.clientHeight); drawSky(); };
     new ResizeObserver(resize).observe(stage);
     resize();
   };
 
-  // A world's file, fetched once, then handed to the engine from memory. A world that failed is
-  // asked for again the next time it is chosen.
+  // A world's files, fetched once, then handed to the engine from memory. A world that failed is
+  // asked for again the next time it is chosen. A world in pieces counts all its files in its wait,
+  // so it is shown whole, its things in their places, never the bare room first.
+  const toAsset = (name, buf) => new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(new Blob([buf]));
+    const asset = new pc.Asset(name, "gsplat", { url, filename: name + ".ply" });
+    asset.once("load", () => { URL.revokeObjectURL(url); resolve(asset); });
+    asset.once("error", (err) => { URL.revokeObjectURL(url); reject(err); });
+    app.assets.add(asset);
+    app.assets.load(asset);
+  });
   const bring = (key) => {
     const w = WORLDS[key];
     if (w.coming) return;
     w.failed = false;
     w.part = 0;
-    w.coming = fetchAll(w.file, (got, total) => { w.part = Math.min(1, got / total); if (key === now) tell(); })
-      .then((buf) => new Promise((resolve, reject) => {
-        w.part = 1;
-        if (key === now) tell();
-        const url = URL.createObjectURL(new Blob([buf]));
-        const asset = new pc.Asset(key, "gsplat", { url, filename: key + ".ply" });
-        asset.once("load", () => { URL.revokeObjectURL(url); resolve(asset); });
-        asset.once("error", (err) => { URL.revokeObjectURL(url); reject(err); });
-        app.assets.add(asset);
-        app.assets.load(asset);
-      }))
-      .then((asset) => {
-        const e = new pc.Entity(key);
-        e.addComponent("gsplat", { asset });
-        e.setLocalEulerAngles(w.turn[0], w.turn[1], w.turn[2]);
-        e.enabled = key === now;
-        app.root.addChild(e);
-        w.entity = e;
-      })
+    const got = {}, size = {};
+    const counted = (file) => (g, t) => {
+      got[file] = g; size[file] = t;
+      let G = 0, T = 0;
+      for (const f in size) { G += got[f]; T += size[f]; }
+      w.part = T ? Math.min(1, G / T) : 0;
+      if (key === now) tell();
+    };
+    w.coming = (async () => {
+      let list = null;
+      if (w.pieces) {
+        const res = await fetch(w.pieces.things);
+        if (!res.ok) throw new Error(w.pieces.things + ": " + res.status);
+        list = await res.json();
+      }
+      const dir = w.file.slice(0, w.file.lastIndexOf("/") + 1);
+      const files = [w.file].concat(list ? [w.pieces.rest] : [], list ? list.things.map((t) => dir + t.file) : []);
+      const bufs = await Promise.all(files.map((f) => fetchAll(f, counted(f))));
+      w.part = 1;
+      if (key === now) tell();
+      const assets = await Promise.all(bufs.map((buf, i) => toAsset(key + "-" + i, buf)));
+      const e = new pc.Entity(key);
+      e.setLocalEulerAngles(w.turn[0], w.turn[1], w.turn[2]);
+      e.enabled = key === now;
+      app.root.addChild(e);
+      const part = (name, asset) => {
+        const c = new pc.Entity(name);
+        c.addComponent("gsplat", { asset });
+        e.addChild(c);
+        return c;
+      };
+      const room = part(key + " room", assets[0]);
+      if (list) furnish(w, list, room, part(key + " rest", assets[1]), assets.slice(2).map((a, i) => part(list.things[i].file, a)));
+      w.entity = e;
+    })()
       .catch((err) => {
         console.error("[worlds]", key, err);
         w.coming = null;
         w.failed = true;
       })
-      .then(() => { if (key === now) tell(); });
+      .then(() => { if (key === now) { tell(); tools(); } });
   };
+
+  // ---- The breakroom's things: carried across the floor, the room cleared, a lamp ----------------
+  //
+  // Every splat of the page goes through one shared, sorted buffer; the engine's hook for changing
+  // one entity's splats on their way into it is a work buffer modifier, a few lines of GLSL. Here
+  // it lights the splats by a lamp (warm, falling off with distance: no normals, so a splat is lit
+  // by where it is, not which way it faces), tints a thing under the pointer, and fades a thing
+  // out when the room is cleared.
+  const PIECE_GLSL = `
+    uniform vec3 uLamp;        // where the lamp is, in the world
+    uniform float uLampOn;     // 0 off, 1 on
+    uniform float uTint;       // 0 as scanned, 1 marked as the thing under the pointer
+    uniform float uFade;       // 1 there, 0 gone
+    void modifySplatCenter(inout vec3 center) {}
+    void modifySplatRotationScale(vec3 originalCenter, vec3 modifiedCenter, inout vec4 rotation, inout vec3 scale) {
+      scale *= uFade;
+    }
+    void modifySplatColor(vec3 center, inout vec4 color) {
+      float d = distance(center, uLamp);
+      float lit = 1.0 / (1.0 + 0.9 * d * d);
+      vec3 lamp = color.rgb * (0.32 + 2.4 * lit * vec3(1.0, 0.8, 0.55));
+      color.rgb = mix(color.rgb, lamp, uLampOn);
+      color.rgb = mix(color.rgb, vec3(0.36, 0.86, 1.0), 0.3 * uTint);
+      color.a *= uFade;
+    }
+  `;
+  const ALWAYS = pc.WORKBUFFER_UPDATE_ALWAYS !== undefined ? pc.WORKBUFFER_UPDATE_ALWAYS : 2;
+  const AUTO = pc.WORKBUFFER_UPDATE_AUTO !== undefined ? pc.WORKBUFFER_UPDATE_AUTO : 0;
+  let house = null;          // the breakroom's pieces, once here
+
+  // A splat entity that can be changed: its parameters, and a few frames of redrawing after each change.
+  const piece = (e) => {
+    const p = { e, fade: 1, tint: 0, settle: 0, ok: false };
+    try {
+      if (e.gsplat.setWorkBufferModifier && e.gsplat.setParameter) {
+        e.gsplat.setWorkBufferModifier({ glsl: PIECE_GLSL });
+        p.ok = true;
+      }
+    } catch (err) {
+      console.warn("[worlds] no splat modifier in this engine", err);
+    }
+    return p;
+  };
+  const stir = (p) => { p.settle = 4; };
+  const send = (p) => {
+    if (!p.ok) return;
+    const g = p.e.gsplat;
+    g.setParameter("uLamp", [lamp.x, lamp.y, lamp.z]);
+    g.setParameter("uLampOn", lamp.on);
+    g.setParameter("uTint", p.tint);
+    g.setParameter("uFade", p.fade);
+  };
+
+  // The lamp: off at first, over the middle of the room, carried by its handle across the floor.
+  const lamp = { x: 0, y: 1.5, z: 0, on: 0, want: 0 };
+  const handle = document.createElement("button");
+  handle.type = "button";
+  handle.className = "worlds-lamp";
+  handle.setAttribute("aria-label", "Lamp");
+  handle.hidden = true;
+  stage.appendChild(handle);
+
+  const furnish = (w, list, room, rest, parts) => {
+    const zone = list.zone;
+    house = {
+      w, zone, cleared: false,
+      room: piece(room), rest: piece(rest),
+      things: parts.map((e, i) => {
+        const t = list.things[i];
+        e.setLocalPosition(t.at[0], 0, t.at[1]);
+        const foot = t.foot.length >= 3 ? t.foot : [[-t.reach, -t.reach], [t.reach, -t.reach], [t.reach, t.reach], [-t.reach, t.reach]];
+        return Object.assign(piece(e), { name: t.name, home: t.at.slice(), foot, tall: Math.max(0.3, t.tall) });
+      }),
+    };
+    lamp.x = w.pivot[0]; lamp.z = w.pivot[2];
+    for (const p of all()) { send(p); stir(p); }
+  };
+  const all = () => house ? [house.room, house.rest].concat(house.things) : [];
+
+  const tick = (dt) => {
+    if (!house) return;
+    const k = Math.min(1, dt * 8);
+    const lampWas = lamp.on;
+    lamp.on += (lamp.want - lamp.on) * k;
+    if (Math.abs(lamp.want - lamp.on) < 0.003) lamp.on = lamp.want;
+    const lampMoved = lamp.on !== lampWas || lamp.moved;
+    lamp.moved = false;
+    const gone = house.cleared ? 0 : 1;
+    for (const p of all()) {
+      const fadeTo = p === house.room ? 1 : gone;
+      const tintTo = p === held || (p === over && !held) ? 1 : 0;
+      const was = p.fade + 10 * p.tint;
+      p.fade += (fadeTo - p.fade) * k;
+      if (Math.abs(fadeTo - p.fade) < 0.003) p.fade = fadeTo;
+      p.tint += (tintTo - p.tint) * Math.min(1, dt * 12);
+      if (Math.abs(tintTo - p.tint) < 0.003) p.tint = tintTo;
+      if (p !== house.room) {
+        const there = p.fade > 0;
+        if (p.e.enabled !== there) p.e.enabled = there;
+      }
+      if (lampMoved || p.fade + 10 * p.tint !== was) { send(p); stir(p); }
+      if (p.ok) {
+        if (p.settle > 0) {
+          p.e.gsplat.workBufferUpdate = ALWAYS;
+          if (--p.settle === 0) p.e.gsplat.workBufferUpdate = AUTO;
+        }
+      }
+    }
+    if (lamp.on > 0 && now === "breakroom") {
+      const s = camera.camera.worldToScreen(new pc.Vec3(lamp.x, lamp.y, lamp.z));
+      handle.hidden = s.z <= 0;
+      handle.style.left = s.x + "px";
+      handle.style.top = s.y + "px";
+      handle.style.opacity = String(lamp.on);
+    } else {
+      handle.hidden = true;
+    }
+  };
+
+  // The pointer's ray, from the eye through a point of the canvas: origin and direction.
+  const rayAt = (cx, cy) => {
+    const r = canvas.getBoundingClientRect();
+    const a = camera.camera.screenToWorld(cx - r.left, cy - r.top, 0.1);
+    const b = camera.camera.screenToWorld(cx - r.left, cy - r.top, 100);
+    const d = new pc.Vec3().sub2(b, a).normalize();
+    return { o: a, d };
+  };
+  // Where a ray meets the level plane at height h, within 25 m, or null.
+  const planeAt = (ray, h) => {
+    if (Math.abs(ray.d.y) < 1e-6) return null;
+    const t = (h - ray.o.y) / ray.d.y;
+    if (t <= 0 || t > 25) return null;
+    return [ray.o.x + ray.d.x * t, ray.o.z + ray.d.z * t];
+  };
+  // How far along the ray it first enters a thing: its outline on the floor raised to its height,
+  // a convex prism, met plane by plane. Infinity when it misses.
+  const enters = (ray, th) => {
+    const at = th.e.getLocalPosition();
+    let t0 = 0, t1 = 1e9;
+    const cut = (num, den) => {            // the half space n . (p - a) <= 0 as num = n . (a - o), den = n . d
+      if (Math.abs(den) < 1e-12) return num >= 0;
+      const t = num / den;
+      if (den < 0) t0 = Math.max(t0, t); else t1 = Math.min(t1, t);
+      return t0 <= t1;
+    };
+    if (!cut(ray.o.y, -ray.d.y) || !cut(th.tall - ray.o.y, ray.d.y)) return Infinity;     // over the floor, under its top
+    const f = th.foot;
+    let mx = 0, mz = 0;
+    for (const q of f) { mx += q[0]; mz += q[1]; }
+    mx /= f.length; mz /= f.length;
+    for (let i = 0; i < f.length; i++) {
+      const a = f[i], b = f[(i + 1) % f.length];
+      let nx = b[1] - a[1], nz = -(b[0] - a[0]);
+      if (nx * (mx - a[0]) + nz * (mz - a[1]) > 0) { nx = -nx; nz = -nz; }     // outward, away from its middle
+      const ax = at.x + a[0], az = at.z + a[1];
+      if (!cut(nx * (ax - ray.o.x) + nz * (az - ray.o.z), nx * ray.d.x + nz * ray.d.z)) return Infinity;
+    }
+    return t0;
+  };
+  // The thing under the pointer, the nearest one the ray enters; null over the room.
+  const thingAt = (cx, cy) => {
+    if (!house || house.cleared || now !== "breakroom") return null;
+    const ray = rayAt(cx, cy);
+    let best = null, near = Infinity;
+    for (const th of house.things) {
+      if (!th.e.enabled) continue;
+      const t = enters(ray, th);
+      if (t < near) { near = t; best = th; }
+    }
+    return best ? { th: best, ray, t: near } : null;
+  };
+
+  // How far a point lies outside the zone things may be carried in; 0 inside.
+  const inZone = (x, z) => {
+    const o = house.zone;
+    let inside = false;
+    for (let i = 0, j = o.length - 1; i < o.length; j = i++) {
+      if ((o[i][1] > z) !== (o[j][1] > z) && x < (o[j][0] - o[i][0]) * (z - o[i][1]) / (o[j][1] - o[i][1]) + o[i][0]) inside = !inside;
+    }
+    return inside;
+  };
+  const outside = (x, z) => {
+    if (inZone(x, z)) return 0;
+    const o = house.zone;
+    let near = Infinity;
+    for (let i = 0; i < o.length; i++) {
+      const a = o[i], b = o[(i + 1) % o.length];
+      const ex = b[0] - a[0], ez = b[1] - a[1];
+      const s = clamp(((x - a[0]) * ex + (z - a[1]) * ez) / (ex * ex + ez * ez), 0, 1);
+      near = Math.min(near, Math.hypot(x - a[0] - s * ex, z - a[1] - s * ez));
+    }
+    return near;
+  };
+  // How much of a thing's outline would stand past the zone, were it at (x, z).
+  const past = (th, x, z) => th.foot.reduce((sum, q) => sum + outside(x + q[0], z + q[1]), 0);
+  // A thing put at (x, z) if it stays in the room there; else slid along whichever axis lets it,
+  // else left where it is. One that stood partly past the zone at home may move if it gets no worse.
+  const putAt = (th, x, z) => {
+    const at = th.e.getLocalPosition();
+    const was = past(th, at.x, at.z);
+    const ok = (px, pz) => { const p = past(th, px, pz); return p < 1e-3 || p <= was + 1e-6; };
+    if (ok(x, z)) th.e.setLocalPosition(x, 0, z);
+    else if (ok(x, at.z)) th.e.setLocalPosition(x, 0, at.z);
+    else if (ok(at.x, z)) th.e.setLocalPosition(at.x, 0, z);
+    else return;
+    stir(th);
+  };
+
+  let over = null;           // the thing under the pointer
+  let held = null;           // the thing being carried: { th, h, grab: [dx, dz] }
+  const hold = (hit, pointerId) => {
+    const p = hit.ray.o.clone().add(hit.ray.d.clone().mulScalar(hit.t));
+    const h = clamp(p.y, 0, hit.th.tall);
+    const at = hit.th.e.getLocalPosition();
+    const f = planeAt(hit.ray, h);
+    held = hit.th;
+    held.carry = { h, grab: f ? [at.x - f[0], at.z - f[1]] : [0, 0], pointerId };
+  };
+  const carry = (cx, cy) => {
+    const f = planeAt(rayAt(cx, cy), held.carry.h);
+    if (f) putAt(held, f[0] + held.carry.grab[0], f[1] + held.carry.grab[1]);
+  };
+  const putDown = () => { held = null; };
+
+  // The controls under the breakroom: put everything back, clear the room, the lamp.
+  const toolbar = document.createElement("div");
+  toolbar.className = "worlds-tools";
+  toolbar.innerHTML = '<button type="button" class="worlds-pick" data-do="reset">Reset</button>' +
+    '<button type="button" class="worlds-pick" data-do="clear" aria-pressed="false">Clear the room</button>' +
+    '<button type="button" class="worlds-pick" data-do="lamp" aria-pressed="false">Lamp</button>';
+  stage.after(toolbar);
+  const tools = () => {
+    const show = now === "breakroom" && !!house && !!WORLDS.breakroom.entity;
+    toolbar.hidden = !show;
+    stage.classList.toggle("is-room", show);
+    const canLight = show && house.room.ok;
+    toolbar.querySelector('[data-do="lamp"]').hidden = !canLight;
+    toolbar.querySelector('[data-do="clear"]').setAttribute("aria-pressed", show && house.cleared ? "true" : "false");
+    toolbar.querySelector('[data-do="lamp"]').setAttribute("aria-pressed", lamp.want ? "true" : "false");
+  };
+  toolbar.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-do]");
+    if (!b || !house) return;
+    if (b.dataset.do === "reset") {
+      for (const th of house.things) { th.e.setLocalPosition(th.home[0], 0, th.home[1]); stir(th); }
+      house.cleared = false;
+      lamp.want = 0;
+      held = over = null;
+    } else if (b.dataset.do === "clear") {
+      house.cleared = !house.cleared;
+      held = over = null;
+    } else if (b.dataset.do === "lamp") {
+      lamp.want = lamp.want ? 0 : 1;
+    }
+    tools();
+  });
+
+  // The lamp's handle is carried across the floor at the lamp's height.
+  let lampBy = null;
+  handle.addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+    lampBy = e.pointerId;
+    try { handle.setPointerCapture(e.pointerId); } catch (err) { /* gone already */ }
+    if (hint) hint.classList.add("is-gone");
+  });
+  handle.addEventListener("pointermove", (e) => {
+    if (lampBy !== e.pointerId || !house) return;
+    const f = planeAt(rayAt(e.clientX, e.clientY), lamp.y);
+    if (f && inZone(f[0], f[1])) { lamp.x = f[0]; lamp.z = f[1]; lamp.moved = true; }
+  });
+  const lampGo = (e) => { if (lampBy === e.pointerId) lampBy = null; };
+  handle.addEventListener("pointerup", lampGo);
+  handle.addEventListener("pointercancel", lampGo);
 
   const choose = (key) => {
     const w = WORLDS[key];
@@ -285,10 +589,13 @@
     }
     place();
     tell();
+    tools();
   };
   picks.forEach((b) => b.addEventListener("click", () => choose(b.dataset.world)));
 
-  // One finger or the mouse turns the view; two fingers come closer and go back.
+  // One finger or the mouse turns the view; two fingers come closer and go back. In the breakroom,
+  // one taken on a thing carries it instead, at the height it was taken by, so it moves as far as
+  // the hand does; and the mouse, passing over a thing, marks it.
   const fingers = new Map();
   let spread = 0;
   canvas.addEventListener("pointerdown", (e) => {
@@ -296,13 +603,29 @@
     fingers.set(e.pointerId, [e.clientX, e.clientY]);
     spread = 0;
     try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* a pointer that is already gone */ }
+    if (fingers.size === 1) {
+      const hit = thingAt(e.clientX, e.clientY);
+      if (hit) hold(hit, e.pointerId);
+    } else {
+      putDown();                           // a second finger: the two of them zoom
+    }
     canvas.style.cursor = "grabbing";
   });
   canvas.addEventListener("pointermove", (e) => {
     const was = fingers.get(e.pointerId);
-    if (!was || !now) return;
+    if (!was) {
+      if (e.pointerType === "mouse" && !fingers.size) {
+        const hit = thingAt(e.clientX, e.clientY);
+        over = hit ? hit.th : null;
+        canvas.style.cursor = over ? "pointer" : "grab";
+      }
+      return;
+    }
+    if (!now) return;
     fingers.set(e.pointerId, [e.clientX, e.clientY]);
-    if (fingers.size === 1) {
+    if (held && held.carry.pointerId === e.pointerId) {
+      carry(e.clientX, e.clientY);
+    } else if (fingers.size === 1) {
       const w = WORLDS[now], v = w.view;
       v.yaw -= (e.clientX - was[0]) * 0.3;
       v.pitch = clamp(v.pitch + (e.clientY - was[1]) * 0.3, w.tilt[0], w.tilt[1]);
@@ -317,10 +640,16 @@
   const release = (e) => {
     fingers.delete(e.pointerId);
     spread = 0;
-    if (!fingers.size) canvas.style.cursor = "grab";
+    if (held && held.carry.pointerId === e.pointerId) putDown();
+    if (!fingers.size) {
+      const hit = e.pointerType === "mouse" ? thingAt(e.clientX, e.clientY) : null;
+      over = hit ? hit.th : null;
+      canvas.style.cursor = over ? "pointer" : "grab";
+    }
   };
   canvas.addEventListener("pointerup", release);
   canvas.addEventListener("pointercancel", release);
+  canvas.addEventListener("pointerleave", () => { if (!fingers.size) over = null; });
   // The wheel belongs to the view while it can still move it. Once the eye is as near or as far
   // as it may be, the wheel is the page's again, so scrolling past the stage never gets stuck.
   canvas.addEventListener("wheel", (e) => {

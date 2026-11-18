@@ -49,6 +49,16 @@
     .worlds-wait-bar { width: min(280px, 60%); height: 5px; border-radius: 999px; background: rgba(255, 255, 255, 0.18); overflow: hidden; }
     .worlds-wait-bar i { display: block; width: 0; height: 100%; border-radius: 999px; background: #5ddcff; }
     .worlds-wait-what { font-size: 15px; color: rgba(255, 255, 255, 0.78); }
+    /* The breakroom's things: what can be moved, the controls under it, the lamp's handle. */
+    .worlds-hint .in-room { display: none; }
+    .worlds-stage.is-room .worlds-hint .in-room { display: inline; }
+    .worlds-tools { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; }
+    .worlds-tools[hidden], .worlds-tools [hidden] { display: none; }
+    .worlds-lamp { position: absolute; z-index: 2; width: 34px; height: 34px; margin: -17px 0 0 -17px; padding: 0; border-radius: 50%;
+      border: 2px solid rgba(255, 236, 200, 0.9); background: radial-gradient(circle, #fff6e0 0%, #ffcf7a 35%, rgba(255, 160, 60, 0.15) 70%, rgba(255, 160, 60, 0) 100%);
+      box-shadow: 0 0 18px rgba(255, 190, 110, 0.8); cursor: grab; touch-action: none; }
+    .worlds-lamp[hidden] { display: none; }
+    .worlds-lamp:focus-visible { outline: 2px solid #5ddcff; outline-offset: 2px; }
     @media (max-width: 640px) {
       .worlds-stage { aspect-ratio: 4 / 3; }
       .worlds-pick { font-size: 12px; padding: 5px 10px; }
@@ -81,6 +91,7 @@
       <div class="worlds-stage" id="worlds-stage">
         <canvas id="worlds-canvas"></canvas>
         <p class="worlds-hint" id="worlds-hint">
+          <span class="in-room">Drag a table to move it</span>
           <span>Drag to turn</span>
           <span class="by-mouse">Scroll to zoom</span>
           <span class="by-touch">Pinch to zoom</span>
@@ -95,7 +106,7 @@
     })();
   </script>
   <script src="../../js/vendor/playcanvas.min.js"></script>
-  <script src="worlds.js?v=20261117a"></script>
+  <script src="worlds.js?v=20261117b"></script>
 </body>
 
 </html>
