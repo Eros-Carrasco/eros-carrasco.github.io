@@ -1,17 +1,16 @@
-// Two gaussian splat worlds on the SplatLab page, one at a time in one viewer: the ASUS booth at
-// Adobe MAX 2026 and the breakroom. Drag turns the view, the wheel (or two fingers) comes closer
-// and goes back, and the buttons above the stage change the world. Only the world that is shown
-// is fetched: the second file comes when it is chosen, and stays once it is here.
+// The gaussian splat worlds on the SplatLab page, each in its own viewer: the breakroom near the
+// top and the ASUS booth at Adobe MAX 2026 further down. Each stage names its world (data-world).
+// Drag turns the view and the wheel (or two fingers) comes closer and goes back. Nothing is
+// fetched until a stage comes near the screen, so the booth's file comes only when it is scrolled to.
 // PlayCanvas is vendored in ../../js/vendor, so nothing is fetched from anyone else.
 // The files are PlayCanvas compressed PLY, in metres (effects/web_ply.py in the splatlab repo).
 // In the breakroom some things can be carried across the floor, the room cleared, and a lamp
 // moved through it: the room comes in pieces (effects/web_room.py), the room bare with the floor
 // and walls made where things stood, what stays in it, and a small file for each thing.
-(() => {
-  const stage = document.getElementById("worlds-stage");
-  const canvas = document.getElementById("worlds-canvas");
-  const hint = document.getElementById("worlds-hint");
-  const picks = Array.from(document.querySelectorAll(".worlds-pick"));
+const worldsViewer = (stage) => {
+  const canvas = stage.querySelector("canvas");
+  const hint = stage.querySelector(".worlds-hint");
+  const picks = [];
   if (!stage || !canvas) return;
 
   // Each world declares its own frame and view; nothing is guessed from the file.
@@ -21,16 +20,27 @@
   //   zoom    the nearest and farthest the eye may stand, in metres; tilt the lowest and highest pitch
   //   room    for a place seen from inside: its outline on the floor (x, z), how far off its walls
   //           the eye keeps, and the height the eye stays under
+  //   solid   for a place seen from outside: the eye keeps off it. A coarse grid of where its
+  //           splats are is counted from the file once it is here (cell, in metres); a cell with
+  //           at least `dense` of them is a surface, and the eye keeps `keep` metres from every
+  //           surface: where it would come nearer it is put farther back until it is clear, so
+  //           neither the wheel nor a turn takes it into or up against a counter or a wall
   //   pieces  for a place in pieces: what stays in it (drawn over the room, gone when it is
   //           cleared) and the things that can be carried (things.json: their files, where each
   //           stands, its outline on the floor and its height, and the zone they may be carried in)
-  const WORLDS = {
-    // Already y up with its floor at 0. The view is the one the booth has on its own page.
+  const ALL = {
+    // Already y up with its floor at 0. The view is the one the booth has on its own page, and so is
+    // the nearest the wheel brings the eye (2.2 m from the pivot). Measured on the file: from 2.2 m
+    // the eye still meets the booth's counters and walls in some directions (from the pivot, a
+    // counter stands up to 3 m off on one side and a wall from 2.5 to 4 m on another), and in the
+    // browser 2.2 m alone put the eye a metre from the screens, drawn softer than the scan holds.
+    // So the eye also keeps 0.8 m from any surface; the first view stands clear of that.
     booth: {
       file: "splats/booth.ply",
       turn: [0, 0, 0],
       pivot: [-0.585, 1.07, -0.68], yaw: -165.6, pitch: 14.7, dist: 6.4,
-      zoom: [1.5, 12], tilt: [2, 75],
+      zoom: [2.2, 12], tilt: [2, 75],
+      solid: { cell: 0.2, dense: 10, keep: 0.8 },
     },
     // The pieces are the booth program's room (booth/breakroom-full.toml in the splatlab repo), its
     // frame (x, y, z up, the floor at 0) carried to this one (x, z up, -y) when they were written:
@@ -53,10 +63,12 @@
       },
     },
   };
+  const shownHere = stage.dataset.world;
+  if (!ALL[shownHere]) return;
+  const WORLDS = { [shownHere]: ALL[shownHere] };
   for (const key in WORLDS) {
     const w = WORLDS[key];
-    const pick = picks.find((b) => b.dataset.world === key);
-    w.name = pick ? pick.textContent.trim() : key;
+    w.name = stage.dataset.name || key;
     w.view = { yaw: w.yaw, pitch: w.pitch, dist: w.dist };
     w.part = 0;               // how much of its file is here, 0 to 1
     w.coming = null;          // the fetch, once asked for
@@ -86,7 +98,81 @@
     }
     return near;
   };
+  // The solid grid of a place seen from outside, counted from its compressed PLY: per chunk of 256
+  // splats a box, per splat a place in that box (11, 10 and 11 bits) and an opacity (the lowest
+  // byte of its colour). Splats under 0.3 opacity are left out. Null when the file is not laid out
+  // as expected, and only for a world the page draws unturned, so the grid's frame is the page's.
+  const solidOf = (buf, cell, dense, keep) => {
+    const bytes = new Uint8Array(buf);
+    const head = new TextDecoder().decode(bytes.subarray(0, Math.min(bytes.length, 4096)));
+    const end = head.indexOf("end_header\n");
+    if (end < 0) return null;
+    const lines = head.slice(0, end).split("\n");
+    const props = (el) => {
+      const at = lines.findIndex((l) => l.startsWith("element " + el + " "));
+      if (at < 0) return null;
+      let n = 0;
+      for (let i = at + 1; i < lines.length && lines[i].startsWith("property "); i++) n++;
+      return { count: +lines[at].split(" ")[2], props: n };
+    };
+    const ch = props("chunk"), vx = props("vertex");
+    if (!ch || !vx || ch.props !== 18 || vx.props !== 4 || lines.some((l) => l.startsWith("element sh"))) return null;
+    const dv = new DataView(buf);
+    const c0 = end + "end_header\n".length, v0 = c0 + ch.count * 72;
+    if (v0 + vx.count * 16 > buf.byteLength) return null;
+    const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+    for (let c = 0; c < ch.count; c++) {
+      for (let k = 0; k < 3; k++) {
+        lo[k] = Math.min(lo[k], dv.getFloat32(c0 + c * 72 + k * 4, true));
+        hi[k] = Math.max(hi[k], dv.getFloat32(c0 + c * 72 + 12 + k * 4, true));
+      }
+    }
+    const n = lo.map((l, k) => Math.ceil((hi[k] - l) / cell) + 1);
+    const grid = new Uint32Array(n[0] * n[1] * n[2]);
+    for (let i = 0; i < vx.count; i++) {
+      if ((dv.getUint32(v0 + i * 16 + 12, true) & 255) <= 76) continue;
+      const p = dv.getUint32(v0 + i * 16, true), b = c0 + (i >> 8) * 72;
+      const f = [(p >>> 21) / 2047, ((p >>> 11) & 1023) / 1023, (p & 2047) / 2047];
+      let at = 0;
+      for (let k = 0; k < 3; k++) {
+        const mn = dv.getFloat32(b + k * 4, true), mx = dv.getFloat32(b + 12 + k * 4, true);
+        at = at * n[k] + clamp(Math.floor((mn + f[k] * (mx - mn) - lo[k]) / cell), 0, n[k] - 1);
+      }
+      grid[at]++;
+    }
+    // The surface cells, grown by `keep` along each axis in turn: a cell is near when a surface
+    // stands within that box round it.
+    let near = new Uint8Array(grid.length);
+    for (let i = 0; i < grid.length; i++) near[i] = grid[i] >= dense ? 1 : 0;
+    const r = Math.round(keep / cell), step = [n[1] * n[2], n[2], 1];
+    for (let axis = 0; axis < 3; axis++) {
+      const out = new Uint8Array(near.length);
+      for (let i = 0; i < n[0]; i++) for (let j = 0; j < n[1]; j++) for (let k = 0; k < n[2]; k++) {
+        const at = (i * n[1] + j) * n[2] + k, c = [i, j, k][axis];
+        for (let q = Math.max(0, c - r); q <= Math.min(n[axis] - 1, c + r); q++) {
+          if (near[at + (q - c) * step[axis]]) { out[at] = 1; break; }
+        }
+      }
+      near = out;
+    }
+    // Whether a point is that near a surface; a point outside the grid is in the open.
+    const blocked = (x, y, z) => {
+      const c = [x, y, z].map((v, k) => Math.floor((v - lo[k]) / cell));
+      if (c.some((v, k) => v < 0 || v >= n[k])) return false;
+      return near[(c[0] * n[1] + c[1]) * n[2] + c[2]] === 1;
+    };
+    return { blocked };
+  };
+
   const eyeDist = (w, yaw, pitch, dist) => {
+    if (w.grid) {
+      const y = yaw * RAD, p = pitch * RAD;
+      const dx = Math.cos(p) * Math.sin(y), dy = Math.sin(p), dz = Math.cos(p) * Math.cos(y);
+      let d = dist;
+      for (let i = 0; i < 200 && d < w.zoom[1] + 4 &&
+           w.grid.blocked(w.pivot[0] + d * dx, w.pivot[1] + d * dy, w.pivot[2] + d * dz); i++) d += 0.1;
+      return d;
+    }
     if (!w.room) return dist;
     const p = pitch * RAD;
     const flat = Math.max(0.2, wallAt(w, yaw) - w.room.margin);
@@ -275,6 +361,9 @@
       const dir = w.file.slice(0, w.file.lastIndexOf("/") + 1);
       const files = [w.file].concat(list ? [w.pieces.rest] : [], list ? list.things.map((t) => dir + t.file) : []);
       const bufs = await Promise.all(files.map((f) => fetchAll(f, counted(f))));
+      if (w.solid && !w.turn.some((a) => a)) {
+        try { w.grid = solidOf(bufs[0], w.solid.cell, w.solid.dense, w.solid.keep); } catch (err) { console.warn("[worlds] no solid grid", err); }
+      }
       w.part = 1;
       if (key === now) tell();
       const assets = await Promise.all(bufs.map((buf, i) => toAsset(key + "-" + i, buf)));
@@ -297,7 +386,7 @@
         w.coming = null;
         w.failed = true;
       })
-      .then(() => { if (key === now) { tell(); tools(); } });
+      .then(() => { if (key === now) { place(); tell(); tools(); } });
   };
 
   // ---- The breakroom's things: carried across the floor, the room cleared, a lamp ----------------
@@ -657,7 +746,7 @@
   }, { passive: false });
 
   // Nothing is fetched until the stage is near the screen, and nothing is drawn while it is off it.
-  const first = picks.length ? picks[0].dataset.world : Object.keys(WORLDS)[0];
+  const first = shownHere;
   if ("IntersectionObserver" in window) {
     new IntersectionObserver((entries) => {
       const near = entries[entries.length - 1].isIntersecting;
@@ -667,4 +756,5 @@
   } else {
     choose(first);
   }
-})();
+};
+document.querySelectorAll(".worlds-stage[data-world]").forEach(worldsViewer);

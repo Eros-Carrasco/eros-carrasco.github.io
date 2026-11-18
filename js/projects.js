@@ -118,9 +118,9 @@ const PROJECTS = {
   splatlab: {
     title: "SplatLab",
     subtitle:
-      "A research system that turns a Gaussian splat scan into a room you can take apart: it finds the objects, lets you move or remove them, and fills in what the scanner never saw. Real time and fully local, shown live at Adobe MAX 2026.",
+      "My own engine for Gaussian splats, in Python on gsplat: it finds the objects in a scanned room, lets you move or remove them, fills in what the scanner never saw, relights the room and crosses from one world to another. Real time and fully local, shown live at Adobe MAX 2026. Unreal Engine is an extra: I am patching the engine's ideas into an Unreal splat plugin.",
 
-    pills: ["Gaussian Splatting", "PyTorch + gsplat", "Local Vision Models", "Unreal Engine"],
+    pills: ["Gaussian Splatting", "My Own Engine", "Python, PyTorch, gsplat", "Local Vision Models"],
 
     hero: {
       type: "video",
@@ -145,8 +145,16 @@ const PROJECTS = {
     },
 
     work: {
-      title: "The System",
+      title: "The Engine",
       items: [
+        {
+          heading: "An Engine of My Own (Python, PyTorch, gsplat, CUDA)",
+          text: [
+            "The live system. Every gaussian is a PyTorch tensor on top of gsplat, so a new effect is a few lines of tensor maths, not a shader rewrite.",
+            "Runs on two ASUS Ascent GX10s (NVIDIA Grace Blackwell): one draws the worlds in real time, the other runs the local vision and language models.",
+            "Puts a scanned, rigged, dancing person inside a scanned room."
+          ]
+        },
         {
           heading: "Object Understanding (Local Vision Models, Python)",
           text: [
@@ -171,7 +179,20 @@ const PROJECTS = {
           ]
         },
         {
-          heading: "Relighting (HLSL, inside the renderer's shader)",
+          heading: "Spatial Analysis (Python)",
+          text: [
+            "Measure floor, ceiling, walls, and clear distance in every direction.",
+            "Write it once to a manifest everything downstream reads.",
+            "Return nothing when nothing is there. The confidence measure this replaced went up as the data ran out."
+          ],
+          figs: [{
+            src: `${BASE_URL}assets/images/splatlab_plan.jpg`,
+            alt: "Top down plan of a room, with coloured lines measuring the distance from a point to every wall",
+            caption: "Distance to a surface, coloured by height."
+          }]
+        },
+        {
+          heading: "Relighting",
           text: [
             "Recover a surface direction for every gaussian from its own shape, live.",
             "Closed form. No preprocessing, no retraining, no stored normals.",
@@ -192,43 +213,30 @@ const PROJECTS = {
           }]
         },
         {
-          heading: "Transitions Between Worlds (HLSL)",
+          heading: "Transitions Between Worlds",
           text: [
             "One world becomes another point by point, without a cut.",
             "Drop the draw budget and the whole room is described with a few thousand points, not cropped. The next world fills in from those same points.",
-            "Runs per gaussian in the raster shader, on the GPU, and costs less to draw than the world it replaces."
+            "In the engine each style is tensor work: paper burn, sweep, matrix columns, and collapse brick by brick. The first clip: a temple built brick by brick, then eaten by a paper burn."
           ],
           clips: [
-            { src: `${BASE_URL}assets/videos/splatlab_tr_breakroom.mp4`, alt: "A breakroom dissolving as a magenta band sweeps through it" },
+            { src: `${BASE_URL}assets/videos/splatlab_tr_temple_collapse_burn.mp4`, alt: "A temple assembling brick by brick out of the dark, then burning away in ragged orange holes" },
             { src: `${BASE_URL}assets/videos/splatlab_tr_temple.mp4`, alt: "A temple crumbling into golden particles" },
             { src: `${BASE_URL}assets/videos/splatlab_tr_cabin.mp4`, alt: "A cabin breaking into points behind a cyan sweep" }
           ]
-        },
+        }
+      ]
+    },
+
+    extra: {
+      title: "Extra: Unreal Engine",
+      items: [
         {
-          heading: "Spatial Analysis (Python)",
+          heading: "Unreal Integration (C++, HLSL)",
           text: [
-            "Measure floor, ceiling, walls, and clear distance in every direction.",
-            "Write it once to a manifest everything downstream reads.",
-            "Return nothing when nothing is there. The confidence measure this replaced went up as the data ran out."
-          ],
-          figs: [{
-            src: `${BASE_URL}assets/images/splatlab_plan.jpg`,
-            alt: "Top down plan of a room, with coloured lines measuring the distance from a point to every wall",
-            caption: "Distance to a surface, coloured by height."
-          }]
-        },
-        {
-          heading: "Renderer (Python, PyTorch, gsplat, CUDA)",
-          text: [
-            "The live system. Every gaussian is a PyTorch tensor on top of gsplat, so a new effect is a few lines of tensor maths, not a shader rewrite.",
-            "Runs on two ASUS Ascent GX10s (NVIDIA Grace Blackwell): one draws the worlds in real time, the other runs the local vision and language models.",
-            "Puts a scanned, rigged, dancing person inside a scanned room."
-          ]
-        },
-        {
-          heading: "Unreal Integration (C++)",
-          text: [
-            "Where the work started. Patched six runtime setters into the plugin so anything could be animated.",
+            "Where the work started, and now a side branch: I patch the engine's ideas into an Unreal splat plugin.",
+            "Patched six runtime setters into the plugin so anything could be animated.",
+            "Relighting and the transitions run per gaussian in the plugin's raster shader, on the GPU, and a transition costs less to draw than the world it replaces.",
             "Worlds travel to the player, because motion capture overwrites the player every frame."
           ]
         }
@@ -238,7 +246,7 @@ const PROJECTS = {
     credits: {
       title: "Credits",
       text: [
-        "My research at NYU Tandon. I designed and built the system on this page, and showed it live at the ASUS ProArt booth at Adobe MAX 2026 in Miami.",
+        "My research at NYU Tandon. I designed and built the engine on this page, and showed it live at the ASUS ProArt booth at Adobe MAX 2026 in Miami.",
         "I scanned the ASUS booth during the show with an XGRIDS PortalCam. The booth in the viewer above was processed with XGRIDS LCC, not trained by my own pipeline; my own training of it is in progress. The breakroom's separate objects, the cleared room and its filled-in floor and walls come from SplatLab."
       ]
     },
@@ -1017,6 +1025,24 @@ function renderMRandarin(p) {
   `;
 }
 
+// A titled section of SplatLab parts: a heading each, its points, and its pictures or clips.
+function splatLabParts(sec) {
+  return `
+      <section class="project-section span-2">
+        <h2 class="section-title">${sec.title}</h2>
+        ${sec.items.map((it) => `
+          ${it.heading ? `<h3 class="part-title">${it.heading}</h3>` : ""}
+          ${it.clips
+            ? `<ul class="part-list">${it.text.map((t) => `<li>${t}</li>`).join("")}</ul>
+               <div class="mocap-grid">${it.clips.map((c) => `<video src="${c.src}" aria-label="${c.alt}" autoplay muted loop playsinline></video>`).join("")}</div>`
+            : `<div class="part-block${(it.figs || []).length ? " part-block-media" : ""}">
+                 <ul class="part-list">${it.text.map((t) => `<li>${t}</li>`).join("")}</ul>
+                 ${(it.figs || []).length ? `<div class="part-media">${it.figs.map(figureHTML).join("")}</div>` : ""}
+               </div>`}
+        `).join("")}
+      </section>`;
+}
+
 function renderSplatLab(p) {
   return `
     <div class="project-hero">
@@ -1041,19 +1067,11 @@ function renderSplatLab(p) {
         </section>
       ` : ""}
 
-      <section class="project-section span-2">
-        <h2 class="section-title">${p.work.title}</h2>
-        ${p.work.items.map((it) => `
-          ${it.heading ? `<h3 class="part-title">${it.heading}</h3>` : ""}
-          ${it.clips
-            ? `<ul class="part-list">${it.text.map((t) => `<li>${t}</li>`).join("")}</ul>
-               <div class="mocap-grid">${it.clips.map((c) => `<video src="${c.src}" aria-label="${c.alt}" autoplay muted loop playsinline></video>`).join("")}</div>`
-            : `<div class="part-block${(it.figs || []).length ? " part-block-media" : ""}">
-                 <ul class="part-list">${it.text.map((t) => `<li>${t}</li>`).join("")}</ul>
-                 ${(it.figs || []).length ? `<div class="part-media">${it.figs.map(figureHTML).join("")}</div>` : ""}
-               </div>`}
-        `).join("")}
-      </section>
+      ${splatLabParts(p.work)}
+
+      <section class="project-section span-2" id="splatlab-booth"></section>
+
+      ${p.extra ? splatLabParts(p.extra) : ""}
 
       ${proseSection(p.credits)}
     </div>
