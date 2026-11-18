@@ -70,7 +70,16 @@
     .mocap-grid.clips-2x2 { grid-template-columns: repeat(2, 1fr); }
     .worlds-lamp[hidden] { display: none; }
     .worlds-lamp:focus-visible { outline: 2px solid #5ddcff; outline-offset: 2px; }
+    /* Three things from the booth under its scan, one of each kind, all the same height: a visitor using it,
+       me showing it, the badge. */
+    .booth-docs { display: grid; grid-template-columns: 0.75fr 1.333fr 0.75fr; gap: 14px; margin: 18px 0 0; align-items: start; }
+    .booth-docs figure { margin: 0; }
+    .booth-docs video, .booth-docs img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08); background: #08080a; }
+    .booth-docs .booth-wide img { aspect-ratio: 4 / 3; object-position: 75% 50%; }
+    .booth-docs figcaption { margin-top: 8px; font-size: 13px; line-height: 1.5; opacity: 0.65; }
     @media (max-width: 640px) {
+      .booth-docs { grid-template-columns: 1fr 1fr; }
+      .booth-docs .booth-wide { grid-column: 1 / -1; order: -1; }
       .worlds-stage { aspect-ratio: 4 / 3; }
       .worlds-pick { font-size: 12px; padding: 5px 10px; }
       .worlds-hint { flex-wrap: wrap; justify-content: center; width: calc(100% - 20px); bottom: 10px; white-space: normal; }
@@ -120,6 +129,20 @@
         <span class="by-mouse">Scroll to zoom</span>
         <span class="by-touch">Pinch to zoom</span>
       </p>
+    </div>
+    <div class="booth-docs">
+      <figure>
+        <video src="../../assets/videos/splatlab_max_visitor.mp4" poster="../../assets/images/poster_splatlab_max_visitor.jpg" aria-label="A visitor at the booth moving the breakroom's tables on screen" autoplay muted loop playsinline preload="metadata"></video>
+        <figcaption>A visitor taking the breakroom apart herself.</figcaption>
+      </figure>
+      <figure class="booth-wide">
+        <img src="../../assets/images/splatlab_max_booth.jpg" alt="Eros explaining the engine to a visitor at the booth, the breakroom on the screen behind them" loading="lazy" />
+        <figcaption>Walking a visitor through the engine.</figcaption>
+      </figure>
+      <figure>
+        <img src="../../assets/images/splatlab_max_badge.jpg" alt="Eros's Adobe MAX badge, NYU, sponsor, in front of the Adobe MAX registration hall" loading="lazy" />
+        <figcaption>Adobe MAX 2026, Miami.</figcaption>
+      </figure>
     </div>
   </template>
   <script>
