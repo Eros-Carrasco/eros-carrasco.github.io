@@ -118,9 +118,9 @@ const PROJECTS = {
   splatlab: {
     title: "SplatLab",
     subtitle:
-      "Gaussian splat research: spatial analysis, object recognition, relighting and transitions, in an Unreal integration and a renderer of my own.",
+      "A research system that turns a Gaussian splat scan into a room you can take apart: it finds the objects, lets you move or remove them, and fills in what the scanner never saw. Real time and fully local, shown live at Adobe MAX 2026.",
 
-    pills: ["Gaussian Splatting", "Unreal Engine", "HLSL", "CUDA"],
+    pills: ["Gaussian Splatting", "PyTorch + gsplat", "Local Vision Models", "Unreal Engine"],
 
     hero: {
       type: "video",
@@ -129,13 +129,47 @@ const PROJECTS = {
     },
 
     impactStats: [
-      { value: "Relighting", title: "Lighting a capture that has no surfaces", description: "A photographed room can be put under a different light, in real time." },
-      { value: "Transitions", title: "Moving between worlds without a cut", description: "Costs less to draw than the world it replaces, because it draws fewer gaussians." }
+      { value: "Objects", title: "A scan that knows what is in it", description: "Local vision models name the things and geometry decides where each one ends. A room becomes tables, chairs and bins, each its own object." },
+      { value: "Editable", title: "Move it, clear it, repair it", description: "Drag a table across the room, or clear the whole room with one key and bring it back. The floor under the table is there." },
+      { value: "Live", title: "Shown at Adobe MAX 2026", description: "At the ASUS ProArt booth in Miami, visitors moved tables and cleared the room themselves, in real time, on two ASUS Ascent GX10s. No cloud." }
     ],
+
+    hard: {
+      title: "What Makes It Hard",
+      text: [
+        "A splat is millions of soft, overlapping gaussians with no objects, no surfaces and no names. Every table, wall and floor here had to be found in that.",
+        "Vision models are good at names and poor at edges. So the model supplies the word and geometry decides where the thing ends. When nothing matches what was asked, the system says so instead of returning the next best thing.",
+        "Taking an object out exposes what the scanner never saw: the floor under a table, the wall behind a shelf, the cabinets behind a kitchen island. Those surfaces have to be filled in to match the room, or the illusion breaks the moment something moves.",
+        "All of it runs in real time on local hardware: one machine draws the worlds, a second runs the models that see and speak."
+      ]
+    },
 
     work: {
       title: "The System",
       items: [
+        {
+          heading: "Object Understanding (Local Vision Models, Python)",
+          text: [
+            "Geometry separates the objects and sets their boundaries.",
+            "A vision model reads eight views. Only what two of them agree on survives: chair went from 78,663 gaussians to 877.",
+            "The model supplies the noun. A measurement decides the category.",
+            "Point at anything and it says what it is. When it does not know, it says that instead of guessing."
+          ],
+          figs: [{
+            src: `${BASE_URL}assets/images/splatlab_named.jpg`,
+            alt: "Two spaces with objects highlighted in red and labelled, the chairs in one and the columns in the other",
+            caption: "Two worlds, asked for a thing by name."
+          }]
+        },
+        {
+          heading: "Rearranging and Repair (Python)",
+          text: [
+            "Every object is its own set of gaussians, so it can be picked up and dragged across the floor.",
+            "One key clears the whole room and brings it back.",
+            "What the scanner never saw is filled in: the floor under a table, the wall behind a shelf, the cabinets behind a kitchen island.",
+            "Try it in the breakroom above: 14 things can be dragged, the room cleared, and a lamp moved."
+          ]
+        },
         {
           heading: "Relighting (HLSL, inside the renderer's shader)",
           text: [
@@ -158,11 +192,11 @@ const PROJECTS = {
           }]
         },
         {
-          heading: "Transitions (HLSL)",
+          heading: "Transitions Between Worlds (HLSL)",
           text: [
-            "Drop the draw budget and the whole room is described with a few thousand points, not cropped.",
-            "The next world fills in from those same points.",
-            "Runs per gaussian in the raster shader, on the GPU."
+            "One world becomes another point by point, without a cut.",
+            "Drop the draw budget and the whole room is described with a few thousand points, not cropped. The next world fills in from those same points.",
+            "Runs per gaussian in the raster shader, on the GPU, and costs less to draw than the world it replaces."
           ],
           clips: [
             { src: `${BASE_URL}assets/videos/splatlab_tr_breakroom.mp4`, alt: "A breakroom dissolving as a magenta band sweeps through it" },
@@ -184,35 +218,30 @@ const PROJECTS = {
           }]
         },
         {
-          heading: "Object Understanding (Local Vision Model)",
+          heading: "Renderer (Python, PyTorch, gsplat, CUDA)",
           text: [
-            "Geometry separates the objects and sets their boundaries.",
-            "A vision model reads eight views. Only what two of them agree on survives: chair went from 78,663 gaussians to 877.",
-            "The model supplies the noun. A measurement decides the category."
-          ],
-          figs: [{
-            src: `${BASE_URL}assets/images/splatlab_named.jpg`,
-            alt: "Two spaces with objects highlighted in red and labelled, the chairs in one and the columns in the other",
-            caption: "Two worlds, asked for a thing by name."
-          }]
+            "The live system. Every gaussian is a PyTorch tensor on top of gsplat, so a new effect is a few lines of tensor maths, not a shader rewrite.",
+            "Runs on two ASUS Ascent GX10s (NVIDIA Grace Blackwell): one draws the worlds in real time, the other runs the local vision and language models.",
+            "Puts a scanned, rigged, dancing person inside a scanned room."
+          ]
         },
         {
           heading: "Unreal Integration (C++)",
           text: [
-            "Patched six runtime setters into the plugin so anything could be animated.",
+            "Where the work started. Patched six runtime setters into the plugin so anything could be animated.",
             "Worlds travel to the player, because motion capture overwrites the player every frame."
-          ]
-        },
-        {
-          heading: "Renderer (CUDA, gsplat, Python)",
-          text: [
-            "Second implementation outside Unreal, on a Grace Blackwell machine.",
-            "Every gaussian stays a tensor, so an effect is tensor maths, not a shader rewrite."
           ]
         }
       ]
     },
 
+    credits: {
+      title: "Credits",
+      text: [
+        "My research at NYU Tandon. I designed and built the system on this page, and showed it live at the ASUS ProArt booth at Adobe MAX 2026 in Miami.",
+        "I scanned the ASUS booth during the show with an XGRIDS PortalCam. The booth in the viewer above was processed with XGRIDS LCC, not trained by my own pipeline; my own training of it is in progress. The breakroom's separate objects, the cleared room and its filled-in floor and walls come from SplatLab."
+      ]
+    },
   },
 
   frl: {
@@ -1005,6 +1034,13 @@ function renderSplatLab(p) {
         ${statsHTML(p.impactStats)}
       </section>
 
+      ${p.hard ? `
+        <section class="project-section span-2">
+          <h2 class="section-title">${p.hard.title}</h2>
+          ${listHTML(p.hard.text)}
+        </section>
+      ` : ""}
+
       <section class="project-section span-2">
         <h2 class="section-title">${p.work.title}</h2>
         ${p.work.items.map((it) => `
@@ -1019,6 +1055,7 @@ function renderSplatLab(p) {
         `).join("")}
       </section>
 
+      ${proseSection(p.credits)}
     </div>
   `;
 }
