@@ -76,7 +76,6 @@
     .booth-docs figure { margin: 0; }
     .booth-docs video, .booth-docs img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08); background: #08080a; }
     .booth-docs .booth-wide img { aspect-ratio: 4 / 3; object-position: 75% 50%; }
-    .booth-docs figcaption { margin-top: 8px; font-size: 13px; line-height: 1.5; opacity: 0.65; }
     @media (max-width: 640px) {
       .booth-docs { grid-template-columns: 1fr 1fr; }
       .booth-docs .booth-wide { grid-column: 1 / -1; order: -1; }
@@ -132,16 +131,13 @@
     </div>
     <div class="booth-docs">
       <figure>
-        <video src="../../assets/videos/splatlab_max_visitor.mp4" poster="../../assets/images/poster_splatlab_max_visitor.jpg" aria-label="A visitor at the booth moving the breakroom's tables on screen" autoplay muted loop playsinline preload="metadata"></video>
-        <figcaption>A visitor taking the breakroom apart herself.</figcaption>
+        <video src="../../assets/videos/splatlab_max_visitor.mp4" poster="../../assets/images/poster_splatlab_max_visitor.jpg" aria-label="A visitor at the booth moving the breakroom's tables on screen" muted loop playsinline preload="none" data-play-when-seen></video>
       </figure>
       <figure class="booth-wide">
         <img src="../../assets/images/splatlab_max_booth.jpg" alt="Eros explaining the engine to a visitor at the booth, the breakroom on the screen behind them" loading="lazy" />
-        <figcaption>Walking a visitor through the engine.</figcaption>
       </figure>
       <figure>
         <img src="../../assets/images/splatlab_max_badge.jpg" alt="Eros's Adobe MAX badge, NYU, sponsor, in front of the Adobe MAX registration hall" loading="lazy" />
-        <figcaption>Adobe MAX 2026, Miami.</figcaption>
       </figure>
     </div>
   </template>
@@ -151,6 +147,10 @@
       if (first) first.after(document.getElementById("worlds-room").content);
       const slot = document.getElementById("splatlab-booth");
       if (slot) slot.appendChild(document.getElementById("worlds-booth").content);
+      // The booth clip is far down the page: it downloads and plays only once it comes into view.
+      document.querySelectorAll("video[data-play-when-seen]").forEach((v) => {
+        new IntersectionObserver(([e]) => { if (e.isIntersecting) v.play().catch(() => {}); else v.pause(); }, { rootMargin: "200px" }).observe(v);
+      });
     })();
   </script>
   <script src="../../js/vendor/playcanvas.min.js"></script>
