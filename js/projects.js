@@ -118,7 +118,7 @@ const PROJECTS = {
   splatlab: {
     title: "SplatLab",
     subtitle:
-      "My own engine for Gaussian splats, in Python on gsplat: it finds the objects in a scanned room, lets you move or remove them, fills in what the scanner never saw, relights the room and crosses from one world to another. Real time and fully local, shown live at Adobe MAX 2026. Unreal Engine is an extra: I am patching the engine's ideas into an Unreal splat plugin.",
+      "My own engine for Gaussian splats, in Python on gsplat: it finds the objects in a scanned room, lets you move or remove them, fills in what the scanner never saw, relights the room and crosses from one world to another. Real time and fully local, shown live at Adobe MAX 2026. The same effects also run in Unreal Engine, through a splat plugin I extended.",
 
     pills: ["Gaussian Splatting", "My Own Engine", "Python, PyTorch, gsplat", "Local Vision Models"],
 
@@ -167,6 +167,10 @@ const PROJECTS = {
             src: `${BASE_URL}assets/images/splatlab_named.jpg`,
             alt: "Two spaces with objects highlighted in red and labelled, the chairs in one and the columns in the other",
             caption: "Two worlds, asked for a thing by name."
+          }, {
+            src: `${BASE_URL}assets/images/splatlab_vision_boxes.jpg`,
+            alt: "A view of the breakroom with a red box round each chair and the word chair on it",
+            caption: "The vision model's boxes on one view of the breakroom: it supplies the word, geometry decides where each chair ends."
           }]
         },
         {
@@ -175,8 +179,17 @@ const PROJECTS = {
             "Every object is its own set of gaussians, so it can be picked up and dragged across the floor.",
             "One key clears the whole room and brings it back.",
             "What the scanner never saw is filled in: the floor under a table, the wall behind a shelf, the cabinets behind a kitchen island.",
-            "Try it in the breakroom above: 14 things can be dragged, the room cleared, and a lamp moved."
-          ]
+            "Try it in the breakroom above: 14 things can be dragged, the room cleared, and a light moved."
+          ],
+          figs: [{
+            src: `${BASE_URL}assets/images/splatlab_inventory.jpg`,
+            alt: "A grid of objects from the breakroom, each cut out alone on a grey background and seen from three sides",
+            caption: "Part of the breakroom's inventory of 93 things, each cut out alone and seen from three sides."
+          }, {
+            src: `${BASE_URL}assets/images/splatlab_cleared.jpg`,
+            alt: "The breakroom from above twice: furnished on the left, empty with a continuous floor on the right",
+            caption: "The breakroom as scanned (left) and cleared (right): the floor under the tables and the turf is made, not captured."
+          }]
         },
         {
           heading: "Spatial Analysis (Python)",
@@ -189,6 +202,10 @@ const PROJECTS = {
             src: `${BASE_URL}assets/images/splatlab_plan.jpg`,
             alt: "Top down plan of a room, with coloured lines measuring the distance from a point to every wall",
             caption: "Distance to a surface, coloured by height."
+          }, {
+            src: `${BASE_URL}assets/images/splatlab_plan_peristyle.jpg`,
+            alt: "Top down plan of a round courtyard with a ring of columns, rays from one point to every wall and column",
+            caption: "The same measurement in the peristyle: its ring of columns found from the splat alone."
           }]
         },
         {
@@ -205,11 +222,18 @@ const PROJECTS = {
           }]
         },
         {
-          text: ["The light it was captured under cannot be removed. This works on top of it."],
+          text: [
+            "The light it was captured under cannot be removed. This works on top of it.",
+            "A lamp darkens the room and lights what is near it, in two worlds at once: the same light the breakroom above lets you carry."
+          ],
           figs: [{
+            src: `${BASE_URL}assets/images/splatlab_engine_lamp.jpg`,
+            alt: "A temple and a round courtyard with columns, each darkened and lit by a warm lamp near the floor",
+            caption: "In my engine: the temple and the peristyle darkened, then lit by a warm lamp."
+          }, {
             src: `${BASE_URL}assets/images/splatlab_relight.jpg`,
             alt: "The same hall twice, once under a warm light and once under a cold one",
-            caption: "The same world under a warm key and a cold key."
+            caption: "The same world under a warm key and a cold key, recorded in the Unreal integration; the engine does the same."
           }]
         },
         {
@@ -217,10 +241,12 @@ const PROJECTS = {
           text: [
             "One world becomes another point by point, without a cut.",
             "Drop the draw budget and the whole room is described with a few thousand points, not cropped. The next world fills in from those same points.",
-            "In the engine each style is tensor work: paper burn, sweep, matrix columns, and collapse brick by brick. The first clip: a temple built brick by brick, then eaten by a paper burn."
+            "In the engine each style is tensor work: paper burn, sweep, matrix columns, and collapse brick by brick.",
+            "Top: screen recordings of my engine, the peristyle collapsing brick by brick and the breakroom forming out of points. Bottom: recorded in the Unreal integration; the engine does the same effects."
           ],
           clips: [
-            { src: `${BASE_URL}assets/videos/splatlab_tr_temple_collapse_burn.mp4`, alt: "A temple assembling brick by brick out of the dark, then burning away in ragged orange holes" },
+            { src: `${BASE_URL}assets/videos/splatlab_tr_peristyle.mp4`, alt: "A round courtyard of columns with a glowing figure, falling apart into blocks and then into the dark" },
+            { src: `${BASE_URL}assets/videos/splatlab_tr_breakroom.mp4`, alt: "A breakroom forming out of scattered points until its tables and chairs are solid" },
             { src: `${BASE_URL}assets/videos/splatlab_tr_temple.mp4`, alt: "A temple crumbling into golden particles" },
             { src: `${BASE_URL}assets/videos/splatlab_tr_cabin.mp4`, alt: "A cabin breaking into points behind a cyan sweep" }
           ]
@@ -234,7 +260,7 @@ const PROJECTS = {
         {
           heading: "Unreal Integration (C++, HLSL)",
           text: [
-            "Where the work started, and now a side branch: I patch the engine's ideas into an Unreal splat plugin.",
+            "Where the work started, and now a side branch: the same effects also run in Unreal Engine, through a splat plugin I extended.",
             "Patched six runtime setters into the plugin so anything could be animated.",
             "Relighting and the transitions run per gaussian in the plugin's raster shader, on the GPU, and a transition costs less to draw than the world it replaces.",
             "Worlds travel to the player, because motion capture overwrites the player every frame."
@@ -1034,7 +1060,7 @@ function splatLabParts(sec) {
           ${it.heading ? `<h3 class="part-title">${it.heading}</h3>` : ""}
           ${it.clips
             ? `<ul class="part-list">${it.text.map((t) => `<li>${t}</li>`).join("")}</ul>
-               <div class="mocap-grid">${it.clips.map((c) => `<video src="${c.src}" aria-label="${c.alt}" autoplay muted loop playsinline></video>`).join("")}</div>`
+               <div class="mocap-grid${it.clips.length === 4 ? " clips-2x2" : ""}">${it.clips.map((c) => `<video src="${c.src}" aria-label="${c.alt}" autoplay muted loop playsinline></video>`).join("")}</div>`
             : `<div class="part-block${(it.figs || []).length ? " part-block-media" : ""}">
                  <ul class="part-list">${it.text.map((t) => `<li>${t}</li>`).join("")}</ul>
                  ${(it.figs || []).length ? `<div class="part-media">${it.figs.map(figureHTML).join("")}</div>` : ""}

@@ -49,19 +49,32 @@
     .worlds-wait-bar { width: min(280px, 60%); height: 5px; border-radius: 999px; background: rgba(255, 255, 255, 0.18); overflow: hidden; }
     .worlds-wait-bar i { display: block; width: 0; height: 100%; border-radius: 999px; background: #5ddcff; }
     .worlds-wait-what { font-size: 15px; color: rgba(255, 255, 255, 0.78); }
-    /* The breakroom's things: what can be moved, the controls under it, the lamp's handle. */
+    /* The breakroom's things: what can be moved, the controls under it, the light's handle. */
     .worlds-hint .in-room { display: none; }
     .worlds-stage.is-room .worlds-hint .in-room { display: inline; }
     .worlds-tools { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; }
     .worlds-tools[hidden], .worlds-tools [hidden] { display: none; }
-    .worlds-lamp { position: absolute; z-index: 2; width: 34px; height: 34px; margin: -17px 0 0 -17px; padding: 0; border-radius: 50%;
-      border: 2px solid rgba(255, 236, 200, 0.9); background: radial-gradient(circle, #fff6e0 0%, #ffcf7a 35%, rgba(255, 160, 60, 0.15) 70%, rgba(255, 160, 60, 0) 100%);
-      box-shadow: 0 0 18px rgba(255, 190, 110, 0.8); cursor: grab; touch-action: none; }
+    .worlds-lamp { --glow: 255, 190, 110; --core: #ffcf7a; position: absolute; z-index: 3; width: 34px; height: 34px; margin: -17px 0 0 -17px; padding: 0; border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.85); background: radial-gradient(circle, #fffaf0 0%, var(--core) 35%, rgba(var(--glow), 0.15) 70%, rgba(var(--glow), 0) 100%);
+      box-shadow: 0 0 18px rgba(var(--glow), 0.8); cursor: grab; touch-action: none; }
+    .worlds-lamp[data-tone="white"] { --glow: 235, 238, 245; --core: #f4f4f0; }
+    .worlds-lamp[data-tone="cool"] { --glow: 120, 180, 255; --core: #9cc8ff; }
+    .worlds-lamp-tip { position: absolute; z-index: 2; margin: 24px 0 0; padding: 4px 10px; border-radius: 999px; transform: translateX(-50%); white-space: nowrap;
+      background: rgba(10, 17, 23, 0.75); border: 1px solid rgba(255, 255, 255, 0.14); font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.9); pointer-events: none; }
+    .worlds-lamp-tip[hidden] { display: none; }
+    .worlds-tone { display: inline-flex; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.12); overflow: hidden; }
+    .worlds-tone[hidden] { display: none; }
+    .worlds-tone .worlds-pick { border: 0; border-radius: 0; display: inline-flex; align-items: center; gap: 6px; }
+    .worlds-tone .worlds-pick + .worlds-pick { border-left: 1px solid rgba(255, 255, 255, 0.12); }
+    .worlds-tone i { width: 9px; height: 9px; border-radius: 50%; background: var(--dot); box-shadow: 0 0 6px var(--dot); }
+    .mocap-grid.clips-2x2 { grid-template-columns: repeat(2, 1fr); }
     .worlds-lamp[hidden] { display: none; }
     .worlds-lamp:focus-visible { outline: 2px solid #5ddcff; outline-offset: 2px; }
     @media (max-width: 640px) {
       .worlds-stage { aspect-ratio: 4 / 3; }
       .worlds-pick { font-size: 12px; padding: 5px 10px; }
+      .worlds-hint { flex-wrap: wrap; justify-content: center; width: calc(100% - 20px); bottom: 10px; white-space: normal; }
+      .worlds-hint span { font-size: 11px; padding: 4px 9px; white-space: nowrap; }
     }
   </style>
 </head>
@@ -85,7 +98,7 @@
   <template id="worlds-room">
     <section class="project-section span-2">
       <h2 class="section-title">Try It: The Breakroom</h2>
-      <p class="worlds-lead">A breakroom taken apart by my engine. Drag a table, an island, a bin or a stool across the floor, clear the whole room and see what was behind, or carry a lamp through it.</p>
+      <p class="worlds-lead">A breakroom taken apart by my engine. Drag a table, an island, a bin or a stool across the floor, clear the whole room and see what was behind, or turn on a light and carry it through the room.</p>
       <div class="worlds-stage" data-world="breakroom" data-name="Breakroom">
         <canvas id="worlds-room-canvas"></canvas>
         <p class="worlds-hint">
@@ -118,7 +131,7 @@
     })();
   </script>
   <script src="../../js/vendor/playcanvas.min.js"></script>
-  <script src="worlds.js?v=20261118"></script>
+  <script src="worlds.js?v=20261118b"></script>
 </body>
 
 </html>

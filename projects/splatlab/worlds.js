@@ -4,8 +4,8 @@
 // fetched until a stage comes near the screen, so the booth's file comes only when it is scrolled to.
 // PlayCanvas is vendored in ../../js/vendor, so nothing is fetched from anyone else.
 // The files are PlayCanvas compressed PLY, in metres (effects/web_ply.py in the splatlab repo).
-// In the breakroom some things can be carried across the floor, the room cleared, and a lamp
-// moved through it: the room comes in pieces (effects/web_room.py), the room bare with the floor
+// In the breakroom some things can be carried across the floor, the room cleared, and a light
+// (warm, white or cool) carried through it: the room comes in pieces (effects/web_room.py), the room bare with the floor
 // and walls made where things stood, what stays in it, and a small file for each thing.
 const worldsViewer = (stage) => {
   const canvas = stage.querySelector("canvas");
@@ -389,16 +389,17 @@ const worldsViewer = (stage) => {
       .then(() => { if (key === now) { place(); tell(); tools(); } });
   };
 
-  // ---- The breakroom's things: carried across the floor, the room cleared, a lamp ----------------
+  // ---- The breakroom's things: carried across the floor, the room cleared, a light --------------
   //
   // Every splat of the page goes through one shared, sorted buffer; the engine's hook for changing
   // one entity's splats on their way into it is a work buffer modifier, a few lines of GLSL. Here
-  // it lights the splats by a lamp (warm, falling off with distance: no normals, so a splat is lit
-  // by where it is, not which way it faces), tints a thing under the pointer, and fades a thing
+  // it lights the splats by a lamp (its colour warm, white or cool, falling off with distance: no
+  // normals, so a splat is lit by where it is, not which way it faces), tints a thing under the pointer, and fades a thing
   // out when the room is cleared.
   const PIECE_GLSL = `
     uniform vec3 uLamp;        // where the lamp is, in the world
     uniform float uLampOn;     // 0 off, 1 on
+    uniform vec3 uLampColor;   // the lamp's colour, as a multiplier
     uniform float uTint;       // 0 as scanned, 1 marked as the thing under the pointer
     uniform float uFade;       // 1 there, 0 gone
     void modifySplatCenter(inout vec3 center) {}
@@ -408,7 +409,7 @@ const worldsViewer = (stage) => {
     void modifySplatColor(vec3 center, inout vec4 color) {
       float d = distance(center, uLamp);
       float lit = 1.0 / (1.0 + 0.9 * d * d);
-      vec3 lamp = color.rgb * (0.32 + 2.4 * lit * vec3(1.0, 0.8, 0.55));
+      vec3 lamp = color.rgb * (0.32 + 2.4 * lit * uLampColor);
       color.rgb = mix(color.rgb, lamp, uLampOn);
       color.rgb = mix(color.rgb, vec3(0.36, 0.86, 1.0), 0.3 * uTint);
       color.a *= uFade;
@@ -437,18 +438,29 @@ const worldsViewer = (stage) => {
     const g = p.e.gsplat;
     g.setParameter("uLamp", [lamp.x, lamp.y, lamp.z]);
     g.setParameter("uLampOn", lamp.on);
+    g.setParameter("uLampColor", TONES[lamp.tone]);
     g.setParameter("uTint", p.tint);
     g.setParameter("uFade", p.fade);
   };
 
-  // The lamp: off at first, over the middle of the room, carried by its handle across the floor.
-  const lamp = { x: 0, y: 1.5, z: 0, on: 0, want: 0 };
+  // The light: off at first, over the middle of the room, carried by its handle across the floor.
+  // Its colour is one of three, each a multiplier of the captured colour (it never adds a hue the
+  // room did not have, only tints what is lit): warm as a bulb, white, and cool as daylight.
+  const TONES = { warm: [1.0, 0.8, 0.55], white: [1.0, 0.98, 0.94], cool: [0.62, 0.8, 1.0] };
+  const lamp = { x: 0, y: 1.5, z: 0, on: 0, want: 0, tone: "warm", dragged: false };
   const handle = document.createElement("button");
   handle.type = "button";
   handle.className = "worlds-lamp";
-  handle.setAttribute("aria-label", "Lamp");
+  handle.dataset.tone = lamp.tone;
+  handle.setAttribute("aria-label", "The light: drag it across the room");
   handle.hidden = true;
   stage.appendChild(handle);
+  // Until the light has been carried once, a tip under its handle says it can be.
+  const tip = document.createElement("span");
+  tip.className = "worlds-lamp-tip";
+  tip.textContent = "Drag the light";
+  tip.hidden = true;
+  stage.appendChild(tip);
 
   const furnish = (w, list, room, rest, parts) => {
     const zone = list.zone;
@@ -502,8 +514,15 @@ const worldsViewer = (stage) => {
       handle.style.left = s.x + "px";
       handle.style.top = s.y + "px";
       handle.style.opacity = String(lamp.on);
+      tip.hidden = handle.hidden || lamp.dragged || lamp.want === 0;
+      if (!tip.hidden) {
+        const half = tip.offsetWidth / 2 + 6;          // the tip stays inside the stage
+        tip.style.left = clamp(s.x, half, stage.clientWidth - half) + "px";
+        tip.style.top = s.y + "px";
+      }
     } else {
       handle.hidden = true;
+      tip.hidden = true;
     }
   };
 
@@ -612,12 +631,19 @@ const worldsViewer = (stage) => {
   };
   const putDown = () => { held = null; };
 
-  // The controls under the breakroom: put everything back, clear the room, the lamp.
+  // The controls under the breakroom: put everything back, clear the room, the light and, while it
+  // is on, its colour.
   const toolbar = document.createElement("div");
   toolbar.className = "worlds-tools";
+  const dot = { warm: "#ffc069", white: "#f4f4f0", cool: "#8cc4ff" };
   toolbar.innerHTML = '<button type="button" class="worlds-pick" data-do="reset">Reset</button>' +
     '<button type="button" class="worlds-pick" data-do="clear" aria-pressed="false">Clear the room</button>' +
-    '<button type="button" class="worlds-pick" data-do="lamp" aria-pressed="false">Lamp</button>';
+    '<button type="button" class="worlds-pick" data-do="lamp" aria-pressed="false">Light</button>' +
+    '<span class="worlds-tone" role="group" aria-label="Colour of the light" hidden>' +
+    Object.keys(TONES).map((t) => '<button type="button" class="worlds-pick" data-tone="' + t + '" aria-pressed="' +
+      (t === lamp.tone) + '"><i style="--dot:' + dot[t] + '"></i>' + t[0].toUpperCase() + t.slice(1) + '</button>').join("") +
+    '</span>';
+  const toneGroup = toolbar.querySelector(".worlds-tone");
   stage.after(toolbar);
   const tools = () => {
     const show = now === "breakroom" && !!house && !!WORLDS.breakroom.entity;
@@ -627,8 +653,18 @@ const worldsViewer = (stage) => {
     toolbar.querySelector('[data-do="lamp"]').hidden = !canLight;
     toolbar.querySelector('[data-do="clear"]').setAttribute("aria-pressed", show && house.cleared ? "true" : "false");
     toolbar.querySelector('[data-do="lamp"]').setAttribute("aria-pressed", lamp.want ? "true" : "false");
+    toneGroup.hidden = !canLight || !lamp.want;
+    toneGroup.querySelectorAll("[data-tone]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.tone === lamp.tone ? "true" : "false"));
   };
   toolbar.addEventListener("click", (e) => {
+    const t = e.target.closest("[data-tone]");
+    if (t && house) {
+      lamp.tone = t.dataset.tone;
+      handle.dataset.tone = lamp.tone;
+      lamp.moved = true;                   // every piece is sent the new colour
+      tools();
+      return;
+    }
     const b = e.target.closest("[data-do]");
     if (!b || !house) return;
     if (b.dataset.do === "reset") {
@@ -641,15 +677,17 @@ const worldsViewer = (stage) => {
       held = over = null;
     } else if (b.dataset.do === "lamp") {
       lamp.want = lamp.want ? 0 : 1;
+      if (lamp.want && hint) hint.classList.add("is-gone");     // the light's own tip says what to do now
     }
     tools();
   });
 
-  // The lamp's handle is carried across the floor at the lamp's height.
+  // The light's handle is carried across the floor at the light's height.
   let lampBy = null;
   handle.addEventListener("pointerdown", (e) => {
     e.stopPropagation();
     lampBy = e.pointerId;
+    lamp.dragged = true;
     try { handle.setPointerCapture(e.pointerId); } catch (err) { /* gone already */ }
     if (hint) hint.classList.add("is-gone");
   });
