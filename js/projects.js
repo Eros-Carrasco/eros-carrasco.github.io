@@ -177,13 +177,13 @@ const PROJECTS = {
             "Try it in the breakroom above."
           ],
           figs: [{
-            src: `${BASE_URL}assets/images/splatlab_inventory.jpg`,
-            alt: "A grid of objects from the breakroom, each cut out alone on a grey background and seen from three sides",
-            caption: "Part of the breakroom's 93 things, each cut out alone."
+            video: `${BASE_URL}assets/videos/splatlab_carry.mp4`,
+            alt: "A round table and its chairs sliding across the floor of the scanned breakroom",
+            caption: "A table and its chairs carried across the floor."
           }, {
-            src: `${BASE_URL}assets/images/splatlab_cleared.jpg`,
-            alt: "The breakroom from above twice: furnished on the left, empty with a continuous floor on the right",
-            caption: "Scanned (left) and cleared (right): the floor under the tables is made, not captured."
+            video: `${BASE_URL}assets/videos/splatlab_flyout.mp4`,
+            alt: "The breakroom's tables, chairs and sculptures lifting off one by one while an empty floor appears under them",
+            caption: "The room cleared: the floor under everything is made, not captured."
           }]
         },
         {
@@ -218,9 +218,9 @@ const PROJECTS = {
             "A lamp darkens the room and lights what is near it: the same light you can carry in the breakroom above."
           ],
           figs: [{
-            src: `${BASE_URL}assets/images/splatlab_engine_lamp.jpg`,
-            alt: "A temple and a round courtyard with columns, each darkened and lit by a warm lamp near the floor",
-            caption: "In my engine: the temple and the peristyle darkened, then lit by a warm lamp."
+            video: `${BASE_URL}assets/videos/splatlab_lamp.mp4`,
+            alt: "The breakroom darkened, with a warm lamp floating through it and lighting the tables near it",
+            caption: "In my engine: the breakroom darkened and a warm lamp carried through it."
           }, {
             src: `${BASE_URL}assets/images/splatlab_relight.jpg`,
             alt: "The same hall twice, once under a warm light and once under a cold one",
@@ -899,6 +899,14 @@ function videoFigureHTML(fig) {
 }
 
 function figureHTML(fig) {
+  if (fig.video) {
+    return `
+    <figure class="fig fig-clip">
+      <video src="${fig.video}" aria-label="${fig.alt || ""}" autoplay muted loop playsinline preload="metadata"></video>
+      ${fig.caption ? `<figcaption>${fig.caption}</figcaption>` : ""}
+    </figure>
+  `;
+  }
   return `
     <figure class="fig">
       <a href="${fig.src}" target="_blank" rel="noopener">
