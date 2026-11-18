@@ -274,24 +274,6 @@
       arrive("alice", (a) => person("Alice", a, -1.124, -2.779, 1.69, [0.42, 0.88, 1.0]));
     };
 
-    // A person the camera has come right up to is not drawn: from inside, a splat is a wall of
-    // smears. The wheel's way in passes where Alice stands (6 cm from her at 2.3 m), and anyone can be
-    // carried to the eye.
-    const NEAR = 0.7;
-    app.on("update", () => {
-      const c = camera.getPosition();
-      for (const p of people) {
-        if (p === walker) continue;                    // not out of the hand that carries them
-        const at = p.e.getPosition();
-        const d = Math.hypot(c.x - at.x, c.z - at.z);
-        const inside = c.y < p.tall + 0.6 && d < (p.e.enabled ? NEAR : NEAR + 0.15);
-        if (p.e.enabled === inside) {
-          p.e.enabled = !inside;
-          if (inside && marked === p) mark(null);
-        }
-      }
-    });
-
     // Where the pointer's ray meets the level plane at height h (the floor at 0), or null when it
     // never does. Too far off is refused too: near the horizon a pixel is metres of floor.
     const floorAt = (cx, cy, h = 0) => {
@@ -310,7 +292,6 @@
       const kx = 1, ky = 1;
       let best = null, bestDepth = 1e9;
       for (const p of people) {
-        if (!p.e.enabled) continue;
         const at = p.e.getPosition();
         const feet = camera.camera.worldToScreen(new pc.Vec3(at.x, 0, at.z));
         const head = camera.camera.worldToScreen(new pc.Vec3(at.x, p.tall, at.z));
