@@ -21,6 +21,39 @@
 
   <link rel="stylesheet" href="../../css/styles.css" />
   <link rel="icon" type="image/png" href="/assets/images/favicon_0.png" />
+
+  <style>
+    /* Two worlds to look at, in one viewer (worlds.js). */
+    .worlds-switch { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+    .worlds-pick { margin: 0; padding: 6px 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.08); color: #fff; font: inherit; font-size: 13px; line-height: 1.3; opacity: 0.9; cursor: pointer; transition: border-color 0.2s ease, background 0.2s ease; }
+    .worlds-pick:hover { border-color: rgba(255, 255, 255, 0.3); }
+    .worlds-pick[aria-pressed="true"] { background: rgba(93, 220, 255, 0.14); border-color: rgba(93, 220, 255, 0.55); opacity: 1; }
+    .worlds-pick:focus-visible { outline: 2px solid #5ddcff; outline-offset: 2px; }
+    .worlds-stage { position: relative; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; background: #08080a; border: 1px solid rgba(255, 255, 255, 0.08); }
+    .worlds-stage canvas { position: relative; z-index: 1; display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+    .worlds-sky { position: absolute; left: 0; top: 0; width: 100%; height: 400%; z-index: 0; pointer-events: none; will-change: transform;
+      background: linear-gradient(to bottom, #04051a 0%, #0c0f3a 30%, #2a1763 41%, #6a2277 46%, #c23a72 48.6%, #ff8a4c 49.7%, #ffd89a 50%, #0b1024 50.05%, #070b18 56%, #04060e 100%); }
+    .worlds-town { position: absolute; left: 0; width: 100%; background-repeat: repeat-x; }
+    .worlds-hint { position: absolute; left: 50%; bottom: 14px; z-index: 2; display: flex; gap: 6px; margin: 0; white-space: nowrap; transform: translateX(-50%); opacity: 0; transition: opacity 0.4s; pointer-events: none; }
+    .worlds-hint span { padding: 5px 11px; border-radius: 999px; background: rgba(10, 17, 23, 0.7); border: 1px solid rgba(255, 255, 255, 0.12); font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.85); }
+    .worlds-stage.is-ready .worlds-hint { opacity: 1; }
+    .worlds-stage .worlds-hint.is-gone { opacity: 0; }
+    .worlds-hint .by-touch { display: none; }
+    @media (pointer: coarse) {
+      .worlds-hint .by-touch { display: inline; }
+      .worlds-hint .by-mouse { display: none; }
+    }
+    .worlds-wait { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 0 16px; pointer-events: none; color: #fff; text-align: center; text-shadow: 0 1px 12px rgba(0, 0, 0, 0.6); }
+    .worlds-wait[hidden], .worlds-wait [hidden] { display: none; }
+    .worlds-wait-num { font-size: clamp(44px, 8vw, 80px); font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+    .worlds-wait-bar { width: min(280px, 60%); height: 5px; border-radius: 999px; background: rgba(255, 255, 255, 0.18); overflow: hidden; }
+    .worlds-wait-bar i { display: block; width: 0; height: 100%; border-radius: 999px; background: #5ddcff; }
+    .worlds-wait-what { font-size: 15px; color: rgba(255, 255, 255, 0.78); }
+    @media (max-width: 640px) {
+      .worlds-stage { aspect-ratio: 4 / 3; }
+      .worlds-pick { font-size: 12px; padding: 5px 10px; }
+    }
+  </style>
 </head>
 
 <body class="project-page">
@@ -36,6 +69,33 @@
   <script>
     document.getElementById("project-root").innerHTML = renderProject("splatlab");
   </script>
+
+  <!-- Two worlds to look at. The section goes in after the page's first one. -->
+  <template id="worlds-section">
+    <section class="project-section span-2">
+      <h2 class="section-title">Two Worlds</h2>
+      <div class="worlds-switch" role="group" aria-label="World">
+        <button type="button" class="worlds-pick" data-world="booth" aria-pressed="true">ASUS booth, Adobe MAX 2026</button>
+        <button type="button" class="worlds-pick" data-world="breakroom" aria-pressed="false">Breakroom</button>
+      </div>
+      <div class="worlds-stage" id="worlds-stage">
+        <canvas id="worlds-canvas"></canvas>
+        <p class="worlds-hint" id="worlds-hint">
+          <span>Drag to turn</span>
+          <span class="by-mouse">Scroll to zoom</span>
+          <span class="by-touch">Pinch to zoom</span>
+        </p>
+      </div>
+    </section>
+  </template>
+  <script>
+    (() => {
+      const first = document.querySelector("#project-root .project-sections > .project-section");
+      if (first) first.after(document.getElementById("worlds-section").content);
+    })();
+  </script>
+  <script src="../../js/vendor/playcanvas.min.js"></script>
+  <script src="worlds.js?v=20261117a"></script>
 </body>
 
 </html>
