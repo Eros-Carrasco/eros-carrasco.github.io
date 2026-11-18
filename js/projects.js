@@ -164,9 +164,9 @@ const PROJECTS = {
             "Point at anything and it says what it is. When it does not know, it says that instead of guessing."
           ],
           figs: [{
-            src: `${BASE_URL}assets/images/splatlab_named.jpg`,
-            alt: "Two spaces with objects highlighted in red and labelled, the chairs in one and the columns in the other",
-            caption: "Two worlds, asked for a thing by name."
+            src: `${BASE_URL}assets/images/splatlab_objects.jpg`,
+            alt: "The breakroom with every table, chair, sculpture and appliance painted its own colour and labelled with its name",
+            caption: "The breakroom's inventory: every thing its own set of gaussians, each in its own colour."
           }, {
             src: `${BASE_URL}assets/images/splatlab_vision_boxes.jpg`,
             alt: "A view of the breakroom with a red box round each chair and the word chair on it",
@@ -199,13 +199,13 @@ const PROJECTS = {
             "Return nothing when nothing is there. The confidence measure this replaced went up as the data ran out."
           ],
           figs: [{
-            src: `${BASE_URL}assets/images/splatlab_plan.jpg`,
-            alt: "Top down plan of a room, with coloured lines measuring the distance from a point to every wall",
-            caption: "Distance to a surface, coloured by height."
+            src: `${BASE_URL}assets/images/splatlab_plan_breakroom.jpg`,
+            alt: "The breakroom from above with its ceiling cut away: its walls drawn as yellow lines with their lengths, and the footprint of every thing outlined in its own colour",
+            caption: "The breakroom from above: each wall measured as a line with its length, each thing's footprint, a 1 m grid."
           }, {
-            src: `${BASE_URL}assets/images/splatlab_plan_peristyle.jpg`,
-            alt: "Top down plan of a round courtyard with a ring of columns, rays from one point to every wall and column",
-            caption: "The same measurement in the peristyle: its ring of columns found from the splat alone."
+            src: `${BASE_URL}assets/images/splatlab_wall_depth.jpg`,
+            alt: "A brick wall with two windows seen straight on, and below it the same wall coloured by depth: windows in blue, a pilaster and a pipe in yellow",
+            caption: "The window wall drawn straight on from the splat, and below it how far each point stands from the wall: the windows set back in blue, the pilaster and the heating pipe standing out in yellow."
           }]
         },
         {
