@@ -118,7 +118,7 @@ const PROJECTS = {
   splatlab: {
     title: "SplatLab",
     subtitle:
-      "My own engine for Gaussian splats, in Python on gsplat: it finds the objects in a scanned room, lets you move or remove them, fills in what the scanner never saw, relights the room and crosses from one world to another. Real time and fully local, shown live at Adobe MAX 2026. The same effects also run in Unreal Engine, through a splat plugin I extended.",
+      "My own engine for Gaussian splats: it finds the objects in a scanned room, lets you move or remove them, fills in what the scanner never saw, and relights it. Real time and fully local, shown live at Adobe MAX 2026.",
 
     pills: ["Gaussian Splatting", "My Own Engine", "Python, PyTorch, gsplat", "Local Vision Models"],
 
@@ -138,9 +138,8 @@ const PROJECTS = {
       title: "What Makes It Hard",
       text: [
         "A splat is millions of soft, overlapping gaussians with no objects, no surfaces and no names. Every table, wall and floor here had to be found in that.",
-        "Vision models are good at names and poor at edges. So the model supplies the word and geometry decides where the thing ends. When nothing matches what was asked, the system says so instead of returning the next best thing.",
-        "Taking an object out exposes what the scanner never saw: the floor under a table, the wall behind a shelf, the cabinets behind a kitchen island. Those surfaces have to be filled in to match the room, or the illusion breaks the moment something moves.",
-        "All of it runs in real time on local hardware: one machine draws the worlds, a second runs the models that see and speak."
+        "Taking an object out exposes what the scanner never saw. That has to be filled in to match the room, or the illusion breaks the moment something moves.",
+        "All of it runs in real time on local hardware."
       ]
     },
 
@@ -150,70 +149,64 @@ const PROJECTS = {
         {
           heading: "An Engine of My Own (Python, PyTorch, gsplat, CUDA)",
           text: [
-            "The live system. Every gaussian is a PyTorch tensor on top of gsplat, so a new effect is a few lines of tensor maths, not a shader rewrite.",
-            "Runs on two ASUS Ascent GX10s (NVIDIA Grace Blackwell): one draws the worlds in real time, the other runs the local vision and language models.",
+            "Every gaussian is a PyTorch tensor on top of gsplat, so a new effect is a few lines of maths, not a shader rewrite.",
+            "Runs on two ASUS Ascent GX10s: one draws the worlds in real time, the other runs the local vision and language models.",
             "Puts a scanned, rigged, dancing person inside a scanned room."
           ]
         },
         {
           heading: "Object Understanding (Local Vision Models, Python)",
           text: [
-            "Geometry separates the objects and sets their boundaries.",
-            "A vision model reads eight views. Only what two of them agree on survives: chair went from 78,663 gaussians to 877.",
-            "The model supplies the noun. A measurement decides the category.",
-            "Point at anything and it says what it is. When it does not know, it says that instead of guessing."
+            "A vision model names the things; geometry decides where each one ends.",
+            "Point at anything and it says what it is. When it does not know, it says so instead of guessing."
           ],
           figs: [{
             src: `${BASE_URL}assets/images/splatlab_objects.jpg`,
             alt: "The breakroom with every table, chair, sculpture and appliance painted its own colour and labelled with its name",
-            caption: "The breakroom's inventory: every thing its own set of gaussians, each in its own colour."
+            caption: "Every thing in the breakroom is its own object."
           }, {
             src: `${BASE_URL}assets/images/splatlab_vision_boxes.jpg`,
             alt: "A view of the breakroom with a red box round each chair and the word chair on it",
-            caption: "The vision model's boxes on one view of the breakroom: it supplies the word, geometry decides where each chair ends."
+            caption: "The vision model's boxes: it supplies the word, geometry decides where each chair ends."
           }]
         },
         {
           heading: "Rearranging and Repair (Python)",
           text: [
-            "Every object is its own set of gaussians, so it can be picked up and dragged across the floor.",
-            "One key clears the whole room and brings it back.",
-            "What the scanner never saw is filled in: the floor under a table, the wall behind a shelf, the cabinets behind a kitchen island.",
-            "Try it in the breakroom above: 14 things can be dragged, the room cleared, and a light moved."
+            "Every object can be picked up and dragged across the floor, and one key clears the whole room.",
+            "What the scanner never saw is filled in: the floor under a table, the wall behind a shelf.",
+            "Try it in the breakroom above."
           ],
           figs: [{
             src: `${BASE_URL}assets/images/splatlab_inventory.jpg`,
             alt: "A grid of objects from the breakroom, each cut out alone on a grey background and seen from three sides",
-            caption: "Part of the breakroom's inventory of 93 things, each cut out alone and seen from three sides."
+            caption: "Part of the breakroom's 93 things, each cut out alone."
           }, {
             src: `${BASE_URL}assets/images/splatlab_cleared.jpg`,
             alt: "The breakroom from above twice: furnished on the left, empty with a continuous floor on the right",
-            caption: "The breakroom as scanned (left) and cleared (right): the floor under the tables and the turf is made, not captured."
+            caption: "Scanned (left) and cleared (right): the floor under the tables is made, not captured."
           }]
         },
         {
           heading: "Spatial Analysis (Python)",
           text: [
-            "Measure floor, ceiling, walls, and clear distance in every direction.",
-            "Write it once to a manifest everything downstream reads.",
-            "Return nothing when nothing is there. The confidence measure this replaced went up as the data ran out."
+            "Measure the floor, the ceiling, every wall and every thing, from the splat alone."
           ],
           figs: [{
             src: `${BASE_URL}assets/images/splatlab_plan_breakroom.jpg`,
             alt: "The breakroom from above with its ceiling cut away: its walls drawn as yellow lines with their lengths, and the footprint of every thing outlined in its own colour",
-            caption: "The breakroom from above: each wall measured as a line with its length, each thing's footprint, a 1 m grid."
+            caption: "From above: every wall measured, every thing's footprint."
           }, {
             src: `${BASE_URL}assets/images/splatlab_wall_depth.jpg`,
             alt: "A brick wall with two windows seen straight on, and below it the same wall coloured by depth: windows in blue, a pilaster and a pipe in yellow",
-            caption: "The window wall drawn straight on from the splat, and below it how far each point stands from the wall: the windows set back in blue, the pilaster and the heating pipe standing out in yellow."
+            caption: "The window wall and its depth: windows set back in blue, the pilaster and the pipe standing out in yellow."
           }]
         },
         {
           heading: "Relighting",
           text: [
-            "Recover a surface direction for every gaussian from its own shape, live.",
-            "Closed form. No preprocessing, no retraining, no stored normals.",
-            "Multiply the captured colour, never add, so the original light survives."
+            "A surface direction for every gaussian, from its own shape, live. No retraining.",
+            "New light goes on top of the captured light, so the room still looks like itself."
           ],
           figs: [{
             src: `${BASE_URL}assets/images/splatlab_normals.jpg`,
@@ -223,8 +216,7 @@ const PROJECTS = {
         },
         {
           text: [
-            "The light it was captured under cannot be removed. This works on top of it.",
-            "A lamp darkens the room and lights what is near it, in two worlds at once: the same light the breakroom above lets you carry."
+            "A lamp darkens the room and lights what is near it: the same light you can carry in the breakroom above."
           ],
           figs: [{
             src: `${BASE_URL}assets/images/splatlab_engine_lamp.jpg`,
@@ -239,10 +231,8 @@ const PROJECTS = {
         {
           heading: "Transitions Between Worlds",
           text: [
-            "One world becomes another point by point, without a cut.",
-            "Drop the draw budget and the whole room is described with a few thousand points, not cropped. The next world fills in from those same points.",
-            "In the engine each style is tensor work: paper burn, sweep, matrix columns, and collapse brick by brick.",
-            "Top: screen recordings of my engine, the peristyle collapsing brick by brick and the breakroom forming out of points. Bottom: recorded in the Unreal integration; the engine does the same effects."
+            "One world becomes another point by point, without a cut: paper burn, sweep, matrix columns, collapse brick by brick.",
+            "Top: my engine. Bottom: the Unreal integration."
           ],
           clips: [
             { src: `${BASE_URL}assets/videos/splatlab_tr_peristyle.mp4`, alt: "A round courtyard of columns with a glowing figure, falling apart into blocks and then into the dark" },
@@ -260,10 +250,8 @@ const PROJECTS = {
         {
           heading: "Unreal Integration (C++, HLSL)",
           text: [
-            "Where the work started, and now a side branch: the same effects also run in Unreal Engine, through a splat plugin I extended.",
-            "Patched six runtime setters into the plugin so anything could be animated.",
-            "Relighting and the transitions run per gaussian in the plugin's raster shader, on the GPU, and a transition costs less to draw than the world it replaces.",
-            "Worlds travel to the player, because motion capture overwrites the player every frame."
+            "Where the work started: the same effects also run in Unreal Engine, through a splat plugin I extended.",
+            "Relighting and transitions run per gaussian in the plugin's shader, on the GPU."
           ]
         }
       ]
@@ -273,7 +261,7 @@ const PROJECTS = {
       title: "Credits",
       text: [
         "My research at NYU Tandon. I designed and built the engine on this page, and showed it live at the ASUS ProArt booth at Adobe MAX 2026 in Miami.",
-        "I scanned the ASUS booth during the show with an XGRIDS PortalCam. The booth in the viewer above was processed with XGRIDS LCC, not trained by my own pipeline; my own training of it is in progress. The breakroom's separate objects, the cleared room and its filled-in floor and walls come from SplatLab."
+        "The ASUS booth above was scanned by me with an XGRIDS PortalCam and processed with XGRIDS LCC. The breakroom's objects, the cleared room and its filled-in floor and walls come from SplatLab."
       ]
     },
   },
