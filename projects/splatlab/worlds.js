@@ -1,0 +1,670 @@
+// Two gaussian splat worlds on the SplatLab page, one at a time in one viewer: the ASUS booth at
+// Adobe MAX 2026 and the breakroom. Drag turns the view, the wheel (or two fingers) comes closer
+// and goes back, and the buttons above the stage change the world. Only the world that is shown
+// is fetched: the second file comes when it is chosen, and stays once it is here.
+// PlayCanvas is vendored in ../../js/vendor, so nothing is fetched from anyone else.
+// The files are PlayCanvas compressed PLY, in metres (effects/web_ply.py in the splatlab repo).
+// In the breakroom some things can be carried across the floor, the room cleared, and a lamp
+// moved through it: the room comes in pieces (effects/web_room.py), the room bare with the floor
+// and walls made where things stood, what stays in it, and a small file for each thing.
+(() => {
+  const stage = document.getElementById("worlds-stage");
+  const canvas = document.getElementById("worlds-canvas");
+  const hint = document.getElementById("worlds-hint");
+  const picks = Array.from(document.querySelectorAll(".worlds-pick"));
+  if (!stage || !canvas) return;
+
+  // Each world declares its own frame and view; nothing is guessed from the file.
+  //   turn    the turn that brings the file to this page's frame (y up, the floor at y = 0), as
+  //           angles about x, y and z in degrees
+  //   pivot   what the view turns about; yaw, pitch and dist put the eye round it
+  //   zoom    the nearest and farthest the eye may stand, in metres; tilt the lowest and highest pitch
+  //   room    for a place seen from inside: its outline on the floor (x, z), how far off its walls
+  //           the eye keeps, and the height the eye stays under
+  //   pieces  for a place in pieces: what stays in it (drawn over the room, gone when it is
+  //           cleared) and the things that can be carried (things.json: their files, where each
+  //           stands, its outline on the floor and its height, and the zone they may be carried in)
+  const WORLDS = {
+    // Already y up with its floor at 0. The view is the one the booth has on its own page.
+    booth: {
+      file: "splats/booth.ply",
+      turn: [0, 0, 0],
+      pivot: [-0.585, 1.07, -0.68], yaw: -165.6, pitch: 14.7, dist: 6.4,
+      zoom: [1.5, 12], tilt: [2, 75],
+    },
+    // The pieces are the booth program's room (booth/breakroom-full.toml in the splatlab repo), its
+    // frame (x, y, z up, the floor at 0) carried to this one (x, z up, -y) when they were written:
+    // already upright here. The pivot's place on the floor, the side the eye starts on and the
+    // outline are the ones that program has for this room (its view and its clear_zone).
+    // Here the eye stays in the clear air of the room, measured on the file itself: over the tables
+    // and chairs (the pivot is 1.2 m up) and under the lamps and panels that hang from 2.5 m (roof).
+    // The outline's window side is brought in 1.6 m, past the tall pieces that stand along it.
+    breakroom: {
+      file: "splats/breakroom/room.ply",
+      pieces: { rest: "splats/breakroom/rest.ply", things: "splats/breakroom/things.json" },
+      turn: [0, 0, 0],
+      pivot: [-2.5, 1.2, -1.5], yaw: 90, pitch: 12, dist: 5.5,
+      zoom: [1, 5.5], tilt: [2, 75],
+      room: {
+        outline: [[-1.143, -9.177], [6.5, -5.4], [3.4, -3.9], [0.9, 3.1], [0.6, 5.6], [-2.188, 4.59],
+                  [-6.247, 2.549]],
+        margin: 0.4,
+        roof: 2.25,
+      },
+    },
+  };
+  for (const key in WORLDS) {
+    const w = WORLDS[key];
+    const pick = picks.find((b) => b.dataset.world === key);
+    w.name = pick ? pick.textContent.trim() : key;
+    w.view = { yaw: w.yaw, pitch: w.pitch, dist: w.dist };
+    w.part = 0;               // how much of its file is here, 0 to 1
+    w.coming = null;          // the fetch, once asked for
+    w.entity = null;          // the splat, once it can be drawn
+    w.failed = false;
+  }
+  const RAD = Math.PI / 180;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+  // How far the eye stands from the pivot. In the open it is the distance asked for. Inside a room
+  // it is no farther than the wall behind the eye allows and no higher than under the ceiling, so
+  // turning the view never carries the eye out through a wall: the walls and the ceiling of a
+  // splat are as solid from behind as from in front, and would hide the room.
+  const wallAt = (w, yaw) => {
+    const dx = Math.sin(yaw * RAD), dz = Math.cos(yaw * RAD);    // the way from the pivot to the eye, on the floor
+    const o = w.room.outline;
+    let near = Infinity;
+    for (let i = 0; i < o.length; i++) {
+      const a = o[i], b = o[(i + 1) % o.length];
+      const ex = b[0] - a[0], ez = b[1] - a[1];
+      const det = ex * dz - ez * dx;
+      if (Math.abs(det) < 1e-9) continue;
+      const ax = a[0] - w.pivot[0], az = a[1] - w.pivot[2];
+      const t = (ex * az - ez * ax) / det;                       // metres along the way to the eye
+      const s = (dx * az - dz * ax) / det;                       // 0 to 1 along this stretch of wall
+      if (t > 0 && s >= 0 && s <= 1 && t < near) near = t;
+    }
+    return near;
+  };
+  const eyeDist = (w, yaw, pitch, dist) => {
+    if (!w.room) return dist;
+    const p = pitch * RAD;
+    const flat = Math.max(0.2, wallAt(w, yaw) - w.room.margin);
+    return Math.min(dist, flat / Math.cos(p), Math.max(0.2, (w.room.roof - w.pivot[1]) / Math.sin(p)));
+  };
+
+  // A file fetched whole, telling how far it is as it comes.
+  const fetchAll = async (url, onProgress) => {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(url + ": " + res.status);
+    const total = +res.headers.get("Content-Length") || 0;
+    if (!res.body || !total) return res.arrayBuffer();
+    const reader = res.body.getReader(), parts = [];
+    let got = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      parts.push(value); got += value.length;
+      if (onProgress) onProgress(got, total);
+    }
+    const all = new Uint8Array(got);
+    let at = 0;
+    for (const part of parts) { all.set(part, at); at += part.length; }
+    return all.buffer;
+  };
+
+  // Behind the world, where the capture ends: a dusk sky with a far skyline, drawn by the page
+  // itself (no photograph), the same one the booth has on its own page. It is at infinity, so it
+  // turns with the view and nothing else: one degree of yaw moves it one degree across the
+  // screen, and the horizon rises and falls with the eye's tilt.
+  const FOV = 60;
+  const sky = document.createElement("div");
+  sky.className = "worlds-sky";
+  const town = document.createElement("div");
+  town.className = "worlds-town";
+  sky.appendChild(town);
+  stage.insertBefore(sky, stage.firstChild);
+  const TOWN_DEG = 14;                     // how many degrees of sky the skyline's strip covers
+  (() => {
+    // The same town every time: a small fixed generator, so it does not change between visits.
+    let seed = 20261110;
+    const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+    let shapes = "";
+    for (let a = 0; a < 360;) {
+      const dense = 0.35 + 0.65 * Math.pow(Math.sin((a / 360) * Math.PI * 3), 2);   // three clusters round the horizon
+      const w = 0.5 + rnd() * 1.6, h = (0.4 + rnd() * rnd() * 7.5) * dense;
+      if (rnd() < 0.82) shapes += '<rect x="' + a.toFixed(2) + '" y="' + (TOWN_DEG - h).toFixed(2) + '" width="' + w.toFixed(2) + '" height="' + h.toFixed(2) + '"/>';
+      a += w + rnd() * 0.5;
+    }
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 ' + TOWN_DEG + '" preserveAspectRatio="none">' +
+      '<defs><radialGradient id="g" cx="0.5" cy="1" r="1"><stop offset="0" stop-color="#ffe2a8" stop-opacity="0.95"/>' +
+      '<stop offset="0.25" stop-color="#ff9a5a" stop-opacity="0.55"/><stop offset="1" stop-color="#ff5a7a" stop-opacity="0"/></radialGradient></defs>' +
+      '<ellipse cx="205" cy="' + TOWN_DEG + '" rx="26" ry="' + TOWN_DEG + '" fill="url(#g)"/>' +
+      '<g fill="#150d2e">' + shapes + '</g></svg>';
+    town.style.backgroundImage = 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '")';
+  })();
+
+  // The wait: how far the world is, large, in the middle of where it will stand.
+  const wait = document.createElement("div");
+  wait.className = "worlds-wait";
+  wait.setAttribute("role", "status");
+  wait.innerHTML = '<span class="worlds-wait-num"></span><span class="worlds-wait-bar"><i></i></span>' +
+    '<span class="worlds-wait-what"></span>';
+  wait.hidden = true;
+  stage.appendChild(wait);
+  const num = wait.querySelector(".worlds-wait-num"), track = wait.querySelector(".worlds-wait-bar");
+  const bar = wait.querySelector("i"), what = wait.querySelector(".worlds-wait-what");
+
+  let app = null, camera = null;
+  let now = null;                          // the world being shown, by its key
+  let shown = 0;                           // how far the eye stands now, after the room's limits
+  let broken = "";                         // why nothing can be drawn at all, when it cannot
+
+  const drawSky = () => {
+    const W = stage.clientWidth, H = stage.clientHeight;
+    if (!W || !H || !now) return;
+    const v = WORLDS[now].view;
+    const half = Math.tan(FOV * Math.PI / 360);                          // the lens' half height, at one unit away
+    const perDeg = W / (2 * Math.atan(half * W / H) * 180 / Math.PI);    // pixels a degree of yaw moves the far sky
+    const horizon = H / 2 - Math.tan(v.pitch * RAD) / half * H / 2;
+    sky.style.transform = "translateY(" + (horizon - 2 * H) + "px)";     // the sky is four stages tall, its horizon half way down
+    town.style.height = (TOWN_DEG * perDeg) + "px";
+    town.style.top = (2 * H - TOWN_DEG * perDeg) + "px";
+    town.style.backgroundSize = (360 * perDeg) + "px 100%";
+    town.style.backgroundPositionX = (v.yaw * perDeg) + "px";
+  };
+  const place = () => {
+    if (!now) return;
+    const w = WORLDS[now], v = w.view;
+    const y = v.yaw * RAD, p = v.pitch * RAD;
+    shown = eyeDist(w, v.yaw, v.pitch, v.dist);
+    if (camera) {
+      camera.setPosition(w.pivot[0] + shown * Math.cos(p) * Math.sin(y), w.pivot[1] + shown * Math.sin(p),
+                         w.pivot[2] + shown * Math.cos(p) * Math.cos(y));
+      camera.lookAt(w.pivot[0], w.pivot[1], w.pivot[2]);
+    }
+    drawSky();
+  };
+  // Closer by a factor under 1, farther by one over 1, from where the eye stands now. False when
+  // the eye is already as near or as far as it may be.
+  const zoomBy = (factor) => {
+    if (!now) return false;
+    const w = WORLDS[now], was = shown;
+    w.view.dist = clamp(shown * factor, w.zoom[0], w.zoom[1]);
+    place();
+    return Math.abs(shown - was) > 1e-4;
+  };
+
+  // What the stage says: the count while a world comes, nothing once it stands there, and plainly
+  // when it cannot be shown.
+  const tell = () => {
+    const w = now ? WORLDS[now] : null;
+    const ready = !!(w && w.entity) && !broken;
+    stage.classList.toggle("is-ready", ready);
+    wait.hidden = ready;
+    if (ready || !w) return;
+    const stuck = broken || (w.failed ? w.name + " could not be loaded." : "");
+    num.hidden = track.hidden = !!stuck;
+    if (stuck) { what.textContent = stuck; return; }
+    const p = Math.round(w.part * 100);
+    num.textContent = p + "%";
+    bar.style.width = p + "%";
+    what.textContent = w.name;
+  };
+
+  const start = () => {
+    if (app || broken) return;
+    if (typeof pc === "undefined") { broken = "The viewer could not be loaded."; return; }
+    try {
+      app = new pc.Application(canvas, {
+        graphicsDeviceOptions: { alpha: true, antialias: false },   // the sky shows through, behind the world
+      });
+    } catch (err) {
+      console.error("[worlds]", err);
+      app = null;
+      broken = "This browser cannot draw it here.";
+      return;
+    }
+    app.setCanvasFillMode(pc.FILLMODE_NONE);
+    app.setCanvasResolution(pc.RESOLUTION_AUTO);
+    app.graphicsDevice.maxPixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    camera = new pc.Entity("camera");
+    camera.addComponent("camera", {
+      clearColor: new pc.Color(0, 0, 0, 0),
+      fov: FOV, nearClip: 0.1, farClip: 200,
+    });
+    app.root.addChild(camera);
+    app.on("update", tick);
+    app.start();
+    const resize = () => { app.resizeCanvas(stage.clientWidth, stage.clientHeight); drawSky(); };
+    new ResizeObserver(resize).observe(stage);
+    resize();
+  };
+
+  // A world's files, fetched once, then handed to the engine from memory. A world that failed is
+  // asked for again the next time it is chosen. A world in pieces counts all its files in its wait,
+  // so it is shown whole, its things in their places, never the bare room first.
+  const toAsset = (name, buf) => new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(new Blob([buf]));
+    const asset = new pc.Asset(name, "gsplat", { url, filename: name + ".ply" });
+    asset.once("load", () => { URL.revokeObjectURL(url); resolve(asset); });
+    asset.once("error", (err) => { URL.revokeObjectURL(url); reject(err); });
+    app.assets.add(asset);
+    app.assets.load(asset);
+  });
+  const bring = (key) => {
+    const w = WORLDS[key];
+    if (w.coming) return;
+    w.failed = false;
+    w.part = 0;
+    const got = {}, size = {};
+    const counted = (file) => (g, t) => {
+      got[file] = g; size[file] = t;
+      let G = 0, T = 0;
+      for (const f in size) { G += got[f]; T += size[f]; }
+      w.part = T ? Math.min(1, G / T) : 0;
+      if (key === now) tell();
+    };
+    w.coming = (async () => {
+      let list = null;
+      if (w.pieces) {
+        const res = await fetch(w.pieces.things);
+        if (!res.ok) throw new Error(w.pieces.things + ": " + res.status);
+        list = await res.json();
+      }
+      const dir = w.file.slice(0, w.file.lastIndexOf("/") + 1);
+      const files = [w.file].concat(list ? [w.pieces.rest] : [], list ? list.things.map((t) => dir + t.file) : []);
+      const bufs = await Promise.all(files.map((f) => fetchAll(f, counted(f))));
+      w.part = 1;
+      if (key === now) tell();
+      const assets = await Promise.all(bufs.map((buf, i) => toAsset(key + "-" + i, buf)));
+      const e = new pc.Entity(key);
+      e.setLocalEulerAngles(w.turn[0], w.turn[1], w.turn[2]);
+      e.enabled = key === now;
+      app.root.addChild(e);
+      const part = (name, asset) => {
+        const c = new pc.Entity(name);
+        c.addComponent("gsplat", { asset });
+        e.addChild(c);
+        return c;
+      };
+      const room = part(key + " room", assets[0]);
+      if (list) furnish(w, list, room, part(key + " rest", assets[1]), assets.slice(2).map((a, i) => part(list.things[i].file, a)));
+      w.entity = e;
+    })()
+      .catch((err) => {
+        console.error("[worlds]", key, err);
+        w.coming = null;
+        w.failed = true;
+      })
+      .then(() => { if (key === now) { tell(); tools(); } });
+  };
+
+  // ---- The breakroom's things: carried across the floor, the room cleared, a lamp ----------------
+  //
+  // Every splat of the page goes through one shared, sorted buffer; the engine's hook for changing
+  // one entity's splats on their way into it is a work buffer modifier, a few lines of GLSL. Here
+  // it lights the splats by a lamp (warm, falling off with distance: no normals, so a splat is lit
+  // by where it is, not which way it faces), tints a thing under the pointer, and fades a thing
+  // out when the room is cleared.
+  const PIECE_GLSL = `
+    uniform vec3 uLamp;        // where the lamp is, in the world
+    uniform float uLampOn;     // 0 off, 1 on
+    uniform float uTint;       // 0 as scanned, 1 marked as the thing under the pointer
+    uniform float uFade;       // 1 there, 0 gone
+    void modifySplatCenter(inout vec3 center) {}
+    void modifySplatRotationScale(vec3 originalCenter, vec3 modifiedCenter, inout vec4 rotation, inout vec3 scale) {
+      scale *= uFade;
+    }
+    void modifySplatColor(vec3 center, inout vec4 color) {
+      float d = distance(center, uLamp);
+      float lit = 1.0 / (1.0 + 0.9 * d * d);
+      vec3 lamp = color.rgb * (0.32 + 2.4 * lit * vec3(1.0, 0.8, 0.55));
+      color.rgb = mix(color.rgb, lamp, uLampOn);
+      color.rgb = mix(color.rgb, vec3(0.36, 0.86, 1.0), 0.3 * uTint);
+      color.a *= uFade;
+    }
+  `;
+  const ALWAYS = pc.WORKBUFFER_UPDATE_ALWAYS !== undefined ? pc.WORKBUFFER_UPDATE_ALWAYS : 2;
+  const AUTO = pc.WORKBUFFER_UPDATE_AUTO !== undefined ? pc.WORKBUFFER_UPDATE_AUTO : 0;
+  let house = null;          // the breakroom's pieces, once here
+
+  // A splat entity that can be changed: its parameters, and a few frames of redrawing after each change.
+  const piece = (e) => {
+    const p = { e, fade: 1, tint: 0, settle: 0, ok: false };
+    try {
+      if (e.gsplat.setWorkBufferModifier && e.gsplat.setParameter) {
+        e.gsplat.setWorkBufferModifier({ glsl: PIECE_GLSL });
+        p.ok = true;
+      }
+    } catch (err) {
+      console.warn("[worlds] no splat modifier in this engine", err);
+    }
+    return p;
+  };
+  const stir = (p) => { p.settle = 4; };
+  const send = (p) => {
+    if (!p.ok) return;
+    const g = p.e.gsplat;
+    g.setParameter("uLamp", [lamp.x, lamp.y, lamp.z]);
+    g.setParameter("uLampOn", lamp.on);
+    g.setParameter("uTint", p.tint);
+    g.setParameter("uFade", p.fade);
+  };
+
+  // The lamp: off at first, over the middle of the room, carried by its handle across the floor.
+  const lamp = { x: 0, y: 1.5, z: 0, on: 0, want: 0 };
+  const handle = document.createElement("button");
+  handle.type = "button";
+  handle.className = "worlds-lamp";
+  handle.setAttribute("aria-label", "Lamp");
+  handle.hidden = true;
+  stage.appendChild(handle);
+
+  const furnish = (w, list, room, rest, parts) => {
+    const zone = list.zone;
+    house = {
+      w, zone, cleared: false,
+      room: piece(room), rest: piece(rest),
+      things: parts.map((e, i) => {
+        const t = list.things[i];
+        e.setLocalPosition(t.at[0], 0, t.at[1]);
+        const foot = t.foot.length >= 3 ? t.foot : [[-t.reach, -t.reach], [t.reach, -t.reach], [t.reach, t.reach], [-t.reach, t.reach]];
+        return Object.assign(piece(e), { name: t.name, home: t.at.slice(), foot, tall: Math.max(0.3, t.tall) });
+      }),
+    };
+    lamp.x = w.pivot[0]; lamp.z = w.pivot[2];
+    for (const p of all()) { send(p); stir(p); }
+  };
+  const all = () => house ? [house.room, house.rest].concat(house.things) : [];
+
+  const tick = (dt) => {
+    if (!house) return;
+    const k = Math.min(1, dt * 8);
+    const lampWas = lamp.on;
+    lamp.on += (lamp.want - lamp.on) * k;
+    if (Math.abs(lamp.want - lamp.on) < 0.003) lamp.on = lamp.want;
+    const lampMoved = lamp.on !== lampWas || lamp.moved;
+    lamp.moved = false;
+    const gone = house.cleared ? 0 : 1;
+    for (const p of all()) {
+      const fadeTo = p === house.room ? 1 : gone;
+      const tintTo = p === held || (p === over && !held) ? 1 : 0;
+      const was = p.fade + 10 * p.tint;
+      p.fade += (fadeTo - p.fade) * k;
+      if (Math.abs(fadeTo - p.fade) < 0.003) p.fade = fadeTo;
+      p.tint += (tintTo - p.tint) * Math.min(1, dt * 12);
+      if (Math.abs(tintTo - p.tint) < 0.003) p.tint = tintTo;
+      if (p !== house.room) {
+        const there = p.fade > 0;
+        if (p.e.enabled !== there) p.e.enabled = there;
+      }
+      if (lampMoved || p.fade + 10 * p.tint !== was) { send(p); stir(p); }
+      if (p.ok) {
+        if (p.settle > 0) {
+          p.e.gsplat.workBufferUpdate = ALWAYS;
+          if (--p.settle === 0) p.e.gsplat.workBufferUpdate = AUTO;
+        }
+      }
+    }
+    if (lamp.on > 0 && now === "breakroom") {
+      const s = camera.camera.worldToScreen(new pc.Vec3(lamp.x, lamp.y, lamp.z));
+      handle.hidden = s.z <= 0;
+      handle.style.left = s.x + "px";
+      handle.style.top = s.y + "px";
+      handle.style.opacity = String(lamp.on);
+    } else {
+      handle.hidden = true;
+    }
+  };
+
+  // The pointer's ray, from the eye through a point of the canvas: origin and direction.
+  const rayAt = (cx, cy) => {
+    const r = canvas.getBoundingClientRect();
+    const a = camera.camera.screenToWorld(cx - r.left, cy - r.top, 0.1);
+    const b = camera.camera.screenToWorld(cx - r.left, cy - r.top, 100);
+    const d = new pc.Vec3().sub2(b, a).normalize();
+    return { o: a, d };
+  };
+  // Where a ray meets the level plane at height h, within 25 m, or null.
+  const planeAt = (ray, h) => {
+    if (Math.abs(ray.d.y) < 1e-6) return null;
+    const t = (h - ray.o.y) / ray.d.y;
+    if (t <= 0 || t > 25) return null;
+    return [ray.o.x + ray.d.x * t, ray.o.z + ray.d.z * t];
+  };
+  // How far along the ray it first enters a thing: its outline on the floor raised to its height,
+  // a convex prism, met plane by plane. Infinity when it misses.
+  const enters = (ray, th) => {
+    const at = th.e.getLocalPosition();
+    let t0 = 0, t1 = 1e9;
+    const cut = (num, den) => {            // the half space n . (p - a) <= 0 as num = n . (a - o), den = n . d
+      if (Math.abs(den) < 1e-12) return num >= 0;
+      const t = num / den;
+      if (den < 0) t0 = Math.max(t0, t); else t1 = Math.min(t1, t);
+      return t0 <= t1;
+    };
+    if (!cut(ray.o.y, -ray.d.y) || !cut(th.tall - ray.o.y, ray.d.y)) return Infinity;     // over the floor, under its top
+    const f = th.foot;
+    let mx = 0, mz = 0;
+    for (const q of f) { mx += q[0]; mz += q[1]; }
+    mx /= f.length; mz /= f.length;
+    for (let i = 0; i < f.length; i++) {
+      const a = f[i], b = f[(i + 1) % f.length];
+      let nx = b[1] - a[1], nz = -(b[0] - a[0]);
+      if (nx * (mx - a[0]) + nz * (mz - a[1]) > 0) { nx = -nx; nz = -nz; }     // outward, away from its middle
+      const ax = at.x + a[0], az = at.z + a[1];
+      if (!cut(nx * (ax - ray.o.x) + nz * (az - ray.o.z), nx * ray.d.x + nz * ray.d.z)) return Infinity;
+    }
+    return t0;
+  };
+  // The thing under the pointer, the nearest one the ray enters; null over the room.
+  const thingAt = (cx, cy) => {
+    if (!house || house.cleared || now !== "breakroom") return null;
+    const ray = rayAt(cx, cy);
+    let best = null, near = Infinity;
+    for (const th of house.things) {
+      if (!th.e.enabled) continue;
+      const t = enters(ray, th);
+      if (t < near) { near = t; best = th; }
+    }
+    return best ? { th: best, ray, t: near } : null;
+  };
+
+  // How far a point lies outside the zone things may be carried in; 0 inside.
+  const inZone = (x, z) => {
+    const o = house.zone;
+    let inside = false;
+    for (let i = 0, j = o.length - 1; i < o.length; j = i++) {
+      if ((o[i][1] > z) !== (o[j][1] > z) && x < (o[j][0] - o[i][0]) * (z - o[i][1]) / (o[j][1] - o[i][1]) + o[i][0]) inside = !inside;
+    }
+    return inside;
+  };
+  const outside = (x, z) => {
+    if (inZone(x, z)) return 0;
+    const o = house.zone;
+    let near = Infinity;
+    for (let i = 0; i < o.length; i++) {
+      const a = o[i], b = o[(i + 1) % o.length];
+      const ex = b[0] - a[0], ez = b[1] - a[1];
+      const s = clamp(((x - a[0]) * ex + (z - a[1]) * ez) / (ex * ex + ez * ez), 0, 1);
+      near = Math.min(near, Math.hypot(x - a[0] - s * ex, z - a[1] - s * ez));
+    }
+    return near;
+  };
+  // How much of a thing's outline would stand past the zone, were it at (x, z).
+  const past = (th, x, z) => th.foot.reduce((sum, q) => sum + outside(x + q[0], z + q[1]), 0);
+  // A thing put at (x, z) if it stays in the room there; else slid along whichever axis lets it,
+  // else left where it is. One that stood partly past the zone at home may move if it gets no worse.
+  const putAt = (th, x, z) => {
+    const at = th.e.getLocalPosition();
+    const was = past(th, at.x, at.z);
+    const ok = (px, pz) => { const p = past(th, px, pz); return p < 1e-3 || p <= was + 1e-6; };
+    if (ok(x, z)) th.e.setLocalPosition(x, 0, z);
+    else if (ok(x, at.z)) th.e.setLocalPosition(x, 0, at.z);
+    else if (ok(at.x, z)) th.e.setLocalPosition(at.x, 0, z);
+    else return;
+    stir(th);
+  };
+
+  let over = null;           // the thing under the pointer
+  let held = null;           // the thing being carried: { th, h, grab: [dx, dz] }
+  const hold = (hit, pointerId) => {
+    const p = hit.ray.o.clone().add(hit.ray.d.clone().mulScalar(hit.t));
+    const h = clamp(p.y, 0, hit.th.tall);
+    const at = hit.th.e.getLocalPosition();
+    const f = planeAt(hit.ray, h);
+    held = hit.th;
+    held.carry = { h, grab: f ? [at.x - f[0], at.z - f[1]] : [0, 0], pointerId };
+  };
+  const carry = (cx, cy) => {
+    const f = planeAt(rayAt(cx, cy), held.carry.h);
+    if (f) putAt(held, f[0] + held.carry.grab[0], f[1] + held.carry.grab[1]);
+  };
+  const putDown = () => { held = null; };
+
+  // The controls under the breakroom: put everything back, clear the room, the lamp.
+  const toolbar = document.createElement("div");
+  toolbar.className = "worlds-tools";
+  toolbar.innerHTML = '<button type="button" class="worlds-pick" data-do="reset">Reset</button>' +
+    '<button type="button" class="worlds-pick" data-do="clear" aria-pressed="false">Clear the room</button>' +
+    '<button type="button" class="worlds-pick" data-do="lamp" aria-pressed="false">Lamp</button>';
+  stage.after(toolbar);
+  const tools = () => {
+    const show = now === "breakroom" && !!house && !!WORLDS.breakroom.entity;
+    toolbar.hidden = !show;
+    stage.classList.toggle("is-room", show);
+    const canLight = show && house.room.ok;
+    toolbar.querySelector('[data-do="lamp"]').hidden = !canLight;
+    toolbar.querySelector('[data-do="clear"]').setAttribute("aria-pressed", show && house.cleared ? "true" : "false");
+    toolbar.querySelector('[data-do="lamp"]').setAttribute("aria-pressed", lamp.want ? "true" : "false");
+  };
+  toolbar.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-do]");
+    if (!b || !house) return;
+    if (b.dataset.do === "reset") {
+      for (const th of house.things) { th.e.setLocalPosition(th.home[0], 0, th.home[1]); stir(th); }
+      house.cleared = false;
+      lamp.want = 0;
+      held = over = null;
+    } else if (b.dataset.do === "clear") {
+      house.cleared = !house.cleared;
+      held = over = null;
+    } else if (b.dataset.do === "lamp") {
+      lamp.want = lamp.want ? 0 : 1;
+    }
+    tools();
+  });
+
+  // The lamp's handle is carried across the floor at the lamp's height.
+  let lampBy = null;
+  handle.addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+    lampBy = e.pointerId;
+    try { handle.setPointerCapture(e.pointerId); } catch (err) { /* gone already */ }
+    if (hint) hint.classList.add("is-gone");
+  });
+  handle.addEventListener("pointermove", (e) => {
+    if (lampBy !== e.pointerId || !house) return;
+    const f = planeAt(rayAt(e.clientX, e.clientY), lamp.y);
+    if (f && inZone(f[0], f[1])) { lamp.x = f[0]; lamp.z = f[1]; lamp.moved = true; }
+  });
+  const lampGo = (e) => { if (lampBy === e.pointerId) lampBy = null; };
+  handle.addEventListener("pointerup", lampGo);
+  handle.addEventListener("pointercancel", lampGo);
+
+  const choose = (key) => {
+    const w = WORLDS[key];
+    if (!w) return;
+    start();
+    if (key !== now) {
+      if (now && WORLDS[now].entity) WORLDS[now].entity.enabled = false;
+      now = key;
+      picks.forEach((b) => b.setAttribute("aria-pressed", b.dataset.world === key ? "true" : "false"));
+      canvas.setAttribute("aria-label", w.name);
+    }
+    if (app) {
+      if (w.entity) w.entity.enabled = true;
+      else bring(key);
+    }
+    place();
+    tell();
+    tools();
+  };
+  picks.forEach((b) => b.addEventListener("click", () => choose(b.dataset.world)));
+
+  // One finger or the mouse turns the view; two fingers come closer and go back. In the breakroom,
+  // one taken on a thing carries it instead, at the height it was taken by, so it moves as far as
+  // the hand does; and the mouse, passing over a thing, marks it.
+  const fingers = new Map();
+  let spread = 0;
+  canvas.addEventListener("pointerdown", (e) => {
+    if (hint) hint.classList.add("is-gone");
+    fingers.set(e.pointerId, [e.clientX, e.clientY]);
+    spread = 0;
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* a pointer that is already gone */ }
+    if (fingers.size === 1) {
+      const hit = thingAt(e.clientX, e.clientY);
+      if (hit) hold(hit, e.pointerId);
+    } else {
+      putDown();                           // a second finger: the two of them zoom
+    }
+    canvas.style.cursor = "grabbing";
+  });
+  canvas.addEventListener("pointermove", (e) => {
+    const was = fingers.get(e.pointerId);
+    if (!was) {
+      if (e.pointerType === "mouse" && !fingers.size) {
+        const hit = thingAt(e.clientX, e.clientY);
+        over = hit ? hit.th : null;
+        canvas.style.cursor = over ? "pointer" : "grab";
+      }
+      return;
+    }
+    if (!now) return;
+    fingers.set(e.pointerId, [e.clientX, e.clientY]);
+    if (held && held.carry.pointerId === e.pointerId) {
+      carry(e.clientX, e.clientY);
+    } else if (fingers.size === 1) {
+      const w = WORLDS[now], v = w.view;
+      v.yaw -= (e.clientX - was[0]) * 0.3;
+      v.pitch = clamp(v.pitch + (e.clientY - was[1]) * 0.3, w.tilt[0], w.tilt[1]);
+      place();
+    } else if (fingers.size === 2) {
+      const [a, b] = Array.from(fingers.values());
+      const apart = Math.hypot(a[0] - b[0], a[1] - b[1]);
+      if (spread > 0 && apart > 0) zoomBy(spread / apart);
+      spread = apart;
+    }
+  });
+  const release = (e) => {
+    fingers.delete(e.pointerId);
+    spread = 0;
+    if (held && held.carry.pointerId === e.pointerId) putDown();
+    if (!fingers.size) {
+      const hit = e.pointerType === "mouse" ? thingAt(e.clientX, e.clientY) : null;
+      over = hit ? hit.th : null;
+      canvas.style.cursor = over ? "pointer" : "grab";
+    }
+  };
+  canvas.addEventListener("pointerup", release);
+  canvas.addEventListener("pointercancel", release);
+  canvas.addEventListener("pointerleave", () => { if (!fingers.size) over = null; });
+  // The wheel belongs to the view while it can still move it. Once the eye is as near or as far
+  // as it may be, the wheel is the page's again, so scrolling past the stage never gets stuck.
+  canvas.addEventListener("wheel", (e) => {
+    if (zoomBy(Math.exp(e.deltaY * 0.001))) e.preventDefault();
+  }, { passive: false });
+
+  // Nothing is fetched until the stage is near the screen, and nothing is drawn while it is off it.
+  const first = picks.length ? picks[0].dataset.world : Object.keys(WORLDS)[0];
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver((entries) => {
+      const near = entries[entries.length - 1].isIntersecting;
+      if (near && !now) choose(first);
+      if (app) app.autoRender = near;
+    }, { rootMargin: "300px" }).observe(stage);
+  } else {
+    choose(first);
+  }
+})();
