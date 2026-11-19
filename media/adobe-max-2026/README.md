@@ -24,12 +24,28 @@ Eros wears a light blue plaid shirt, thin round metal glasses and a red Adobe la
 
 | File | Length | What it shows |
 |---|---|---|
-| `booth-arrival.mp4` | 7.5 s | Walking up to the ProArt booth. The man at the station is a visitor, not Eros. A passer-by crosses close to the camera at around 4 to 5 s. |
 | `engine-on-screen-two-gx10.mp4` | 6.3 s | Close on the screen: the breakroom with its object labels. A panel reads "This GX10: draws the room, 39 ms a frame, no model running here" and "Second GX10 · Qwen: looked at the round table in 1.4 s". |
 | `visitor-at-the-controls.mp4` | 10 s | A visitor at the keyboard, moving objects in the breakroom. |
 | `visitor-moves-the-tables.mp4` | 16.2 s | Close on the screen while the visitor moves the breakroom's tables and chairs. |
 | `room-dissolves-into-the-breakroom.mp4` | 10.4 s | On another booth monitor, a different room breaks into points and the breakroom forms out of them. |
 | `breakroom-dissolves-at-the-booth.mp4` | 6.5 s | The breakroom falling apart into points on a booth monitor, with the show floor behind. |
+
+## Music (`music/`)
+
+Four tracks Eros chose for the video. Each file name keeps the artist, the title and the track number from the library it came from. Use them only inside the video.
+
+| File | Length |
+|---|---|
+| `audiodollar-jazz-553332.mp3` | 1:56 |
+| `sub_clair-france-instrumental-633138.mp3` | 2:11 |
+| `sub_clair-technology-634281.mp3` | 2:13 |
+| `the_mountain-dynamic-slideshow-155590.mp3` | 2:05 |
+
+## Notes from Eros for the video
+
+- Do not use a shot from outside the booth.
+- `demo-station-in-the-booth-scan.png` shows where his demo stood, inside his scan of the booth. Once the camera reaches that position, cut to the visitor using the app (`visitor-at-the-controls.mp4`).
+- The people in the booth should be turned a little and look like they are working there, not standing like statues. Avoid showing them straight from the front, so their identity is not in the video.
 
 ## More project footage in this repo
 
