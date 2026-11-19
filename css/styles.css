@@ -316,6 +316,12 @@ body.project-page {
   object-fit: cover;
 }
 
+/* The upright cut of a hero, on a screen taller than wide: shown whole, 4 by 5. */
+.project-hero-media.project-hero-media-tall {
+  height: auto;
+  aspect-ratio: 4 / 5;
+}
+
 .project-hero-caption {
   padding: 16px 18px 18px;
 }

@@ -124,8 +124,10 @@ const PROJECTS = {
 
     hero: {
       type: "video",
-      src: `${BASE_URL}assets/videos/splatlab_hero.mp4`,
-      poster: `${BASE_URL}assets/images/poster_splatlab.jpg`
+      src: `${BASE_URL}assets/videos/splatlab_hero_max.mp4`,
+      poster: `${BASE_URL}assets/images/poster_splatlab_max.jpg`,
+      // On a phone the hero is taller than wide, and the wide cut lost its sides: the same video cut upright.
+      tall: { src: `${BASE_URL}assets/videos/splatlab_hero_max_tall.mp4`, poster: `${BASE_URL}assets/images/poster_splatlab_max_tall.jpg` }
     },
 
     impactStats: [
@@ -610,10 +612,14 @@ function heroHTML(hero) {
   if (!hero) return "";
 
   if (hero.type === "video") {
-    const posterAttr = hero.poster ? `poster="${hero.poster}"` : "";
+    // A hero may carry a second cut for screens taller than wide (hero.tall); it is chosen once, when the page is drawn.
+    const tall = hero.tall && window.matchMedia && window.matchMedia("(max-aspect-ratio: 1/1)").matches;
+    const src = tall ? hero.tall.src : hero.src;
+    const poster = tall ? hero.tall.poster : hero.poster;
+    const posterAttr = poster ? `poster="${poster}"` : "";
     return `
-      <div class="project-hero-media">
-        <video src="${hero.src}" ${posterAttr} autoplay muted loop playsinline controls></video>
+      <div class="project-hero-media${tall ? " project-hero-media-tall" : ""}">
+        <video src="${src}" ${posterAttr} autoplay muted loop playsinline controls></video>
       </div>
     `;
   }
