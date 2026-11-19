@@ -130,8 +130,8 @@ const PROJECTS = {
 
     impactStats: [
       { value: "Objects", title: "A scan that knows what is in it", description: "Local vision models name the things and geometry decides where each one ends. A room becomes tables, chairs and bins, each its own object." },
-      { value: "Editable", title: "Move it, clear it, repair it", description: "Drag a table across the room, or clear the whole room with one key and bring it back. The floor under the table is there." },
-      { value: "Live", title: "Shown at Adobe MAX 2026", description: "At the ASUS ProArt booth in Miami, visitors moved tables and cleared the room themselves, in real time, on two ASUS Ascent GX10s. No cloud." }
+      { value: "Editable", title: "Move or remove any object", description: "Drag a table across the room, or clear the whole room with one key. The engine fills in the floor the scanner never saw." },
+      { value: "Live", title: "Shown at Adobe MAX 2026", description: "The engine ran in real time on two ASUS Ascent GX10s." }
     ],
 
     hard: {
