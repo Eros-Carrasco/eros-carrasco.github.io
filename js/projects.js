@@ -254,15 +254,7 @@ const PROJECTS = {
           }]
         }
       ]
-    },
-
-    credits: {
-      title: "Credits",
-      text: [
-        "My research at NYU Tandon. I designed and built the engine on this page, and showed it live at the ASUS ProArt booth at Adobe MAX 2026 in Miami.",
-        "The ASUS booth above was scanned by me with an XGRIDS PortalCam and processed with XGRIDS LCC. The breakroom's objects, the cleared room and its filled-in floor and walls come from SplatLab."
-      ]
-    },
+    }
   },
 
   frl: {
