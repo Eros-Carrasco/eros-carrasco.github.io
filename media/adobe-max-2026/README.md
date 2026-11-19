@@ -30,17 +30,6 @@ Eros wears a light blue plaid shirt, thin round metal glasses and a red Adobe la
 | `room-dissolves-into-the-breakroom.mp4` | 10.4 s | On another booth monitor, a different room breaks into points and the breakroom forms out of them. |
 | `breakroom-dissolves-at-the-booth.mp4` | 6.5 s | The breakroom falling apart into points on a booth monitor, with the show floor behind. |
 
-## Music (`music/`)
-
-Four tracks Eros chose for the video. Each file name keeps the artist, the title and the track number from the library it came from. Use them only inside the video.
-
-| File | Length |
-|---|---|
-| `audiodollar-jazz-553332.mp3` | 1:56 |
-| `sub_clair-france-instrumental-633138.mp3` | 2:11 |
-| `sub_clair-technology-634281.mp3` | 2:13 |
-| `the_mountain-dynamic-slideshow-155590.mp3` | 2:05 |
-
 ## Notes from Eros for the video
 
 - Do not use a shot from outside the booth.
