@@ -34,10 +34,13 @@
     .worlds-sky { position: absolute; left: 0; top: 0; width: 100%; height: 400%; z-index: 0; pointer-events: none; will-change: transform;
       background: linear-gradient(to bottom, #04051a 0%, #0c0f3a 30%, #2a1763 41%, #6a2277 46%, #c23a72 48.6%, #ff8a4c 49.7%, #ffd89a 50%, #0b1024 50.05%, #070b18 56%, #04060e 100%); }
     .worlds-town { position: absolute; left: 0; width: 100%; background-repeat: repeat-x; }
-    .worlds-hint { position: absolute; left: 50%; bottom: 14px; z-index: 2; display: flex; gap: 6px; margin: 0; white-space: nowrap; transform: translateX(-50%); opacity: 0; transition: opacity 0.4s; pointer-events: none; }
-    .worlds-hint span { padding: 5px 11px; border-radius: 999px; background: rgba(10, 17, 23, 0.7); border: 1px solid rgba(255, 255, 255, 0.12); font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.85); }
-    .worlds-stage.is-ready .worlds-hint { opacity: 1; }
-    .worlds-stage .worlds-hint.is-gone { opacity: 0; }
+    /* One pill, as on the ASUS page: higher off the floor and nudging sideways until the view is first moved. */
+    .worlds-hint { position: absolute; left: 50%; bottom: 44px; z-index: 2; margin: 0; padding: 6px 12px; border-radius: 999px; background: rgba(10, 17, 23, 0.7); border: 1px solid rgba(255, 255, 255, 0.12); font-size: 13px; font-weight: 600; color: rgba(255, 255, 255, 0.85); white-space: nowrap; transform: translateX(-50%); opacity: 0; transition: opacity 0.4s; pointer-events: none; }
+    .worlds-hint span + span::before { content: "\00a0\00b7\00a0"; }
+    .worlds-stage.is-ready .worlds-hint { opacity: 1; animation: worlds-nudge 2.4s ease-in-out 1s infinite; }
+    .worlds-stage .worlds-hint.is-gone { opacity: 0; animation: none; }
+    @keyframes worlds-nudge { 0%, 100% { transform: translateX(-50%); } 50% { transform: translateX(calc(-50% + 6px)); } }
+    @keyframes worlds-bob { 0%, 100% { transform: translateX(-50%); } 50% { transform: translate(-50%, -4px); } }
     .worlds-hint .by-touch { display: none; }
     @media (pointer: coarse) {
       .worlds-hint .by-touch { display: inline; }
@@ -99,8 +102,9 @@
       .booth-docs .booth-wide { grid-column: 1 / -1; order: -1; }
       .worlds-stage { aspect-ratio: 4 / 3; }
       .worlds-pick { font-size: 12px; padding: 5px 10px; }
-      .worlds-hint { flex-wrap: wrap; justify-content: center; width: calc(100% - 20px); bottom: 10px; white-space: normal; }
-      .worlds-hint span { font-size: 11px; padding: 4px 9px; white-space: nowrap; }
+      .worlds-hint { bottom: 16px; width: max-content; max-width: calc(100% - 28px); white-space: normal; text-align: center; font-size: 12px; }
+      .worlds-hint span { white-space: nowrap; }
+      .worlds-stage.is-ready .worlds-hint { animation-name: worlds-bob; }     /* sideways, it left the stage at this width */
     }
   </style>
 </head>
@@ -128,7 +132,7 @@
       <div class="worlds-stage" data-world="breakroom" data-name="Breakroom">
         <canvas id="worlds-room-canvas"></canvas>
         <p class="worlds-hint">
-          <span class="in-room">Drag a table to move it</span>
+          <span class="in-room">Drag furniture to move it</span>
           <span>Drag to turn</span>
           <span class="by-mouse">Scroll to zoom</span>
           <span class="by-touch">Pinch to zoom</span>

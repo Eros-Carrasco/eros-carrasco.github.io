@@ -1752,3 +1752,12 @@ details.numbers[open] summary {
   .phone-now { font-size: 15px; color: rgba(255, 255, 255, 0.5); }
   .phone-status { font-size: 15px; color: rgba(255, 255, 255, 0.9); }
 }
+
+/* A scrollbar that stays in view, as people expect to find one on the right (Eros, 2026-11-18): macOS
+   hides its own until the page moves, and on a page with 3D viewers that capture the wheel it is the
+   plain way up and down. Chrome and Safari draw this one always; Firefox takes the colours. */
+html { scrollbar-color: rgba(255, 255, 255, 0.28) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.24); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); background-clip: padding-box; }

@@ -380,6 +380,7 @@ const worldsViewer = (stage) => {
       const room = part(key + " room", assets[0]);
       if (list) furnish(w, list, room, part(key + " rest", assets[1]), assets.slice(2).map((a, i) => part(list.things[i].file, a)));
       w.entity = e;
+      if (list) dress(list, dir);
     })()
       .catch((err) => {
         console.error("[worlds]", key, err);
@@ -402,6 +403,7 @@ const worldsViewer = (stage) => {
     uniform vec3 uLampColor;   // the lamp's colour, as a multiplier
     uniform float uTint;       // 0 as scanned, 1 marked as the thing under the pointer
     uniform float uFade;       // 1 there, 0 gone
+    uniform float uCloud;      // 0 as scanned, 1 all points: the thing's own splats fade as its points come
     void modifySplatCenter(inout vec3 center) {}
     void modifySplatRotationScale(vec3 originalCenter, vec3 modifiedCenter, inout vec4 rotation, inout vec3 scale) {
       scale *= uFade;
@@ -412,7 +414,46 @@ const worldsViewer = (stage) => {
       vec3 lamp = color.rgb * (0.32 + 2.4 * lit * uLampColor);
       color.rgb = mix(color.rgb, lamp, uLampOn);
       color.rgb = mix(color.rgb, vec3(0.36, 0.86, 1.0), 0.3 * uTint);
-      color.a *= uFade;
+      color.a *= uFade * (1.0 - uCloud) * (1.0 - uCloud);
+    }
+  `;
+
+  // A thing under the pointer comes apart into its points, as in the booth program (handling.py in
+  // the splatlab repository, Hands.apply): the points come in one by one as the thing fades, each
+  // shimmers at its own phase, wanders round its place and drifts up, fading over its rise; a held
+  // thing's wander is twice as wide and its points pale toward a cool white. The points are made
+  // ahead of time (web_cloud.py: diorama.surface_points over its surfaces, in its own colour pushed a
+  // little), and each one's number in [0, 1), which says when it shows and its phases, is its opacity.
+  const DOTS_GLSL = `
+    uniform float uTime;
+    uniform float uCloud;      // 0 none, 1 every point
+    uniform float uLift;       // 1 while held
+    uniform float uFade;
+    uniform vec3 uLamp;
+    uniform float uLampOn;
+    uniform vec3 uLampColor;
+    float dotRise(float h) { return fract(uTime * 0.35 + fract(h * 91.71)); }
+    void modifySplatCenter(inout vec3 center) {
+      float h = getColor().a;
+      float ph = h * 6.2832, h2 = fract(h * 37.13), h3 = fract(h * 91.71);
+      float w = 1.0 + 2.0 * h2;
+      float reach = 0.05 * uCloud * (1.0 + uLift);
+      center += vec3(sin(w * uTime + ph), 0.7 * sin(0.8 * w * uTime + 6.2832 * h3), cos(1.3 * w * uTime + 6.2832 * h2)) * reach;
+      center.y += 0.10 * uCloud * dotRise(h);
+    }
+    void modifySplatRotationScale(vec3 originalCenter, vec3 modifiedCenter, inout vec4 rotation, inout vec3 scale) {
+      if (getColor().a >= uCloud) scale = vec3(0.0);
+    }
+    void modifySplatColor(vec3 center, inout vec4 color) {
+      float h = color.a;
+      float shimmer = 0.5 + 0.5 * sin(uTime * 3.0 + h * 6.2832 * 7.0);
+      float r = dotRise(h);
+      float level = 0.4 + 0.6 * sqrt(dot(color.rgb, vec3(1.0 / 3.0)));
+      vec3 own = mix(color.rgb, level * vec3(0.80, 0.90, 1.0), 0.4 * uLift) * (0.8 + 0.4 * shimmer);
+      float d = distance(center, uLamp);
+      float lit = 1.0 / (1.0 + 0.9 * d * d);
+      color.rgb = mix(own, own * (0.32 + 2.4 * lit * uLampColor), uLampOn);
+      color.a = (h < uCloud ? 1.0 : 0.0) * uCloud * uFade * (0.55 + 0.45 * shimmer) * sqrt(max(sin(3.1416 * r), 0.0));
     }
   `;
   const ALWAYS = pc.WORKBUFFER_UPDATE_ALWAYS !== undefined ? pc.WORKBUFFER_UPDATE_ALWAYS : 2;
@@ -421,7 +462,7 @@ const worldsViewer = (stage) => {
 
   // A splat entity that can be changed: its parameters, and a few frames of redrawing after each change.
   const piece = (e) => {
-    const p = { e, fade: 1, tint: 0, settle: 0, ok: false };
+    const p = { e, fade: 1, tint: 0, cloud: 0, lift: 0, dots: null, settle: 0, ok: false };
     try {
       if (e.gsplat.setWorkBufferModifier && e.gsplat.setParameter) {
         e.gsplat.setWorkBufferModifier({ glsl: PIECE_GLSL });
@@ -441,6 +482,36 @@ const worldsViewer = (stage) => {
     g.setParameter("uLampColor", TONES[lamp.tone]);
     g.setParameter("uTint", p.tint);
     g.setParameter("uFade", p.fade);
+    g.setParameter("uCloud", p.dots ? p.cloud : 0);
+    if (p.dots && p.dots.ok) {
+      const d = p.dots.e.gsplat;
+      d.setParameter("uCloud", p.cloud);
+      d.setParameter("uLift", p.lift);
+      d.setParameter("uFade", p.fade);
+      d.setParameter("uLamp", [lamp.x, lamp.y, lamp.z]);
+      d.setParameter("uLampOn", lamp.on);
+      d.setParameter("uLampColor", TONES[lamp.tone]);
+    }
+  };
+  // Each thing's points, fetched once the room is up (they are not waited for: until a thing's are
+  // here, the thing under the pointer is marked by a tint instead).
+  const dress = async (list, dir) => {
+    for (let i = 0; i < list.things.length; i++) {
+      const t = list.things[i], th = house && house.things[i];
+      if (!t.dots || !th) continue;
+      try {
+        const asset = await toAsset("dots " + t.file, await fetchAll(dir + t.dots));
+        const c = new pc.Entity("dots " + t.file);
+        c.addComponent("gsplat", { asset });
+        c.enabled = false;
+        th.e.addChild(c);
+        const ok = !!(c.gsplat.setWorkBufferModifier && c.gsplat.setParameter);
+        if (ok) c.gsplat.setWorkBufferModifier({ glsl: DOTS_GLSL });
+        if (ok) th.dots = { e: c, ok };
+      } catch (err) {
+        console.warn("[worlds] no points for", t.file, err);
+      }
+    }
   };
 
   // The light: off at first, over the middle of the room, carried by its handle across the floor.
@@ -488,10 +559,28 @@ const worldsViewer = (stage) => {
     const lampMoved = lamp.on !== lampWas || lamp.moved;
     lamp.moved = false;
     const gone = house.cleared ? 0 : 1;
+    const time = performance.now() / 1000;
     for (const p of all()) {
       const fadeTo = p === house.room ? 1 : gone;
-      const tintTo = p === held || (p === over && !held) ? 1 : 0;
-      const was = p.fade + 10 * p.tint;
+      const marked = p === held || (p === over && !held);
+      const tintTo = marked && !p.dots ? 1 : 0;
+      const was = p.fade + 10 * p.tint + 100 * p.cloud + 1000 * p.lift;
+      if (p.dots) {
+        const ease = Math.min(1, dt * 10);                 // about a fifth of a second, as in the booth
+        const cloudTo = marked ? 1 : 0, liftTo = p === held ? 1 : 0;
+        p.cloud += (cloudTo - p.cloud) * ease;
+        if (Math.abs(cloudTo - p.cloud) < 0.003) p.cloud = cloudTo;
+        p.lift += (liftTo - p.lift) * ease;
+        if (Math.abs(liftTo - p.lift) < 0.003) p.lift = liftTo;
+        const show = p.cloud > 0 && p.fade > 0;
+        if (p.dots.e.enabled !== show) p.dots.e.enabled = show;
+        if (show) {                                        // the points move every frame they show
+          p.dots.e.gsplat.setParameter("uTime", time);
+          p.dots.e.gsplat.workBufferUpdate = ALWAYS;
+        } else {
+          p.dots.e.gsplat.workBufferUpdate = AUTO;
+        }
+      }
       p.fade += (fadeTo - p.fade) * k;
       if (Math.abs(fadeTo - p.fade) < 0.003) p.fade = fadeTo;
       p.tint += (tintTo - p.tint) * Math.min(1, dt * 12);
@@ -500,7 +589,7 @@ const worldsViewer = (stage) => {
         const there = p.fade > 0;
         if (p.e.enabled !== there) p.e.enabled = there;
       }
-      if (lampMoved || p.fade + 10 * p.tint !== was) { send(p); stir(p); }
+      if (lampMoved || p.fade + 10 * p.tint + 100 * p.cloud + 1000 * p.lift !== was) { send(p); stir(p); }
       if (p.ok) {
         if (p.settle > 0) {
           p.e.gsplat.workBufferUpdate = ALWAYS;
@@ -777,10 +866,13 @@ const worldsViewer = (stage) => {
   canvas.addEventListener("pointerup", release);
   canvas.addEventListener("pointercancel", release);
   canvas.addEventListener("pointerleave", () => { if (!fingers.size) over = null; });
-  // The wheel belongs to the view while it can still move it. Once the eye is as near or as far
-  // as it may be, the wheel is the page's again, so scrolling past the stage never gets stuck.
+  // The wheel over the stage belongs to the view, always, as on the ASUS page. Handing it back to the
+  // page at the nearest or furthest the eye may come made the page jump a little under a trackpad's
+  // momentum while the view was being zoomed (Eros, 2026-11-18); the page scrolls anywhere else, and
+  // by its scrollbar.
   canvas.addEventListener("wheel", (e) => {
-    if (zoomBy(Math.exp(e.deltaY * 0.001))) e.preventDefault();
+    e.preventDefault();
+    zoomBy(Math.exp(e.deltaY * 0.001));
   }, { passive: false });
 
   // Nothing is fetched until the stage is near the screen, and nothing is drawn while it is off it.
