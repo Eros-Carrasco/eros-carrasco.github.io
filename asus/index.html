@@ -162,6 +162,9 @@
     .booth-tips { margin: 0 0 48px; padding-left: 20px; font-size: 16px; color: var(--muted); }
     .booth-tips li { margin: 0 0 4px; }
     .booth-note:empty { display: none; }
+    /* A finger held on the booth is a hold, never a text selection or the phone's callout (Eros, 2026-11-19:
+       on a phone, moving a person or the view selected the letter around it). */
+    .booth-stage { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
     .booth-stage canvas { position: relative; z-index: 1; display: block; width: 100%; height: 100%; touch-action: none; }
     .booth-sky { position: absolute; left: 0; top: 0; width: 100%; height: 400%; z-index: 0; pointer-events: none; will-change: transform;
       background: linear-gradient(to bottom, #04051a 0%, #0c0f3a 30%, #2a1763 41%, #6a2277 46%, #c23a72 48.6%, #ff8a4c 49.7%, #ffd89a 50%, #0b1024 50.05%, #070b18 56%, #04060e 100%); }
@@ -243,7 +246,7 @@
   </form>
   <main class="letter" id="letter" hidden></main>
   <script src="../js/vendor/playcanvas.min.js"></script>
-  <script src="booth.js?v=20261118b"></script>
+  <script src="booth.js?v=20261119a"></script>
 </body>
 
 </html>

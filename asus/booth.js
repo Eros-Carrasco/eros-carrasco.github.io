@@ -458,6 +458,10 @@
     canvas.addEventListener("pointerleave", () => { if (!mode) mark(null); });
     canvas.addEventListener("pointerup", release);
     canvas.addEventListener("pointercancel", release);
+    // On a phone a held finger would otherwise start a text selection outside the stage, or the
+    // long-press menu; the pointer events above still come (Eros, 2026-11-19).
+    canvas.addEventListener("touchstart", (e) => { if (e.cancelable) e.preventDefault(); }, { passive: false });
+    canvas.addEventListener("contextmenu", (e) => e.preventDefault());
     canvas.addEventListener("wheel", (e) => {
       e.preventDefault();
       dist = Math.max(2.2, Math.min(12, dist * Math.exp(e.deltaY * 0.001)));
