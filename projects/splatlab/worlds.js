@@ -870,6 +870,10 @@ const worldsViewer = (stage) => {
   // page at the nearest or furthest the eye may come made the page jump a little under a trackpad's
   // momentum while the view was being zoomed (Eros, 2026-11-18); the page scrolls anywhere else, and
   // by its scrollbar.
+  // On a phone a held finger would otherwise start a text selection outside the stage, or the
+  // long-press menu; the pointer events above still come (Eros, 2026-11-19).
+  canvas.addEventListener("touchstart", (e) => { if (e.cancelable) e.preventDefault(); }, { passive: false });
+  canvas.addEventListener("contextmenu", (e) => e.preventDefault());
   canvas.addEventListener("wheel", (e) => {
     e.preventDefault();
     zoomBy(Math.exp(e.deltaY * 0.001));
