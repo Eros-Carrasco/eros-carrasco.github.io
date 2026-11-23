@@ -159,9 +159,8 @@
 </div>
 <button id="toggle" title="Show or hide the panel">&#9776;</button>
 <div id="deskpanel">
-  <div class="kick">Project Aura &middot; concept</div>
   <h1>Screen to Space</h1>
-  <div class="sub">Some things make more sense in 3D. Take them out of the screen, work on them as a diorama on your desk, and send them back.</div>
+  <div class="sub">With Project Aura on, do in 3D what should be done in 3D.</div>
   <ol id="dksteps"></ol>
   <div class="row"><button id="dk-restart">Restart</button><button id="dk-view">Overview</button></div>
   <div class="keys">Plays by itself &middot; R replay &middot; drag to look</div>
@@ -1429,12 +1428,12 @@ const DESK = {
   gprog: null, gu: {}, gvao: null, cube: null, quad: null, fbo: null, photoTex: null,
 };
 const STEPS = [
-  { title: 'On your screen', text: 'The breakroom is open on your monitor, flat. Pinch it with the glasses on.', act: 'Pinch it' },
-  { title: 'Drop it on the desk', text: 'Let it go over the desk. The computer makes it a gaussian splat of the place, in your space.', act: 'Drop it' },
-  { title: 'Make it bigger', text: 'It lands small. Pull a corner until it is the size you want to work at.', act: 'Scale' },
-  { title: 'Clear it, rearrange it', text: 'Clear the room and bring it all back. Then lift out the tables that block the view, put in what waits in the palette, and slide the tray along the island.', act: 'Rearrange' },
-  { title: 'Light it like a film', text: 'Turn the room\'s light down. A warm light in front, as the key; a cool one behind, by the windows, for depth.', act: 'Relight' },
-  { title: 'Back to your screen', text: 'Send it back. Your screen shows what you made, still alive.', act: 'Send it back' },
+  { title: 'On your screen', text: 'Something flat that would be easier to work on in 3D.', act: 'Pinch it' },
+  { title: 'Pinch and drop', text: 'Pinch it out of the screen and drop it on your desk. It becomes 3D.', act: 'Drop it' },
+  { title: 'Make it bigger', text: 'Pull it to the size you want.', act: 'Scale' },
+  { title: 'Rearrange it', text: 'Rearrange the 3D space as you like: move objects, take them out, put new ones in.', act: 'Rearrange' },
+  { title: 'Change the lighting', text: 'Dim the room and place your own lights.', act: 'Relight' },
+  { title: 'Back to your screen', text: 'Send it back with your changes.', act: 'Send it back' },
 ];
 function viewFrom(e, t) {
   const f = norm3(sub3(t, e)), r = norm3(cross3(f, [0, 0, 1])), d = cross3(f, r);
@@ -2077,9 +2076,9 @@ function deskShowStep() {
   const done = { screen: 0, pinch: 0, held: 1, drop: 1, placed: 2, scale: 2, scaled: 3, move: 3, moved: 4, light: 4, lit: 5, back: 5, done: 6 }[DESK.phase];
   const lis = $('dksteps').children;
   for (let i = 0; i < lis.length; i++) lis[i].className = i < done ? 'done' : i === done ? 'now' : 'later';
-  const cap = { screen: 'On your monitor', pinch: 'Pinch it off the screen', held: 'Out of the screen, in your hand', drop: 'Dropped: it becomes a splat in your space',
-    placed: 'The place, on your desk', scale: 'Bigger, to work on it', scaled: 'The size you work at', move: 'Clearing, then rearranging', moved: 'Rearranged', light: 'Room light down: a warm key in front, a cool light behind', lit: 'Lit by the lights you placed',
-    back: 'Back to your screen', done: 'What you made, on your screen' }[DESK.phase];
+  const cap = { screen: 'On your screen', pinch: 'Pinch', held: 'Out of the screen', drop: 'Drop', placed: 'On your desk, in 3D', scale: 'Bigger', scaled: 'Bigger',
+    move: 'Rearranging', moved: 'Rearranged', light: 'Changing the lighting', lit: 'Lit',
+    back: 'Back to your screen', done: 'On your screen, with your changes' }[DESK.phase];
   $('deskcap').textContent = cap;
 }
 // The things round the place that the hand works, drawn as cards in the room: the room's light and the tray of lights.
