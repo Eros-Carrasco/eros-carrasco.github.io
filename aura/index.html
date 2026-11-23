@@ -160,8 +160,8 @@
 <button id="toggle" title="Show or hide the panel">&#9776;</button>
 <div id="deskpanel">
   <div class="kick">Project Aura &middot; concept</div>
-  <h1>Work on it in 3D</h1>
-  <div class="sub">Some things make more sense in 3D. Take them out of the screen, work on them in space, and send them back.</div>
+  <h1>Screen to Space</h1>
+  <div class="sub">Some things make more sense in 3D. Take them out of the screen, work on them as a diorama on your desk, and send them back.</div>
   <ol id="dksteps"></ol>
   <div class="row"><button id="dk-restart">Restart</button><button id="dk-view">Overview</button></div>
   <div class="keys">Plays by itself &middot; R replay &middot; drag to look</div>
@@ -1354,7 +1354,7 @@ function frame(now) {
    the desk, and the place stands up on the desk at a small scale, to be looked at from any side.
    URL: ?desk [&photo=ex,ey,ez,tx,ty,tz in the scene's metres] [&turn=degrees] [&ceil=metres] [&auto] */
 const Q = new URLSearchParams(location.search.length > 1 || !window.SPLATLAB_STATIC ? location.search : window.SPLATLAB_STATIC.query);
-if (Q.has('desk')) document.title = 'Work on it in 3D';
+if (Q.has('desk')) document.title = 'Screen to Space';
 const M4 = {
   id: () => [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
   mul(a, b) {
