@@ -722,16 +722,17 @@ async function fetchBinary(url, onProgress) {
   let r; url = api(url); if (!url) return null;
   try { r = await fetch(url, STATIC ? {} : { cache: 'no-store' }); } catch (e) { return null; }
   if (!r.ok) return null;
-  const total = +r.headers.get('Content-Length') || 0;
+  // A compressed answer's length is the compressed one: not the bytes that will arrive.
+  const total = r.headers.get('Content-Encoding') ? 0 : +r.headers.get('Content-Length') || 0;
   if (!r.body || !onProgress) return await r.arrayBuffer();
   const reader = r.body.getReader();
-  let got = 0, out = total ? new Uint8Array(total) : null; const parts = [];
+  let got = 0, out = total ? new Uint8Array(total) : null, head = null; const parts = [];
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
     if (out && got + value.length <= out.length) out.set(value, got); else { if (out) { parts.push(out.subarray(0, got)); out = null; } parts.push(value); }
-    got += value.length;
-    onProgress(got, total);
+    got += value.length; head = head || value;
+    onProgress(got, total, head);
   }
   if (out) return got === out.length ? out.buffer : out.slice(0, got).buffer;
   const all = new Uint8Array(got); let o = 0;
@@ -747,8 +748,11 @@ async function loadSplat() {
   S.splatAsked = true;
   loadMsg('Loading', 0);
   const mb = (b) => (b / 1048576).toFixed(0);
-  const buf = await fetchBinary('/api/splat', (got, total) =>
-    loadMsg(total ? 'Loading the splat: ' + mb(got) + ' of ' + mb(total) + ' MB' : 'Loading the splat: ' + mb(got) + ' MB', total ? got / total : null));
+  const buf = await fetchBinary('/api/splat', (got, total, head) => {
+    if (STATIC && head && head.length >= 4) total = 4 + 28 * new DataView(head.buffer, head.byteOffset, 4).getUint32(0, true);   // the file says its own size
+    total = total >= got ? total : 0;
+    loadMsg(total ? 'Loading: ' + mb(got) + ' of ' + mb(total) + ' MB' : 'Loading: ' + mb(got) + ' MB', total ? got / total : null);
+  });
   if (!buf || buf.byteLength < 4) {
     S.splatAsked = false; S.splatFailed++;
     loadMsg('No splat from the server yet. Asking again in a moment.', 0);
