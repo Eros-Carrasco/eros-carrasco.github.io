@@ -155,7 +155,7 @@
   <div id="hud"><div class="place" id="place">splatlab</div><div class="sub" id="sub"></div></div>
   <div id="notes"></div>
   <div id="help">Drag: orbit. Right drag or shift drag: pan. Wheel: zoom. W A S D Q E: walk. Double click: orbit there. Click: pick. Esc: clear.</div>
-  <div id="load"><div class="msg" id="loadmsg">Asking for the splat</div><div class="bar"><i id="loadbar"></i></div></div>
+  <div id="load"><div class="msg" id="loadmsg">Loading</div><div class="bar"><i id="loadbar"></i></div></div>
 </div>
 <button id="toggle" title="Show or hide the panel">&#9776;</button>
 <div id="deskpanel">
@@ -745,7 +745,7 @@ async function fetchJSON(url) {
 async function loadSplat() {
   if (S.splatAsked) return;
   S.splatAsked = true;
-  loadMsg('Asking for the splat', 0);
+  loadMsg('Loading', 0);
   const mb = (b) => (b / 1048576).toFixed(0);
   const buf = await fetchBinary('/api/splat', (got, total) =>
     loadMsg(total ? 'Loading the splat: ' + mb(got) + ' of ' + mb(total) + ' MB' : 'Loading the splat: ' + mb(got) + ' MB', total ? got / total : null));
