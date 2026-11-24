@@ -1714,6 +1714,9 @@ function deskItems() {
     { ...box([-0.52, -0.2, TOP + 0.006], [0.4, 0.125, 0.012], light), mode: 5 },     // keyboard
     { mesh: DESK.cyl, model: chain(M4.T(-0.25, -0.21, TOP + 0.008), M4.S(0.058, 0.098, 0.016)), color: light, mode: 0, alpha: 1 },   // mouse
     { mesh: DESK.cyl, model: chain(M4.T(-0.62, 0.15, TOP + 0.048), M4.S(0.078, 0.078, 0.095)), color: [0.93, 0.92, 0.9], mode: 0, alpha: 1 },   // a mug
+    { mesh: DESK.cyl, model: chain(M4.T(-0.62, 0.15, TOP + 0.0945), M4.S(0.066, 0.066, 0.004)), color: [0.2, 0.115, 0.06], mode: 0, alpha: 1 },   // coffee in it
+    box([-0.57, 0.15, TOP + 0.072], [0.03, 0.012, 0.01], [0.93, 0.92, 0.9]), box([-0.57, 0.15, TOP + 0.03], [0.03, 0.012, 0.01], [0.93, 0.92, 0.9]),   // its handle
+    box([-0.552, 0.15, TOP + 0.051], [0.01, 0.012, 0.052], [0.93, 0.92, 0.9]),
     shadow(0, 0.27, 0.3, 0.22, 0.35), shadow(-0.52, -0.2, 0.46, 0.18, 0.28), shadow(-0.25, -0.21, 0.09, 0.13, 0.3), shadow(-0.62, 0.15, 0.13, 0.13, 0.32),
   ];
   const under = DESK.back ? (DESK.morph ? 1 - ease(DESK.u / 0.3) : 1) : DESK.morph ? ease((DESK.u - 1.62) / 0.38) : DESK.show;
