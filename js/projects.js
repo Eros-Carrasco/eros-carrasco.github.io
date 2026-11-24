@@ -392,39 +392,42 @@ const PROJECTS = {
   about: {
     title: "Eros Carrasco",
     subtitle:
-      "I build the systems and pipelines that let people create art and express emotion in XR.",
+      "I love building systems and pipelines across XR, 3D capture and spatial AI, especially when the work is difficult, uncharted, or has a positive mission.",
     pills: ["CUDA", "Gaussian Splatting", "Computer Vision", "Deep Learning", "Unity and Unreal"],
     hero: {
       type: "image",
       src: `${BASE_URL}assets/images/about_hero.jpg`,
     },
     currently: {
-      lead: "Researcher at NYU.",
+      lead: "Research Engineer at NYU.",
       labs: [
         {
-          name: "Brooklyn Navy Yard",
-          lead: "Research on Gaussian splats for production use in XR.",
+          name: "NYU Tandon at The Yard, Brooklyn Navy Yard",
+          lead: "A real-time Gaussian splat engine for editing scanned spaces.",
           bullets: [
-            "Building the computer vision and analysis in Python that let a local agent read a splat and work on it, because the captures cannot leave the building.",
-            "Wrote a custom CUDA rasterizer for the work that does not fit a game engine.",
-            "Writing the same renderer again in C++ as an Unreal plugin, deploying it in a VR multiplayer motion-capture production built with the team.",
-            "Relight the scans with my own tooling."
+            "Built a real-time engine for Gaussian splats in Python on PyTorch and gsplat that edits scanned spaces: objects can be moved or removed, the floor and walls the scanner never saw are filled in, and the scene can be relit without retraining.",
+            "Built object understanding with local vision models that label each object, let 3D geometry set its edges, and say when unsure.",
+            "Demonstrated it live at the ASUS ProArt booth, Adobe MAX 2026.",
+            "Built a pipeline from raw handheld-lidar data to trained splats without vendor software, including posable 3D avatars of people.",
+            "Bringing the system to VR in Unreal Engine (C++, HLSL plugin) and Unity, starting with a multiplayer motion capture production."
           ]
         },
         {
-          name: "Future Reality Lab",
-          lead: "Research with Ken Perlin on how AR glasses will integrate into desktop workflows, collaboration, and work with 3D data.",
+          name: "Future Reality Lab, with Ken Perlin",
+          lead: "Research on how AR glasses integrate into desktop workflows, collaboration and work with 3D data.",
           bullets: [
-            "Contributing to the lab's XR framework, which moves content between the desktop screen and 3D space.",
-            "My piece is the registration that anchors your monitor in virtual space.",
-            "Targeting publication at SIGGRAPH and CHI."
+            "Built the registration that anchors the user's monitor in virtual space, locating the screen from on-screen markers.",
+            "Contribute to the lab's XR framework, which moves content between the desktop screen and 3D space.",
+            "Built internal review tooling the lab used across more than a dozen revision cycles of its NSF proposal."
           ]
         }
       ]
     },
     industry: [
-      "Designed and developed five VR career exploration simulations in Unity at Transfr, deployed in real educational environments.",
-      "Defined and documented the Spanish localization workflow for 30+ learning experiences, adopted by the team as its standard."
+      "XR Engineer, NYU VIP Metaverse for Education (Apple Vision Pro team): integrated a multi-user Unity XR environment into Apple Vision Pro with the visionOS toolchain, with cross-device support for Quest and desktop.",
+      "XR Designer, Transfr: built and shipped 5 production VR simulations in Unity, deployed in classrooms across educational institutions.",
+      "Defined the Spanish localization workflow for 30+ learning experiences, adopted as the team\u2019s standard, and designed accessibility in from the start: wheelchair height adjustment, color-blind-safe UI and closed captions.",
+      "Unity Developer, Inmersys: contributed to production VR applications, including a project with UNICEF."
     ],
     currentFocus: [
       "Available for full-time work from January 2027.",
@@ -448,7 +451,7 @@ const PROJECTS = {
       },
       {
         label: "Email",
-        url: "mailto:ejj2059@nyu.edu",
+        url: "mailto:eros.carrasco@nyu.edu",
         type: "external"
       }
     ],
