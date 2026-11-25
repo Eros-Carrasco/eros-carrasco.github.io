@@ -1,0 +1,2265 @@
+<meta charset="utf-8">
+<!-- + WITHOUT THAT LINE THE BROWSER READS hanzi.js AND atlas.js AS LATIN-1,
+     + AND EVERY TONE VOWEL ARRIVES AS THE TWO BYTES IT IS MADE OF: "yi" WITH
+     + A MACRON CAME OUT AS "yA<<". KEN'S PAGES NEVER NEEDED IT BECAUSE THEY
+     + ARE PURE ASCII. MINE IS NOT. -->
+<!-- + THE PAGE IS DARKER THAN THE CANVAS ON PURPOSE. THEY USED TO BE THE
+     + SAME #0b0b0b, SO THE CANVAS HAD NO EDGE AND THE WHOLE THING READ AS
+     + ONE BLACK VOID WITH WORDS FLOATING IN IT. TWO VALUES APART AND THE
+     + CANVAS BECOMES AN OBJECT SITTING ON A SURFACE, WHICH IS WHAT IT IS. -->
+<body style="background:#030406; margin:0; overflow:hidden">
+<center><canvas id=canvas width=1800 height=1800
+        style="width:min(99vmin,1340px);height:auto;margin-top:.5vh"></canvas></center>
+
+<!-- + THE ONLY PIECE OF HTML ON THE PAGE THAT IS NOT THE CANVAS, AND IT IS
+     + HERE FOR ONE REASON: TYPING A HANZI NEEDS AN INPUT METHOD, AND AN
+     + INPUT METHOD TALKS TO A REAL FIELD, NOT TO A CANVAS. IT IS INVISIBLE
+     + AND SITS OVER THE MIDDLE OF THE PAGE SO THE CANDIDATE WINDOW OPENS
+     + WHERE YOU ARE LOOKING. NOTHING IS EVER DRAWN BY IT: THE CHARACTER
+     + YOU PICK IS HANDED BACK TO THE CANVAS AND DRAWN THERE. -->
+<!-- + pointer-events:none, BECAUSE "THE MIDDLE OF THE PAGE" IS INSIDE THE
+     + PAPER: WITHOUT IT THE FIELD SAT INVISIBLE OVER A PATCH OF THE SHEET,
+     + RIGHT OF CENTRE, AND A STROKE THAT STARTED THERE WENT TO THE FIELD
+     + INSTEAD OF THE CANVAS AND WAS LOST WITHOUT A WORD. IT IS ONLY EVER
+     + FOCUSED FROM CODE, SO IT NEVER NEEDS THE MOUSE. -->
+<input id=typed autocomplete=off autocorrect=off autocapitalize=off spellcheck=false
+       style="position:fixed;left:50%;top:46%;width:3em;height:1.6em;opacity:0;
+              border:0;padding:0;background:transparent;color:transparent;
+              caret-color:transparent;outline:none;pointer-events:none">
+<script src=library.js></script>
+<script src=shape.js></script>
+<script src=webgl4.js></script>
+<script src=atlas.js></script>
+<script src=hanzi.js></script>
+<script src=hanzi-shapes.js></script>
+<script src=hanzi-score.js></script>
+<!-- + THE COLLECTOR, AND IT HAS TO LOAD BEFORE THE SCENE BECAUSE init()
+     + CALLS Log.start() ON THE FIRST FRAME. IT OWNS ITS OWN KEYS IN
+     + localStorage, NEVER TOUCHES hanziFound OR hanziMine, AND EVERY ONE
+     + OF ITS CALLS IS WRAPPED, SO A LOGGER THAT FAILS CANNOT TAKE THE
+     + PAGE DOWN WITH IT. NOTHING IS WRITTEN WITHOUT CONSENT. -->
+<script src=hanzi-log.js></script>
+<script type="module">
+// + HanziWriter IS THE SAME LIBRARY MRANDARIN USES FOR THE LEARN PANEL, AND
+// + THIS IS THE SAME WAY IT IS DRIVEN THERE: ONTO A HIDDEN CANVAS, WHICH IS
+// + THEN BLITTED. THE ONLY CHANGE IS WHERE THE DATA COMES FROM. MRANDARIN
+// + LETS IT FETCH; HERE IT IS HANDED THE OUTLINES ALREADY BAKED INTO
+// + hanzi.js, SO THE PAGE NEEDS NOTHING OFF THE NETWORK.
+import HanziWriter from './hanzi-writer.esm.js';
+window.HanziWriter = HanziWriter;
+</script>
+<script>
+
+// # = straight from Ken's class examples
+// + = added by me
+
+function Scene() {
+
+   // + ====================================================================
+   // + THE PALETTE, TAKEN FROM MRANDARIN ITSELF
+   // +
+   // + Not chosen again here. These are the values already in the scene
+   // + files: #90c2ff is the stroke colour MRandarin.js hands HanziWriter,
+   // + #0b0b0b its outline, #b9d9fa its pale blue, [.05 .05 .05 .85] the
+   // + panel it floats, [.85 .85 .85] its text, and #00cecc the cyan the
+   // + detection effects fire in. The docs call the direction glow on dark,
+   // + and this is what that already looks like in the code.
+   // +
+   // + I had this on warm paper with a cinnabar red, reasoned from how
+   // + Chinese copybooks are printed. It was a good argument for a page
+   // + that was not this one. This page is MRandarin, so it wears
+   // + MRandarin's colours.
+   // +
+   // + Ken's shader ends on sqrt(color), so the screen shows the square
+   // + root of a material's numbers. flat() squares them first, which lets
+   // + every colour below be written as the thing it actually looks like.
+
+   let flat = c => ({ ambient: [c[0]*c[0], c[1]*c[1], c[2]*c[2]],
+                      diffuse: [0,0,0], specular: [0,0,0,1] });
+
+   // + ----------------------------------------------------------------
+   // + THE PAGE NEEDED A FLOOR AND TWO SURFACES ON IT
+   // +
+   // + Everything used to sit on one flat near-black: the sheet, the
+   // + hundred, the words, the controls, all at the same depth and all
+   // + the same distance from each other, which is another way of saying
+   // + there was no layout at all. There are two kinds of thing here,
+   // + where your hand goes and what the machine says back, so there are
+   // + two plates, and the words sit ON one of them instead of in a void.
+   // +
+   // + Still MRandarin's dark scene, just given a floor and a shadow.
+
+   let ground   = flat([.035,.039,.051]);     // + #090a0d, the desk
+   let plate    = flat([.082,.098,.129]);     // + #151a21, a surface on it
+   let seam     = flat([.161,.192,.247]);     // + #292f3f, its only keyline
+   let blank    = flat([.141,.161,.200]);     // + a cell not filled yet
+   let chip     = flat([.133,.161,.212]);     // + a word you can press
+   let chipOn   = flat([.102,.302,.400]);     // + the one under the pointer
+
+   // + ----------------------------------------------------------------
+   // + THE SHEET IS THE ONE LIT SURFACE ON THE PAGE
+   // +
+   // + It has to be, now that the ink is black, because black only
+   // + exists on paper. It is also the right way round for what this is:
+   // + everything else here is the machine talking, and this one
+   // + rectangle is where your hand goes. The ink used to be the same
+   // + pale blue as the model underneath it, which meant that during a
+   // + lesson you could not tell your own stroke from the one you were
+   // + copying, and that is the only comparison the page exists to let
+   // + you make.
+
+   let paper    = flat([.925,.937,.953]);     // + #ecefF3
+   let edge     = flat([.055,.060,.070]);     // + a keyline, not a halo
+   let guides   = flat([.792,.827,.871]);     // + #cad3de, the printed grid
+
+   let INK      = [.078,.086,.102];           // + #14161a, what you write
+   let DEX      = [.725,.851,.980];           // + #b9d9fa, the collection
+   let ink      = flat(INK);
+   let dexInk   = flat(DEX);
+   let between  = (a, b, u) => flat([ a[0] + u * (b[0] - a[0]),
+                                      a[1] + u * (b[1] - a[1]),
+                                      a[2] + u * (b[2] - a[2]) ]);
+
+   let spent    = flat([.604,.651,.714]);     // + a stroke that went wrong, faded
+   let caughtC  = flat([.000,.808,.800]);     // + #00cecc, and only for a find:
+                                              //   in MRandarin cyan means detected,
+                                              //   so it must not mean wrong here
+
+   // + MRANDARIN'S #90c2ff IS TUNED FOR ITS DARK SCENE AND GOES TO NOTHING
+   // + ON PAPER, SO THE MODEL IS THE SAME BLUE TAKEN DOWN UNTIL IT READS
+   // + ON WHITE. IT IS THE ONLY COLOUR HERE THAT HAD TO MOVE.
+
+   let shown    = flat([.290,.620,1.00]);     // + #4a9eff, the model
+   let ghost    = flat([.698,.780,.890]);     // + #b2c7e3, the candidate it is
+                                              //   holding against what you wrote
+   let tie      = flat([.549,.651,.792]);     // + #8ca6ca, which stroke went
+                                              //   with which
+
+   let whiteish = flat([1,1,1]);              // + a texture shown as it is
+
+   // + TWO TEXT WEIGHTS, AND BOTH HAD TO COME UP. .85 GREY ON NEAR BLACK
+   // + IS FINE; .48 GREY WAS NOT, AND THAT WAS THE COLOUR EVERY CONTROL
+   // + SAT AT UNTIL THE POINTER TOUCHED IT, SO THE PAGE LOOKED LIKE IT HAD
+   // + NO BUTTONS. A CONTROL IS NOT A HINT. IT IS READABLE OR IT IS NOT
+   // + THERE.
+
+   let letters  = flat([.886,.910,.945]);     // + #e2e8f1, what you read
+   let stone    = flat([.541,.584,.651]);     // + #8a95a6, said more quietly
+   let faint    = flat([.318,.345,.408]);     // + #515868, a credit, not a word
+                                              //   anyone has to read to use this
+
+   // # VERTEX MAP, VERTEX SHADER AND FRAGMENT SHADER, FROM hw9/index.html
+
+   this.vertexSize = 8;
+   this.vertexAttributes = {
+      aPos: { size: 3, position: 0 },
+      aNor: { size: 3, position: 3 },
+      aUV:  { size: 2, position: 6 },
+   };
+
+   this.vertexShader = `#version 300 es
+   in  vec3 aPos, aNor;
+   in  vec2 aUV;
+   out vec3 vPos, vNor;
+   out vec2 vUV;
+   uniform mat4 uMF, uMI;
+   void main() {
+      vec4 pos = uMF * vec4(aPos, 1.);
+      vec4 nor = vec4(aNor, 0.) * uMI;
+      vPos = pos.xyz / pos.w;
+      vPos.z *= -1.;
+      vNor = nor.xyz;
+      vUV = aUV;
+      gl_Position = vec4(vPos, 1.);
+   }`;
+   this.fragmentShader = `#version 300 es
+   precision highp float;
+
+   in  vec3 vPos, vNor;
+   in  vec2 vUV;
+   out vec4 fragColor;
+   uniform vec3 uAmbient, uDiffuse;
+   uniform vec4 uSpecular;
+
+   uniform sampler2D uSampler[16];          // YOU CAN HAVE UP TO 16 TEXTURES
+   uniform int uTexture;                    // INDEX OF THE ACTIVE TEXTURE
+   uniform float uSheer;
+
+   vec3 La = vec3(-.7);                     // LIGHT SOURCE DIRECTIONS
+   vec3 Lb = vec3( .7);
+
+   vec3 W = vec3(0.,0.,-1.);                // DIRECTION FROM CAMERA INTO THE SCREEN
+
+   void main() {
+
+      vec4 txtr = vec4(1.);
+      if (uTexture == 0) txtr = texture(uSampler[0], vUV);
+      if (uTexture == 1) txtr = texture(uSampler[1], vUV);
+      if (uTexture == 2) txtr = texture(uSampler[2], vUV);
+      if (uTexture == 3) txtr = texture(uSampler[3], vUV);
+
+      vec3 N = normalize(vNor);             // PHONG SHADING FROM TWO LIGHT SOURCES
+      vec3 R = W - 2. * dot(W,N) * N;
+      vec3 color = uAmbient
+         + (uDiffuse * max(0.,dot(N,La)) + uSpecular.rgb * pow(max(0.,dot(R,La)), uSpecular.a)) * .5
+         +  uDiffuse * max(0.,dot(N,Lb)) + uSpecular.rgb * pow(max(0.,dot(R,Lb)), uSpecular.a);
+
+      // + ONE CHANGE TO KEN'S LAST LINE. THE GLYPHS IN font.png ARE BLACK,
+      // + SO txtr.rgb IS ZERO ON THE INK AND THE MATERIAL COULD NEVER
+      // + COLOUR A LETTER: EVERY WORD CAME OUT BLACK NO MATTER WHAT I
+      // + ASKED FOR. PULLING txtr.rgb TOWARDS WHITE BY uSheer LETS THE INK
+      // + TAKE THE MATERIAL'S COLOUR WHILE THE PAPER AROUND IT STILL GOES
+      // + AWAY. AT uSheer = 0 mix() RETURNS txtr.rgb UNTOUCHED, SO PLAIN
+      // + TEXTURED SURFACES BEHAVE EXACTLY AS KEN WROTE THEM.
+
+      // + AND ONE MORE, ON THE ALPHA. A LETTER IS A PICTURE, SO WHEN IT IS
+      // + SMALL THE MIPMAPS HAVE ALREADY BLURRED IT, AND EVERY BLURRED
+      // + PIXEL STILL LEAVES HERE AT FULL COLOUR WITH ONLY ITS ALPHA
+      // + LOWERED. OVER WHITE PAPER THAT WAS INVISIBLE. OVER A DARK GROUND
+      // + IT IS A HALO, AND SMALL WORDS FATTEN INTO A SMEAR. STEEPENING
+      // + THE RAMP PUTS THE EDGE BACK. AT uSheer = 0 NOTHING IS TOUCHED.
+
+      float a = 1. - txtr.r * uSheer;
+      if (uSheer > 0.)
+         a = smoothstep(.40, .64, a);
+
+      fragColor = vec4(mix(txtr.rgb, vec3(1.), uSheer) * sqrt(color), a);
+   }`;
+
+   let m = new Matrix(), box = Shape.cube();
+
+   // + ====================================================================
+   // + THE MOUSE
+   // +
+   // + library.js divides the mouse by canvas.width, the backing store, and
+   // + measures the canvas once when the page loads. Both are fine while
+   // + the canvas is shown at exactly its own pixel size and the page never
+   // + moves. Mine is deliberately bigger than its box so the type stays
+   // + sharp, which breaks the first; scrolling breaks the second. So the
+   // + mouse is read against the live rectangle here. Ken's own cursor is
+   // + left alone and still works for his pages.
+   // +
+   // + The release is heard on the window, not the canvas: let go outside
+   // + the square and the canvas never hears it, and the stroke you were
+   // + drawing would never end.
+
+   let pointer = [0, 0, 0];
+   let readPointer = (e, down) => {
+      let r = canvas.getBoundingClientRect();
+      pointer = [ (e.clientX - r.left) / r.width  * 2 - 1,
+                  1 - (e.clientY - r.top) / r.height * 2,
+                  down === undefined ? pointer[2] : down ];
+   };
+   // + preventDefault IS WHAT MAKES TYPE ONE WORK AT ALL. A MOUSEDOWN ON
+   // + THE CANVAS ENDS, BY DEFAULT, BY MOVING FOCUS TO THE PAGE, AND THAT
+   // + RUNS AFTER press() HAS ALREADY FOCUSED THE FIELD: SO THE FIELD WAS
+   // + FOCUSED AND BLURRED IN THE SAME CLICK, "Type or paste a hanzi."
+   // + NEVER APPEARED, AND WHATEVER YOU TYPED WENT NOWHERE.
+   canvas.addEventListener('mousedown', e => { e.preventDefault(); readPointer(e, 1); press(); });
+   canvas.addEventListener('mousemove', e => { readPointer(e); move(); });
+   window.addEventListener('mouseup',   e => { readPointer(e, 0); release(); });
+
+   // + ====================================================================
+   // + LAYOUT: PRACTICE ON THE LEFT, THE COLLECTION ON THE RIGHT
+   // +
+   // + The sheet and the grid are the same height and sit side by side,
+   // + because they are the two halves of one loop: you write a character
+   // + over here, and it lands over there.
+
+   // + THE DESK IS THE WIDER OF THE TWO, BECAUSE THE SHEET IS THE REASON
+   // + THE PAGE EXISTS AND EVERYTHING ELSE IS COMMENTARY ON IT. THE SHEET
+   // + IS NOW A FULL HALF OF THE CANVAS WIDE, UP FROM .88, WHICH IS A
+   // + THIRD MORE PAPER TO WRITE ON.
+
+   let L_X = -.40, L_W = .57;                   // + the desk, centre and half width
+   let R_X = .575, R_W = .355;                  // + the panel it answers on
+   let PLATE_H = .93;
+
+   let SQ_X = -.40, SQ_Y = 0, SQ = .53;         // + the sheet, and half its side
+   let COL  = SQ_X - SQ;                        // + the desk hangs off the paper's
+                                                //   own left edge, not off a number
+                                                //   of its own that nearly matches
+   let DEX_X = .575, DEX_Y = .49, CELL = .062;  // + the collection
+   let RX   = DEX_X - 5 * CELL;                 // + and the panel off the grid's
+
+   // + ----------------------------------------------------------------
+   // + THE PEN IS ONE NUMBER, AND IT IS MEASURED, NOT CHOSEN
+   // +
+   // + It was a slider for a while, which was the wrong answer to the
+   // + right complaint: the pen was too fat. A slider asks you to solve
+   // + that, and you should not have to, because there is a correct
+   // + width and the page already knows it. The model you are copying is
+   // + right there on the same sheet. Measured off the library's own
+   // + render, the body of a stroke is about .040 of the sheet, swelling
+   // + to .060 where the brush presses, down to nothing at a tip.
+   // +
+   // + So .048 sits in the middle of that, and the variation is not
+   // + yours to set either: Hanzi.quill reads it off how fast the
+   // + pointer was moving when each point was recorded, which is what a
+   // + brush does with a hand leaning in and flicking out.
+
+   let pen = .048;
+
+   // + THE STUDY AND ITS CHARACTERS, DECLARED HERE BECAUSE THE GRID BELOW IS
+   // + BUILT FROM THEM. THE REST OF THE STUDY IS FURTHER DOWN.
+
+   let study = location.hash == '#study';
+   let STUDY = ['人', '女', '火', '天', '生'];
+
+   // + IN THE STUDY THE COLLECTION IS ONLY THE STUDY'S OWN CHARACTERS: A
+   // + HUNDRED EMPTY CELLS SAY "COLLECT THEM ALL" TO SOMEBODY WHO WAS ASKED
+   // + FOR FIVE. THEY SIT FIVE TO A ROW AT TWICE THE SIZE, WHICH IS THE
+   // + SAME WIDTH AS THE GRID OF A HUNDRED, FROM THE SAME TOP EDGE.
+
+   let studyN = STUDY.map(ch => { for (let n = 0 ; n < HANZI_DATA.length ; n++)
+                                     if (HANZI_DATA[n].char == ch) return n;
+                                  return -1; });
+   let BIG = study ? CELL * 2 : CELL;
+   let slotAt = k => [ DEX_X + (k % 5 - 2) * BIG,
+                       DEX_Y + 5 * CELL - BIG / 2 - ((k / 5) >> 0) * BIG ];
+
+   let cellAt = n => study ? slotAt(Math.max(0, studyN.indexOf(n)))
+                   : [ DEX_X + (n % HANZI.cols - (HANZI.cols - 1) / 2) * CELL,
+                       DEX_Y + ((HANZI.rows - 1) / 2 - ((n / HANZI.cols) >> 0)) * CELL ];
+
+   // + THE WHOLE GRID AS ONE MESH, AND EVERYTHING FOUND SO FAR AS ONE MORE.
+   // + It used to be a draw call per cell: 116 a frame with nothing found,
+   // + past 200 once it fills, each one going through Ken's setUniform six
+   // + times. An atlas exists so that a hundred characters cost what one
+   // + costs, and until now the comment claiming that was the only place it
+   // + was true.
+
+   let dexCells = (() => {
+      let mesh = [];
+      for (let n = 0 ; n < HANZI_DATA.length ; n++) {
+         if (study && studyN.indexOf(n) < 0) continue;
+         let c = cellAt(n);
+         mesh.push(Hanzi.quad([0,0,0,0], c[0], c[1], -.02, BIG * .86, BIG * .86));
+      }
+      return new Float32Array(mesh.flat());
+   })();
+
+   let dexTiles = null, dexKey = '';
+
+   // + A STROKE THAT LEAVES THE SHEET STOPS AT ITS EDGE. WITHOUT THE CLAMP
+   // + THE INK KEPT RUNNING DOWN THE PAGE, BECAUSE NOTHING SAYS THE POINTER
+   // + HAS TO STAY INSIDE ONCE THE BUTTON IS ALREADY DOWN.
+
+   let hold = v => v < -.5 ? -.5 : v > .5 ? .5 : v;
+
+   let intoPaper = () => [ hold((pointer[0] - SQ_X) / (2 * SQ)),
+                           hold((pointer[1] - SQ_Y) / (2 * SQ)) ];
+   let onPaper   = () => Math.abs(pointer[0] - SQ_X) < SQ && Math.abs(pointer[1] - SQ_Y) < SQ;
+
+   // + ====================================================================
+   // + THE LOOP, WHICH IS MRANDARIN'S
+   // +
+   // + In MRandarin nothing asks you for a character. There is a whiteboard
+   // + and a marker. You write what you feel like writing, the headset reads
+   // + it, says the pinyin and the meaning out loud, and the character joins
+   // + your pokedex. Wipe the board and the answer goes with the ink.
+   // +
+   // + Being told what to write is the OTHER mode, and you have to ask for
+   // + it: one button, LEARN A NEW HANZI. It picks one you have not found,
+   // + plays the stroke-order animation, and until you write that one the
+   // + recogniser accepts nothing else.
+   // +
+   // + So: free hand by default, a lesson on request. This page is the same
+   // + loop with the camera taken out, because there is no whiteboard here.
+   // + What the camera was doing continuously, the page does off a hand
+   // + that stopped moving and off a stroke count it can read ahead.
+
+   let found = {};                              // + index -> true
+   let total = () => { let n = 0; for (let k in found) n++; return n; }
+
+   let remember = () => {                       // + survives a reload, if allowed
+      try { localStorage.setItem('hanziFound', JSON.stringify(found)); } catch (e) {}
+   }
+   try { found = JSON.parse(localStorage.getItem('hanziFound')) || {}; } catch (e) { found = {}; }
+
+   // + ====================================================================
+   // + A CHARACTER THAT IS NOT ONE OF THE HUNDRED
+   // +
+   // + The hundred are baked into the page and need nothing off the
+   // + network. Anything else is fetched, from the same dataset and by
+   // + the same route MRandarin uses: hanzi-writer-data, which is
+   // + makemeahanzi packaged one character to a file. The dictionary is a
+   // + separate 435 KB file, fetched once and only when somebody asks for
+   // + a character outside the book, because the hundred carry their own
+   // + pinyin already.
+   // +
+   // + A guest is NOT added to the collection grid. The grid is one
+   // + image, one mesh, one draw call, and that is the whole point of an
+   // + atlas: a guest has no tile in it and never will. Guests are kept
+   // + underneath instead, drawn as ribbons from their own centrelines,
+   // + which works for any character in the dataset. So the two halves of
+   // + the page end up showing the two ways of putting a character on a
+   // + screen, which is what the assignment is about.
+
+   let CDN   = 'https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0/';
+   let dict  = null;
+   let asking = false;                          // + the field has focus
+   let trouble = '';
+   let field = document.getElementById('typed');
+
+   // + ====================================================================
+   // + THE TWO THINGS THE PAGE CAN KNOW, AND WHY THEY ARE NOT ONE THING
+   // +
+   // + MRandarin keeps mandarinState.character, what the camera just read
+   // + off the board, apart from mandarinState.learnTarget, the one you
+   // + asked to be taught. I had them collapsed into a single `target` and
+   // + that single variable is where the whole wrong flow came from: if the
+   // + page always has a target, the page is always telling you what to
+   // + write, and it never lets you just write.
+   // +
+   // + They also do not end at the same moment. Wiping the board clears the
+   // + reading, because the reading was about ink that is gone. The lesson
+   // + stays up until you write it. Both null is the resting state, and the
+   // + resting state is a blank sheet asking you for nothing.
+
+   let said = null, saidN = -1;                 // + what it read. the answer.
+   let lesson = null, lessonN = -1;             // + the one you asked to learn
+   let drawn = [], here = null, verdict = null;
+   let reveal = false;                          // + the lesson is the animation
+   let caught = null;                           // + the one flying to its cell
+
+   // + THE STUDY, REACHED ONLY THROUGH #study IN THE ADDRESS. THE SAME FIVE
+   // + CHARACTERS FOR EVERYBODY: FIRST EACH ONE AS A LESSON, WITH THE
+   // + ANIMATION, THEN THE SAME FIVE AGAIN WITH NOTHING ON THE SHEET, ASKED
+   // + FOR BY SOUND AND MEANING ONLY. WRITING IT AGAIN WITH THE MODEL GONE
+   // + IS THE ONLY PART THAT SAYS ANYTHING ABOUT HAVING LEARNT IT.
+   // + 2, 3, 4, 4 AND 5 STROKES. 人 HAS 入 AND 八 NEXT TO IT, 天 HAS 夫, AND
+   // + 女, 火 AND 生 ARE THE ONES WHOSE STROKE ORDER IS NOT THE OBVIOUS ONE.
+
+   let GUIDES = false;                          // + the cross and diagonals on the sheet
+
+   let tried = false;                           // + this one has had an answer
+   let locked = false;                          // + and from memory that was the answer
+   let step = 0;                                // + how many have been handed out
+   let recall = false;                          // + this one is from memory
+   let studyOver = false;
+
+   // + THE CHARACTER THE PAGE IS ABOUT, IF ANY: THE LESSON IF YOU ASKED FOR
+   // + ONE, OTHERWISE WHATEVER IT LAST READ, OTHERWISE NOTHING.
+
+   let at  = () => lesson ? lesson : said;
+
+   // + WIPING THE BOARD. check_if_erased ON THE BACKEND NOTICES THE BOARD
+   // + WENT BLANK AND THE ANSWER PANELS GO AWAY WITH THE INK. A LESSON IS
+   // + NOT SOMETHING YOU WROTE, SO IT SURVIVES THE WIPE.
+
+   let clear = () => {
+      // + ASKED BEFORE THE INK IS GONE, BECAUSE GIVING UP WITH THREE
+      // + STROKES DOWN IS DATA AND AN EMPTY drawn WOULD NOT SAY SO
+      Log.wiped(drawn.length);
+      drawn = []; here = null; verdict = null; trouble = '';
+      said = null; saidN = -1;
+      seen = null; gaps = []; lifted = 0;
+      reveal = lesson && ! recall ? true : false;
+   }
+
+   // + A FRESH SHEET WITH A CHARACTER TO LEARN ON IT, WHICH IS HOW BOTH
+   // + WAYS OF ASKING FOR A LESSON END.
+
+   let opened = () => {
+      said = null; saidN = -1;
+      drawn = []; here = null; verdict = null; trouble = '';
+      reveal = true;                            // + a lesson IS the animation
+
+      // + EVERY WAY OF ASKING FOR A LESSON ENDS HERE, SO THIS IS THE ONE
+      // + PLACE THAT HAS TO KNOW. HOW MANY TIMES SOMEBODY WATCHED THE
+      // + ANIMATION FOR A CHARACTER IS A DIFFERENT KIND OF EFFORT FROM HOW
+      // + MANY TIMES THEY TRIED TO WRITE IT.
+      Log.lesson(lesson);
+   }
+   let taught = () => { if (lesson) reveal = false; lesson = null; lessonN = -1; }
+
+   // + WHAT THE RECOGNISER IS ALLOWED TO ANSWER: THE HUNDRED PLUS EVERY
+   // + CHARACTER YOU HAVE BROUGHT IN YOURSELF. YOUR VOCABULARY GROWS, AND
+   // + A GUEST STILL HAS TO WIN AGAINST THE HUNDRED FAIRLY.
+   // +
+   // + IT IS A CLOSED SET, AND THAT IS THE ONE PLACE THIS PAGE CANNOT BE
+   // + MRANDARIN: THERE, APPLE'S OCR READS ANY CHARACTER AT ALL. HERE THE
+   // + MATCH IS AGAINST SHAPES THE PAGE IS HOLDING, WHICH MAKES THE GRID OF
+   // + A HUNDRED SOMETHING OTHER THAN DECORATION: IT IS THE VOCABULARY,
+   // + DRAWN. YOU CAN SEE EXACTLY WHAT IT IS ABLE TO SAY.
+
+   let book = () => {
+      let s = HANZI_DATA.slice();
+      for (let g of mine) s.push(g);
+      if (lesson && lessonN < 0) {
+         let seen = false;
+         for (let g of mine) if (g.char == lesson.char) seen = true;
+         if (! seen) s.push(lesson);
+      }
+      return s;
+   }
+
+   // + LEARN A NEW HANZI. THE ONE BUTTON MRANDARIN'S POKEDEX PANEL HAS, AND
+   // + THE ONLY THING ON THIS PAGE THAT EVER ASKS YOU FOR A CHARACTER.
+   // + /hanzi/learn_target PICKS AT RANDOM FROM THE ONES NOT YET
+   // + DISCOVERED, EXCLUDING WHATEVER IS ALREADY UP, AND FALLS BACK TO THE
+   // + WHOLE LIST ONCE YOU HAVE THEM ALL. SAME THREE RULES HERE.
+   // +
+   // + RANDOM, NOT THE NEXT ONE ALONG, AND I WAS WRONG TO MAKE IT WALK THE
+   // + LIST IN ORDER: IN ORDER IS A WORKSHEET, AND THE POINT OF BEING
+   // + HANDED ONE IS THAT YOU DO NOT CHOOSE IT.
+
+   let teach = () => {
+      let pool = [];
+      for (let n = 0 ; n < HANZI_DATA.length ; n++)
+         if (! found[n] && n != lessonN) pool.push(n);
+      if (! pool.length)
+         for (let n = 0 ; n < HANZI_DATA.length ; n++)
+            if (n != lessonN) pool.push(n);
+      lessonN = pool[Math.floor(Math.random() * pool.length)];
+      lesson  = HANZI_DATA[lessonN];
+      opened();
+   }
+
+   // + YOUR OWN FINDS, KEPT WHOLE SO THEY SURVIVE A RELOAD WITHOUT GOING
+   // + BACK TO THE NETWORK FOR THEM.
+
+   let MINE_X = RX, MINE_Y = .075, MINE_GAP = .074, MINE_KEPT = 6;
+
+   let mine = [];
+   try { mine = JSON.parse(localStorage.getItem('hanziMine')) || []; } catch (e) { mine = []; }
+   let keepMine = () => {
+      try { localStorage.setItem('hanziMine', JSON.stringify(mine)); } catch (e) {}
+   }
+
+   // + ONLY THE LAST FEW FIT BESIDE THE COUNT, AND THE FLIGHT HAS TO LAND
+   // + ON THE SLOT THE CHARACTER WILL ACTUALLY OCCUPY, NOT ON ITS INDEX IN
+   // + THE WHOLE LIST.
+
+   let mineShow = () => mine.slice(-MINE_KEPT);
+   let mineSlot = ch => {
+      let show = mineShow(), k = show.length - 1;
+      for (let i = 0 ; i < show.length ; i++) if (show[i].char == ch) k = i;
+      return [ MINE_X + k * MINE_GAP, MINE_Y ];
+   }
+
+   // + TYPING ONE IS THE SAME LESSON, WITH YOU CHOOSING INSTEAD OF THE
+   // + RANDOM PICK. MRANDARIN HAS NO EQUIVALENT: THERE IS NO KEYBOARD IN A
+   // + HEADSET. IT IS HERE BECAUSE A PAGE HAS ONE, AND BECAUSE THE REASON
+   // + TO WANT IT IS REAL: YOU SAW A CHARACTER SOMEWHERE AND WANT THAT ONE.
+
+   // + WHERE A CHARACTER COMES FROM, WHOEVER ASKED FOR IT. THE BOOK
+   // + FIRST, THEN THE ONES YOU HAVE ALREADY BROUGHT IN, AND ONLY THEN
+   // + THE NETWORK. IT USED TO BE BURIED INSIDE THE TYPING PATH; THE
+   // + READER NEEDS IT TOO NOW, BECAUSE THE READER CAN NAME A CHARACTER
+   // + THIS PAGE HAS NEVER HEARD OF.
+
+   let known = ch => {
+      for (let n = 0 ; n < HANZI_DATA.length ; n++)
+         if (HANZI_DATA[n].char == ch) return { e: HANZI_DATA[n], n: n };
+      for (let g of mine)
+         if (g.char == ch) return { e: g, n: -1 };
+      return null;
+   }
+
+   let fetched = {};                            // + asked for once, kept
+
+   let lookUp = async ch => {
+      let has = known(ch);
+      if (has) return has;
+      if (fetched[ch]) return { e: fetched[ch], n: -1 };
+      let r = await fetch(CDN + encodeURIComponent(ch) + '.json');
+      if (! r.ok) throw 0;
+      let g = await r.json();
+      if (! dict) dict = await (await fetch('hanzi-dict.json')).json();
+      let d = dict[ch] || ['', ''];
+      let e = { char: ch, pinyin: d[0] || '?',
+                meaning: d[1] || 'no definition on file',
+                medians: g.medians.map(k => k.map(q => [ q[0]/1024 - .5,
+                                                         q[1]/1024 - .5 ])),
+                strokes: g.strokes };
+      fetched[ch] = e;
+      return { e: e, n: -1 };
+   }
+
+   let bring = async ch => {
+      trouble = '';
+      try {
+         let got = await lookUp(ch);
+         lesson = got.e; lessonN = got.n;
+         opened();
+      }
+      catch (err) { trouble = 'That one is not in the dataset.'; }
+   }
+
+   // + ====================================================================
+   // + THE READER, AND IT IS A REAL ONE AT LAST
+   // +
+   // + Everything above this line matches your strokes against a hundred
+   // + shapes the page is carrying. That was never a reader, it was a
+   // + lookup, and it could only ever answer with one of its hundred. I
+   // + called it an OCR in my own comments for a week, which was a lie.
+   // +
+   // + MRandarin has a real one: vision_ocr.py hands a photograph of the
+   // + whiteboard to Apple's Vision and asks for topCandidates_(3). That
+   // + is macOS native code behind a Flask server on Eros's machine, so
+   // + it cannot be what a page on cims.nyu.edu calls.
+   // +
+   // + This can. It is the handwriting recogniser behind Google's own
+   // + input tools, and it fits this page better than any OCR would,
+   // + because it does not want a picture: IT WANTS THE STROKES, with
+   // + their timings, which is exactly and only what this page records.
+   // + Nothing is rendered, nothing is photographed, and nothing but the
+   // + path of the hand inside the writing square ever leaves the
+   // + machine. It answers with ranked candidates, the same shape of
+   // + answer Vision gives, over every character instead of a hundred.
+   // +
+   // + Measured on 24 of the hundred, three ways: written cleanly in the
+   // + book's stroke order, written with a wobbling hand, and written
+   // + with the strokes in a shuffled order. 23 right at the first guess
+   // + every time, 24 of 24 inside the top five. The local matcher gets
+   // + 88% and only against its own hundred.
+   // +
+   // + It is undocumented, so it can disappear without notice, and that
+   // + is why the hundred stay: if this throws, times out, or the page
+   // + is offline, judge() answers instead and the page still works.
+
+   let OCR = 'https://inputtools.google.com/request'
+           + '?ime=handwriting&app=mobilesearch&cs=1&oe=UTF-8';
+   let OCR_BOX = 300;                           // + the box the ink is sent in
+   let OCR_WAIT = 2000;                         // + how long to hold the answer
+
+   let askOCR = strokes => {
+      let ink = [], t = 0;
+      for (let st of strokes) {
+         let xs = [], ys = [], ts = [];
+         for (let p of st) {
+            xs.push(Math.round((p[0] + .5) * OCR_BOX));
+            ys.push(Math.round((.5 - p[1]) * OCR_BOX));
+            ts.push(t);
+            t += 35;
+         }
+         ink.push([xs, ys, ts]);
+         t += 180;                              // + a gap between strokes
+      }
+      let body = { options: 'enable_pre_space', requests: [ {
+                      writing_guide: { writing_area_width:  OCR_BOX,
+                                       writing_area_height: OCR_BOX },
+                      ink: ink, language: 'zh', max_num_results: 5 } ] };
+
+      // + THE TIMEOUT IS THE POINT OF THE RACE. A READER THAT HAS NOT
+      // + ANSWERED IN TWO SECONDS IS NOT GOING TO BE USED: THE HUNDRED
+      // + ARE SITTING RIGHT HERE AND THEY ANSWER IN THREE MILLISECONDS.
+
+      return Promise.race([
+         fetch(OCR, { method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(body) })
+            .then(r => r.json())
+            .then(j => {
+               if (! j || j[0] != 'SUCCESS') return null;
+               let out = [];
+               // + IT ANSWERS SLASHES AND UNDERSCORES FOR A SINGLE
+               // + STRAIGHT STROKE, WHICH ARE HONEST ANSWERS AND NOT
+               // + CHARACTERS. ONLY CJK IS KEPT.
+               for (let c of j[1][0][1])
+                  if (c.length == 1 && c.charCodeAt(0) > 0x2e7f) out.push(c);
+               return out.length ? out : null;
+            }),
+         new Promise(go => setTimeout(() => go(null), OCR_WAIT))
+      ]).catch(() => null);
+   }
+
+   // + THE FIELD HANDS BACK WHATEVER THE INPUT METHOD SETTLED ON. ONLY A
+   // + CJK CHARACTER IS TAKEN, AND ONLY THE LAST ONE, SO PASTING A WHOLE
+   // + WORD PRACTISES ITS LAST CHARACTER INSTEAD OF FAILING.
+
+   let typing = () => {
+      // + THE NEXT LESSON WAS CHOSEN, NOT HANDED OVER. BEING GIVEN A
+      // + RANDOM CHARACTER AND GOING AFTER ONE YOU ALREADY WANTED ARE NOT
+      // + THE SAME TASK, AND THE LOG SHOULD NOT PRETEND THEY ARE.
+      Log.asked('typed');
+      asking = true; trouble = ''; field.value = ''; field.focus();
+   }
+   field.addEventListener('input', () => {
+      let ch = '';
+      for (let c of field.value) if (c.charCodeAt(0) > 0x2e7f) ch = c;
+      if (! ch) return;
+      field.value = ''; field.blur(); asking = false;
+      bring(ch);
+   });
+   field.addEventListener('blur', () => { asking = false; });
+
+   // + ====================================================================
+   // + WHERE A READING STOPS BEING A READING, MEASURED
+   // +
+   // + This was .30 because mrandarin_main.py says
+   // + OCR_CONFIDENCE_THRESHOLD = 0.30, and copying that numeral was a
+   // + plain mistake: .30 there is Apple's Vision confidence on a photo
+   // + of a whiteboard, and .30 here is 1 - chamfer/.10 between two point
+   // + clouds. Same word, two unrelated scales. Taking a number across
+   // + is not the same as taking a decision across.
+   // +
+   // + So it was measured instead, and the first measurement was still
+   // + wrong, because I generated the test hands by jittering the data
+   // + the page is matching against. That is a trace, not a hand. A real
+   // + hand puts each stroke down in its own place at its own size, so
+   // + the strokes are individually close and collectively out of
+   // + register. Measured again that way, 2200 attempts:
+   // +
+   // +                      accepts a RIGHT  passes a WRONG  passes JUNK
+   // +    floor 30% alone         98%             80%            22%
+   // +    floor 55% alone         71%             10%             0%
+   // +
+   // + Which is the whole argument in two lines. At 30 the page agreed
+   // + with anything; at 55 it turned away three real attempts in ten,
+   // + and the ones it turned away were characters already sitting in
+   // + the collection. ONE NUMBER CANNOT DO THIS JOB: an ordinary hand
+   // + scores about 58 and a scribble reaches 52, so the two piles
+   // + overlap and no line through them is in the right place.
+   // +
+   // + What does separate them is not how close the winner is. It is
+   // + whether it WON. A real character beats the runner up by a mile,
+   // + because it is that character and not another one. A scribble is
+   // + near everything and near nothing: its top two are within a few
+   // + per cent of each other. And a real attempt almost always has the
+   // + right number of strokes, 80% to 98% of the time, while a scribble
+   // + lands on the right count by luck, 12% to 54%.
+   // +
+   // +    floor 35 + won by 10% + right count   89%    14%     1%
+   // +
+   // + Three cheap questions instead of one impossible one.
+
+   // + AND THEN EROS WROTE 山 AND THE PAGE PUT IT THIRD, BEHIND 出 AND 内,
+   // + AT 26%. WHICH KILLED THE WHOLE APPROACH, AND RIGHTLY. 出 IS 山 WITH
+   // + ANOTHER 山 UNDER IT, SO AS A CLOUD OF POINTS WITH THE SIZE TAKEN
+   // + OUT THEY ARE NEARLY THE SAME PICTURE. THE CLOUD CANNOT TELL THEM
+   // + APART AND NO THRESHOLD ON IT EVER WILL.
+   // +
+   // + WHAT TELLS THEM APART IS SITTING RIGHT THERE: 山 IS THREE STROKES
+   // + AND 出 IS FIVE. SO THE COUNT STOPPED BEING A VETO ON THE WINNER AND
+   // + BECAME THE FIRST QUESTION ASKED: ONLY CHARACTERS WRITTEN IN THE
+   // + NUMBER OF STROKES YOU USED GET TO COMPETE AT ALL. THEN THE BEST SIX
+   // + OF THOSE ARE LOOKED AT PROPERLY, STROKE AGAINST STROKE IN ORDER,
+   // + AND THAT IS WHAT DECIDES.
+   // +
+   // + Measured the same way, 1050 attempts and 1200 scribbles:
+   // +
+   // +                                 right  wrong  junk
+   // +    the old floor of 30%          98%    80%   22%
+   // +    cloud, half sure              71%    10%    0%
+   // +    count first, then the strokes 94%    14%    0%
+   // +
+   // + The confidence shown is now this fit, not the cloud distance, so
+   // + the number on the screen is the number the decision was made on.
+   // + The scale is set so that half sure IS the line: it reads a
+   // + character when it is more than half sure and the runner up is not
+   // + within a tenth of it.
+
+   let SHORT  = 6;        // + how many get looked at closely
+   let SURE   = .50;      // + more than half sure
+   let MARGIN = .90;      // + and clear of the next one
+   let SPREAD = .30;      // + fit of .30 per stroke is zero confidence
+
+   // + THE THREE QUESTIONS, ASKED IN ONE PLACE, BECAUSE check() IS NOT THE
+   // + ONLY THING THAT NEEDS THE ANSWER: watch() ASKS THE SAME QUESTION TO
+   // + DECIDE HOW LONG TO WAIT BEFORE READING AT ALL.
+   // +
+   // + THE SECOND QUESTION IS ONLY ASKED WITH NO LESSON UP. WITHOUT A
+   // + TARGET THE QUESTION IS "WHICH CHARACTER IS THIS", AND A WINNER THAT
+   // + BARELY WINS HAS NOT ANSWERED IT. WITH A TARGET THE QUESTION IS ONLY
+   // + "IS THIS THAT ONE", WHICH THE RANKING AND THE STROKE COUNT ALREADY
+   // + ANSWER, AND THE target_char GATE IN /predict ASKS NO MORE EITHER.
+
+   let judge = () => {
+      let shelf = book();
+      let all   = Score.readAs(drawn, shelf);
+
+      // + QUESTION ONE, AND IT IS A DOOR, NOT A PENALTY: HOW MANY STROKES
+      // + DID YOU USE. ANYTHING WRITTEN IN A DIFFERENT NUMBER IS NOT A
+      // + WORSE ANSWER, IT IS A DIFFERENT CHARACTER, AND IT SHOULD NOT BE
+      // + STANDING IN THE LIST AT ALL.
+
+      let same = [];
+      for (let r of all)
+         if (shelf[r.n].medians.length == drawn.length) same.push(r);
+
+      if (! same.length)
+         return { ok: false, why: 'count', rank: [], shelf: shelf,
+                  near: shelf[all[0].n], needs: shelf[all[0].n].medians.length,
+                  drew: drawn.length };
+
+      // + QUESTION TWO. THE CLOUD HAS DONE ITS ONE JOB, WHICH IS TO CUT A
+      // + HUNDRED DOWN TO A HANDFUL FAST. NOW THE HANDFUL GETS READ
+      // + PROPERLY: STROKE ONE AGAINST STROKE ONE, IN THE ORDER YOU WROTE
+      // + THEM. THIS IS THE PART THAT KNOWS 山 FROM 川.
+
+      // + MATCHED BY SHAPE, NOT BY POSITION IN THE SEQUENCE. READING IS
+      // + NOT ALLOWED TO CARE WHAT ORDER YOU WROTE IN, BECAUSE THE CAMERA
+      // + THIS IS COPYING CANNOT SEE AN ORDER AT ALL. THE ORDER IS KEPT
+      // + FOR THE MARKING BELOW, WHERE IT IS THE WHOLE POINT.
+
+      let rank = [];
+      for (let k = 0 ; k < same.length && k < SHORT ; k++) {
+         let mm = Score.matchAny(drawn, shelf[same[k].n].medians);
+         rank.push({ n: same[k].n, d: same[k].d, fit: mm.fit, pair: mm.pair,
+                     tile: same[k].n < HANZI_DATA.length ? same[k].n : -1 });
+      }
+      rank.sort((a, b) => a.fit - b.fit);
+
+      // + ONLY THE WINNER IS MARKED, AND IN ORDER, BECAUSE THAT IS THE
+      // + ONE THE PERSON IS ABOUT TO BE TOLD ABOUT.
+
+      rank[0].wrote = Score.grade(drawn, shelf[rank[0].n].medians);
+
+      let top = rank[0], next = rank[1] ? rank[1].fit : 9;
+      let margin = next > .000001 ? top.fit / next : 0;
+      let enough = sure(top.fit) >= SURE;
+
+      // + THE MARGIN IS ONLY ASKED FOR WITHOUT A LESSON. WITH A TARGET IN
+      // + HAND THE QUESTION IS ONLY "IS THIS THAT ONE", WHICH THE COUNT
+      // + AND THE FIT ALREADY ANSWER, AND THE target_char GATE IN /predict
+      // + ASKS NO MORE THAN THAT EITHER.
+
+      return { rank: rank, shelf: shelf, top: top, got: shelf[top.n],
+               ok: enough && (lesson || margin <= MARGIN),
+               why: enough ? 'split' : 'far' };
+   }
+
+   // + READING WITHOUT DECIDING. CALLED EVERY TIME THE PEN COMES UP, SO
+   // + THERE IS ALWAYS A NAME AND A NUMBER ON THE SCREEN FOR WHAT IS ON
+   // + THE PAPER RIGHT NOW. IT COLLECTS NOTHING AND WIPES NOTHING, WHICH
+   // + IS WHY IT CAN AFFORD TO BE WRONG.
+
+   let seen = null;
+
+   let look = () => {
+      if (! drawn.length) { seen = null; return; }
+
+      // + WITH A LESSON UP AND STROKES STILL MISSING, THE LIVE READING IS
+      // + NOT A READING, IT IS A DISTRACTION. YOU ARE WRITING 水 AND IT
+      // + ANNOUNCES 力 AT 29%, WHICH IS TRUE AND USELESS: OF COURSE HALF A
+      // + CHARACTER LOOKS LIKE SOME OTHER CHARACTER. WHAT YOU ACTUALLY
+      // + WANT TO KNOW THERE IS HOW MANY STROKES ARE LEFT.
+
+      // + FROM MEMORY IT STAYS THIS WAY HOWEVER MANY STROKES THERE ARE, SO
+      // + NO CANDIDATE IS EVER SHOWN BEFORE THE PERSON HAS ANSWERED.
+      if (lesson && (recall || drawn.length < lesson.medians.length)) {
+         seen = null;
+         verdict = { short: true, drew: drawn.length,
+                     needs: lesson.medians.length };
+         return;
+      }
+
+      seen = judge();
+      verdict = { rank: seen.rank, shelf: seen.shelf, live: true,
+                  ok: seen.ok, why: seen.why, near: seen.near,
+                  needs: seen.needs, drew: drawn.length,
+                  wrote: seen.top ? seen.top.wrote : null };
+   }
+
+   // + ====================================================================
+   // + ONE PLACE WHERE A FINISHED ATTEMPT IS TURNED INTO AN ANSWER
+   // +
+   // + It takes the character and its index, from wherever they came, and
+   // + does the rest: mark it, gate it against the lesson, keep it, fly
+   // + it. The reader and the hundred both end up here, which is the
+   // + point: swapping how the page RECOGNISES must not change anything
+   // + about what it then DOES, and before this existed it would have.
+
+   let SURE_READ = .35;        // + the bar when a real reader named it
+   let pending = 0;            // + which question the page is waiting on
+   let reading = false;        // + and whether it is still waiting
+
+   let land = (got, gotN, rank, shelf) => {
+      let fit = Score.fitAny(drawn, got.medians);
+      if (lesson) tried = true;
+      let asked = study && lesson && ! studyOver;      // + one of the study's own
+
+      // + A LESSON IS STRICT. WHAT YOU WROTE IS STILL READ OUT LOUD AND
+      // + THEN TURNED DOWN, WHICH IS EXACTLY WHAT THE target_char GATE IN
+      // + /predict DOES: RECOGNISE FIRST, REFUSE SECOND.
+
+      if (lesson && got.char != lesson.char) {
+         verdict = { rank: rank, shelf: shelf, missed: true, done: true,
+                     wrote: Score.grade(drawn, lesson.medians) };
+         Log.attempt(verdict, lesson, drawn, gaps);
+         if (asked && recall) { locked = true; advance(2600); }
+         return;
+      }
+
+      // + AND IT STILL HAS TO BE WRITTEN WELL ENOUGH TO KEEP. A READER
+      // + THIS GOOD WILL PUT A NAME ON A SCRIBBLE, BECAUSE SOMETHING IS
+      // + ALWAYS THE NEAREST THING, SO THE QUESTION "IS IT THAT
+      // + CHARACTER" IS ANSWERED BY THE READER AND THE QUESTION "IS THAT
+      // + WRITING" IS STILL ANSWERED HERE.
+
+      // + TWO THINGS LEARNT FROM A REAL HAND, WHICH NO TEST OF MINE WAS.
+      // +
+      // + IN A LESSON THE RULER NO LONGER HAS A VETO. THE READER WAS NOT
+      // + TOLD WHAT THE TARGET WAS AND NAMED IT ANYWAY, WHICH IS THE WHOLE
+      // + OF MRANDARIN'S target_char GATE: THAT IS THE CHARACTER. HOW IT
+      // + WAS WRITTEN IS STILL MEASURED, SHOWN AND LOGGED, AS A GRADE AND
+      // + NOT AS A REFUSAL.
+      // +
+      // + WITHOUT A LESSON THE RULER STAYS, BECAUSE A READER THIS GOOD PUTS
+      // + A NAME ON A SCRIBBLE TOO. BUT ONE STROKE SPLIT IN TWO IS FORGIVEN.
+
+      if (drawn.length == got.medians.length + 1) {
+         fit = Score.fitSplit(drawn, got.medians);
+         if (rank.length) rank[0].fit = fit;
+      }
+
+      if (! lesson && sure(fit) < SURE_READ) {
+         verdict = { rank: rank, shelf: shelf, noise: true, done: true,
+                     why: 'far', near: got, needs: got.medians.length,
+                     drew: drawn.length };
+         Log.attempt(verdict, lesson, drawn, gaps);
+         said = null; saidN = -1;
+         return;
+      }
+
+      said = got; saidN = gotN;
+      verdict = { rank: rank, shelf: shelf, done: true,
+                  wrote: Score.grade(drawn, got.medians) };
+
+      // + BEFORE taught(), NOT AFTER. taught() NULLS THE LESSON, AND A ROW
+      // + THAT HAS LOST ITS TARGET CANNOT SAY WHETHER THE CHARACTER WAS
+      // + ASKED FOR OR CHOSEN, WHICH IS THE DIFFERENCE BETWEEN THE TWO
+      // + MODES THE PAGE HAS.
+      Log.attempt(verdict, lesson, drawn, gaps);
+
+      taught();
+      if (asked) advance(2000);
+
+      // + THE SHEET IS CLEAR AGAIN, BECAUSE THE INK IS NOT GONE: IT IS IN
+      // + THE AIR. THE STROKES ARE HANDED TO THE FLIGHT AND WHAT YOU SEE
+      // + LEAVING THE PAPER IS WHAT WAS ON IT. THE VERDICT STAYS UP, YOU
+      // + STILL WANT TO READ HOW IT WENT.
+
+      let flying = drawn.map(s => s.slice());
+      let born = Date.now() / 1000;
+      drawn = []; here = null;
+      gaps = []; lifted = 0;
+
+      if (saidN >= 0) {
+         if (! found[saidN]) { found[saidN] = true; remember(); }
+         caught = { n: saidN, char: got.char, at: born, strokes: flying,
+                    to: cellAt(saidN), size: BIG * .80 };
+      }
+      else {
+         let seen = false;
+         for (let g of mine) if (g.char == got.char) seen = true;
+         if (! seen) { mine.push(got); keepMine(); }
+         caught = { n: -1, char: got.char, at: born, strokes: flying,
+                    to: mineSlot(got.char), size: .064, mine: true };
+      }
+   }
+
+   // + THE LOCAL ANSWER, WHICH IS WHAT HAPPENS WHEN THE READER IS NOT
+   // + THERE. UNCHANGED FROM WHAT THE PAGE DID BEFORE IT HAD ONE.
+
+   let fromBook = () => {
+      let call = judge();
+      if (! call.ok) {
+         verdict = { rank: call.rank, shelf: call.shelf, noise: true,
+                     done: true, why: call.why, near: call.near,
+                     needs: call.needs, drew: drawn.length };
+         Log.attempt(verdict, lesson, drawn, gaps);
+         said = null; saidN = -1;
+         return;
+      }
+      land(call.got, call.top.n < HANZI_DATA.length ? call.top.n : -1,
+           call.rank, call.shelf);
+   }
+
+   // + AND THE READER'S ANSWER. THE CANDIDATES COME BACK AS CHARACTERS,
+   // + NOT AS INDICES INTO ANYTHING, SO EACH ONE HAS TO BE LOOKED UP
+   // + BEFORE IT CAN BE SCORED OR DRAWN. THREE IS ENOUGH FOR THE LIST
+   // + AND THEY ARE KEPT AFTER THE FIRST TIME.
+
+   let fromReader = async cands => {
+      let shelf = [], rank = [];
+      for (let k = 0 ; k < cands.length && shelf.length < 3 ; k++) {
+         let e = null;
+         try { e = (await lookUp(cands[k])).e; } catch (err) { e = null; }
+         if (! e) continue;
+         // + tile IS THE CELL IN THE ATLAS IMAGE, OR -1 FOR A CHARACTER
+         // + THAT HAS NO CELL BECAUSE IT IS NOT ONE OF THE HUNDRED. n IS
+         // + ONLY A PLACE IN THIS LIST. THEY USED TO BE THE SAME NUMBER
+         // + AND THAT HELD RIGHT UP UNTIL THE READER STARTED ANSWERING
+         // + WITH CHARACTERS FROM OUTSIDE THE BOOK, WHICH WOULD HAVE
+         // + DRAWN WHATEVER THE HUNDRED HAPPENED TO HAVE IN CELL 0, 1, 2.
+         let has = known(e.char);
+         rank.push({ n: shelf.length, char: e.char,
+                     tile: has ? has.n : -1,
+                     fit: Score.fitAny(drawn, e.medians) });
+         shelf.push(e);
+      }
+      // + false AND NOTHING ELSE. check() TAKES false TO MEAN "ASK THE BOOK",
+      // + AND WHEN THIS ASKED THE BOOK TOO, ONE REFUSAL WAS LOGGED TWICE.
+      if (! shelf.length) return false;
+
+      // + THE READER'S FIRST ANSWER STAYS FIRST. IT IS BETTER AT SAYING
+      // + WHICH CHARACTER THIS IS THAN MY RULER IS, AND MY RULER IS HERE
+      // + TO SAY HOW WELL IT WAS WRITTEN, NOT TO OVERRULE IT. THE ONES
+      // + BELOW IT ARE PUT IN ORDER OF THE NUMBER THEY SHOW, BECAUSE A
+      // + LIST THAT READS 95, 45, 52 LOOKS BROKEN EVEN WHEN IT IS NOT.
+
+      let rest = rank.slice(1).sort((a, b) => a.fit - b.fit);
+      rank = [ rank[0] ].concat(rest);
+
+      let top = known(shelf[0].char);
+
+      // + ONE STROKE THAT IS NOT ONE OF THE HUNDRED IS SHOWN, NOT COLLECTED.
+      // + 丨 AND 丿 ARE CHARACTERS TO THE READER, BUT ON THIS SHEET A SINGLE
+      // + STROKE IS ALMOST ALWAYS THE FIRST STROKE OF SOMETHING: STOP TO
+      // + THINK HALFWAY INTO 山 AND THE PAGE TOOK 丨, WIPED IT, AND THEN
+      // + TOOK THE REST AS 凵. THE INK STAYS AND THE READING STAYS ON
+      // + SCREEN, SO NOTHING IS HIDDEN, AND THE NEXT STROKE CARRIES ON.
+      if (drawn.length < 2 && ! (top && top.n >= 0)) {
+         verdict = { rank: rank, shelf: shelf, live: true, ok: false,
+                     why: 'far', drew: drawn.length };
+         return true;
+      }
+
+      land(shelf[0], top ? top.n : -1, rank, shelf);
+      return true;
+   }
+
+   let check = () => {
+      if (drawn.length == 0) return;
+
+      // + FROM MEMORY, AN ANSWER THAT HAS BEEN GIVEN IS NOT ASKED AGAIN. THE
+      // + INK IS STILL ON THE LOCKED SHEET, SO A SECOND PRESS ON READ IT
+      // + READ THE SAME DRAWING AND WROTE THE SAME ROW TWICE.
+      if (study && locked) return;
+
+      // + STOPPING HALFWAY THROUGH A LESSON IS NOT A WRONG CHARACTER, IT
+      // + IS AN UNFINISHED ONE, AND ASKING ANYBODY TO READ IT WOULD
+      // + ANSWER THE WRONG QUESTION: HALF OF 水 REALLY IS SOME OTHER
+      // + CHARACTER. SO IT SAYS WHAT IT ACTUALLY SEES, WHICH IS THAT
+      // + THERE ARE STROKES MISSING, AND THE INK STAYS PUT.
+
+      // + FROM MEMORY, TOO MANY STROKES GOES TO THE READER (A SPLIT STROKE
+      // + IS STILL THE CHARACTER) BUT TOO FEW DOES NOT: THE READER IS KIND
+      // + ENOUGH TO NAME 女 FROM TWO OF ITS THREE STROKES, AND A CHARACTER
+      // + WITH A STROKE MISSING IS NOT ONE THAT WAS REMEMBERED.
+      if (lesson && (recall ? drawn.length <  lesson.medians.length
+                            : drawn.length != lesson.medians.length)) {
+         verdict = { short: true, drew: drawn.length, needs: lesson.medians.length,
+                     final: true };
+         Log.attempt(verdict, lesson, drawn, gaps);
+         tried = true;
+         if (study && recall && ! studyOver) { locked = true; advance(2600); }
+         return;
+      }
+
+      // + THE TAG IS HOW A LATE ANSWER KNOWS IT IS LATE. THE READER TAKES
+      // + A FEW HUNDRED MILLISECONDS AND A HAND DOES NOT STOP MOVING OUT
+      // + OF POLITENESS: BY THE TIME IT COMES BACK YOU MAY HAVE WRITTEN
+      // + ANOTHER STROKE, AND THE ANSWER IS THEN ABOUT A DRAWING THAT NO
+      // + LONGER EXISTS. SO IT IS THROWN AWAY RATHER THAN APPLIED.
+
+      let tag = ++pending;
+      let was = drawn.length;
+      reading = true;
+
+      askOCR(drawn).then(async cands => {
+         if (tag != pending || drawn.length != was) { reading = false; return; }
+         let ok = cands ? await fromReader(cands) : false;
+         if (tag != pending) { reading = false; return; }
+         if (! ok && drawn.length == was) fromBook();
+         reading = false;
+      });
+   }
+   // + ====================================================================
+   // + THE STROKE IS BUILT IN THE MOUSE HANDLERS, NOT READ ONCE A FRAME
+   // +
+   // + update() runs on a 30 ms setInterval, so a quick tap can begin and
+   // + end between two frames and never be seen at all. That is exactly how
+   // + the short dot stroke is written. Losing it made the page announce
+   // + "you drew 4, it takes 5", blaming the writer for input it dropped.
+   // +
+   // + A tap is now kept as a dot, the point where you let go is recorded,
+   // + and a stroke that wanders off the sheet leaves ONE point on the edge
+   // + instead of a row of them pinned there, which used to read to the
+   // + recogniser as a long deliberate line along the border.
+
+   let outside = false;
+
+   // + TOUCHING THE PAPER WHEN AN ANSWER IS ALREADY UP STARTS OVER, AND
+   // + THAT ONE LINE IS THE WHOLE FIX FOR GETTING IT WRONG. BEFORE IT,
+   // + A REFUSED ATTEMPT LEFT ITS OWN MARKED-UP STROKES LYING ON THE
+   // + SHEET: ADD ONE MORE AND YOU WERE WRITING ON TOP OF YOUR LAST
+   // + MISTAKE, SO THE ONLY WAY FORWARD WAS A BUTTON NOBODY TOLD YOU TO
+   // + PRESS. MAKING A MISTAKE IS THE NORMAL CASE, NOT THE EDGE CASE.
+   // +
+   // + A SHORT COUNT IS NOT AN ANSWER, THOUGH. IT MEANS YOU STOPPED
+   // + HALFWAY, AND THE STROKES ALREADY DOWN ARE THE ONES YOU ARE ABOUT
+   // + TO CARRY ON FROM, SO THAT ONE IS LEFT ALONE.
+
+   // + ====================================================================
+   // + TOUCHING ONE OF THE HUNDRED ASKS TO BE TAUGHT IT
+   // +
+   // + Straight out of MRandarin.js, and I had simply not built it:
+   // +
+   // +    "Tapped on a discovered hanzi cell. Set it directly as the new
+   // +     learn-target, no backend round-trip needed since the pinyin
+   // +     and meaning are already in the pokedex."
+   // +       mandarinState.learnTarget = { char, pinyin, meaning }
+   // +
+   // + So the grid is not a scoreboard, it is the menu. LEARN A NEW HANZI
+   // + is for when you do not care which one; the cells are for when you
+   // + do. Only a DISCOVERED cell answers, there too: the hit test walks
+   // + visibleChars, which holds only what you have found, so an empty
+   // + cell is not a button and never was.
+
+   let cellUnder = () => {
+      if (study) return -1;
+      let col = Math.round((pointer[0] - DEX_X) / CELL + (HANZI.cols - 1) / 2);
+      let row = Math.round((HANZI.rows - 1) / 2 - (pointer[1] - DEX_Y) / CELL);
+      if (col < 0 || col >= HANZI.cols || row < 0 || row >= HANZI.rows) return -1;
+      let n = row * HANZI.cols + col;
+      if (n < 0 || n >= HANZI_DATA.length || ! found[n]) return -1;
+      let c = cellAt(n);
+      return Math.abs(pointer[0] - c[0]) < CELL / 2
+          && Math.abs(pointer[1] - c[1]) < CELL / 2 ? n : -1;
+   }
+
+   // + AND THE ONES YOU BROUGHT IN YOURSELF ANSWER THE SAME WAY. THEY ARE
+   // + AS DISCOVERED AS ANYTHING IN THE GRID; THEY JUST HAVE NO TILE IN
+   // + THE ATLAS TO LIVE IN.
+
+   let mineUnder = () => {
+      let show = mineShow();
+      for (let k = 0 ; k < show.length ; k++)
+         if (Math.abs(pointer[0] - (MINE_X + k * MINE_GAP)) < MINE_GAP / 2
+          && Math.abs(pointer[1] - MINE_Y) < .052) return show[k];
+      return null;
+   }
+
+   let press = () => {
+      for (let b of buttons)
+         if (over(b)) { b.act(); return; }
+
+      // + NOT IN THE STUDY: A TAP ON A FOUND CELL PLAYS ITS ANIMATION, AND
+      // + THE SECOND HALF OF THE STUDY IS THE HALF WITHOUT ANIMATIONS.
+      let n = study ? -1 : cellUnder();
+      if (n >= 0) { lesson = HANZI_DATA[n]; lessonN = n; opened(); return; }
+      let g = study ? null : mineUnder();
+      if (g) { lesson = g; lessonN = -1; opened(); return; }
+
+      if (! onPaper()) return;
+
+      // + IN THE STUDY THE SHEET ONLY TAKES INK WHILE A CHARACTER IS BEING
+      // + ASKED FOR. BEFORE THE FIRST ONE, BETWEEN TWO, AND AFTER THE LAST,
+      // + WHATEVER WAS WRITTEN WAS READ AS FREE WRITING AND WENT INTO THE
+      // + DATA AS IF IT MEANT SOMETHING. AND FROM MEMORY THE FIRST ANSWER IS
+      // + THE ANSWER: ADDING THE MISSING STROKE AFTER BEING TOLD "THAT IS NOT
+      // + IT" USED TO TURN A MISS INTO A PASS.
+      if (study && (! lesson || locked)) return;
+
+      if (settle) clearTimeout(settle);         // + the hand moved again
+
+      // + AND AN ANSWER STILL ON ITS WAY IS NOW ABOUT A DRAWING THAT IS
+      // + ABOUT TO CHANGE. check() ONLY THREW A LATE ANSWER AWAY WHEN THE
+      // + STROKE COUNT HAD ALREADY MOVED, AND IT DOES NOT MOVE UNTIL THE PEN
+      // + COMES UP: SO START A STROKE WHILE THE READER WAS ANSWERING AND THE
+      // + ANSWER LANDED UNDER YOUR HAND, WIPED THE SHEET, AND THE STROKE YOU
+      // + WERE DRAWING VANISHED HALFWAY.
+      pending++;
+
+      // + ====================================================================
+      // + WHAT TOUCHING THE PAPER WIPES, AND THIS WAS WIPING YOUR WRITING
+      // +
+      // + It used to wipe on any finished answer, and a refusal is a
+      // + finished answer, so: you write the first stroke, you stop for
+      // + three seconds to work out where the second one goes, the page
+      // + gives up waiting and says it cannot read one stroke, and then
+      // + the moment you touch the paper to carry on IT DELETES THE
+      // + STROKE YOU HAD. You write and your work disappears under your
+      // + hand. That is the whole bug and it was mine.
+      // +
+      // + A refusal is not an attempt that ended. It is almost always an
+      // + attempt that is not finished yet, so the ink stays and the next
+      // + stroke is added to it, the way ink on a whiteboard stays until
+      // + somebody wipes the board. Clear is the wipe, and it is a button
+      // + with a name on it.
+      // +
+      // + A miss is different: a lesson was asked for, the wrong
+      // + character was written and it has been marked in red. That one
+      // + really is over, so the next touch starts again.
+
+      // + AND SO IS TOO MANY STROKES IN A LESSON. THE PANEL SAYS "WRITE
+      // + OVER IT TO START AGAIN" FOR THAT CASE TOO, AND IT DID NOT DO IT:
+      // + EVERY NEW STROKE WENT ON TOP, THE COUNT ONLY GREW, AND THE ONLY
+      // + WAY OUT WAS THE CLEAR BUTTON THE SENTENCE NEVER MENTIONS.
+
+      let extra = verdict && verdict.short && ! recall && verdict.drew > verdict.needs;
+      // + AND A LESSON THAT WAS REFUSED OUTRIGHT. IT KEPT ITS INK, THE RETRY
+      // + WENT ON TOP OF IT, AND THE COUNT WAS WRONG FROM THE FIRST STROKE.
+      let spoilt = lesson && verdict && verdict.noise && verdict.done;
+      if (verdict && (verdict.missed || extra || spoilt)) {
+         drawn = [];
+         gaps = []; lifted = 0;
+      }
+      if (said) { said = null; saidN = -1; }
+      verdict = null;
+      // + THE MODEL LEAVES THE SHEET WHEN THE PEN LANDS ON IT. WATCH, THEN
+      // + WRITE: WITH IT STILL THERE A LESSON WAS TRACING, AND THE INK AND
+      // + THE MODEL SAT ON TOP OF EACH OTHER. CLEAR PLAYS IT AGAIN.
+      if (lesson) reveal = false;
+
+      here = [ intoPaper() ];
+      outside = false;
+
+      // + THE CLOCK ON AN ATTEMPT STARTS AT THE FIRST TOUCH, NOT WHEN
+      // + check() RUNS: BY THEN THE PAGE HAS ALREADY SPENT ITS WAIT, AND
+      // + WAITING IS NOT PART OF WRITING ANYTHING. IT ONLY TAKES THE FIRST
+      // + ONE OF AN ATTEMPT AND IGNORES THE REST.
+      Log.penDown();
+   }
+
+   let move = () => {
+      if (! here) return;
+      let off = ! onPaper();
+      if (off && outside) return;
+      let p = intoPaper(), last = here[here.length - 1];
+      let dx = p[0] - last[0], dy = p[1] - last[1];
+      if (off || dx * dx + dy * dy > .00008) here.push(p);   // + finer, for a thin pen
+      outside = off;
+   }
+
+   let release = () => {
+      if (! here) return;
+      if (! outside) here.push(intoPaper());
+      if (here.length == 1)                    // + a dot still has to be drawable
+         here.push([ here[0][0] + .004, here[0][1] - .004 ]);
+      drawn.push(here);
+      here = null;
+
+      // + YOUR OWN RHYTHM, WHICH IS WHAT THE WAIT IS MEASURED IN
+
+      let now = Date.now();
+      if (lifted && drawn.length > 1) gaps.push(now - lifted);
+      if (gaps.length > 8) gaps.shift();
+      lifted = now;
+
+      watch();
+   }
+
+   // + ====================================================================
+   // + NOBODY PRESSES CHECK, BECAUSE NOBODY PRESSES CHECK ON A WHITEBOARD
+   // +
+   // + There was a Check button here and it was a confession that this
+   // + page was not the thing it is copying. MRandarin has no Check. The
+   // + PC posts a frame to /predict every 500 ms whether you asked it to
+   // + or not, and the character is recognised the moment it is finished
+   // + being written. The button was me making you do the camera's job.
+   // +
+   // + Two signals replace it, and the first one is Eros's:
+   // +
+   // + WITH A LESSON UP, THE PAGE KNOWS HOW MANY STROKES THE CHARACTER
+   // + TAKES. It is sitting right there in the data. So there is nothing
+   // + to guess at and nothing to wait for: you lift the pen on the last
+   // + stroke and it reads. Three strokes asked for, third stroke landed,
+   // + go. That is better than anything the real MRandarin can do, because
+   // + a camera looking at a whiteboard cannot count what you have not
+   // + written yet.
+   // +
+   // + WITH NO LESSON, nothing knows the count, so it falls back to a
+   // + still hand: you stopped, so you are done. Long enough that the gap
+   // + between two strokes never trips it, short enough that finishing
+   // + feels like it answered you.
+
+   // + AND THE SECOND DEAD END: THE COUNT ALONE WAS THE ONLY TRIGGER WITH
+   // + A LESSON UP, SO JOIN TWO STROKES INTO ONE BY ACCIDENT AND THE PAGE
+   // + WAITED FOREVER FOR A STROKE YOU THOUGHT YOU HAD ALREADY WRITTEN.
+   // + NOTHING MOVED AND NOTHING SAID WHY. A STILL HAND NOW ANSWERS THERE
+   // + TOO, JUST LATER, BECAUSE A PAUSE MID CHARACTER IS THINKING AND A
+   // + LONGER ONE IS BEING STUCK.
+
+   // + ====================================================================
+   // + KNOWING WHEN YOU HAVE FINISHED. THE THIRD ATTEMPT.
+   // +
+   // + The first was a flat one second after the last stroke. Too slow
+   // + when you were obviously done, too fast when you stopped to think.
+   // +
+   // + The second tried to be clever and was worse, in a way that is
+   // + worth writing down because it is the whole problem in one
+   // + sentence: IT READ AS SOON AS WHAT WAS ON THE PAPER WAS A
+   // + CHARACTER. But a prefix of a character IS a character. 出 is 山
+   // + with another 山 under it. Write the first three strokes of 出 and
+   // + there is a finished, confident, correct reading of 山 sitting on
+   // + the sheet, and the page took it, collected it, and wiped the
+   // + paper you were still writing on. Being already readable is not
+   // + evidence that you are finished. It is barely evidence at all.
+   // +
+   // + So the question is not "is this a character" but "COULD THIS STILL
+   // + BE THE BEGINNING OF SOMETHING LONGER", which is a question with an
+   // + actual answer. Grade what is on the paper against the FIRST n
+   // + STROKES of everything longer than it. If anything fits, you might
+   // + be in the middle of that, and the page has no business interrupting
+   // + you. If nothing does, there is nothing you could be writing that
+   // + continues from here, and it can read at once without risk.
+   // +
+   // + It used to wait in YOUR time when it had to wait: a multiple of
+   // + the gaps between your strokes. That was taken out, because it was
+   // + exactly what cut characters outside the hundred in half. Their
+   // + prefixes are invisible to unfinished(), so for them the page always
+   // + believed you were done and read after about a second. Now there are
+   // + only fixed waits, each named below with what it is for. The gaps
+   // + are still measured, because the log keeps them as hesitation.
+   // +
+   // + Leaving the sheet used to read too. It no longer does: every
+   // + button is off the sheet, so reaching for one was being counted as
+   // + putting the brush down.
+
+   let settle = null;
+   let QUICK = 380;                  // + one of the hundred, and nothing could
+                                     //   continue it: just a beat
+   let LATE  = 4000;                 // + it could still be the start of
+                                     //   something longer in the hundred
+   let STRANGER = 4000;              // + none of the hundred is confidently on
+                                     //   the paper, so the page cannot tell a
+                                     //   finished character from half of one
+   let THINK = 2400;                 // + mid lesson, with strokes missing
+   let OPEN  = .18;                  // + how well a beginning has to fit
+
+   let lifted = 0, gaps = [];        // + when the last stroke ended, and the
+                                     //   gaps between the ones before it,
+                                     //   which only the log uses now
+
+   // + IS WHAT IS ON THE PAPER THE START OF SOMETHING LONGER?
+
+   let unfinished = () => {
+      let n = drawn.length;
+      for (let e of book()) {
+         if (e.medians.length <= n) continue;
+         if (Score.fitAny(drawn, e.medians.slice(0, n)) <= OPEN) return true;
+      }
+      return false;
+   }
+
+   let arm = ms => {
+      if (settle) clearTimeout(settle);
+      settle = setTimeout(check, ms);
+   }
+
+   let watch = () => {
+      if (settle) clearTimeout(settle);
+
+      // + IT READS THE MOMENT YOU LIFT THE PEN, EVERY TIME, AND SAYS SO.
+      // + THAT IS FREE: LOOKING AT SOMETHING IS NOT THE SAME AS DECIDING
+      // + ABOUT IT. NOTHING IS COLLECTED AND NOTHING IS WIPED. SO THE
+      // + PAGE IS NEVER SILENT WHILE YOU WRITE, AND THE WAIT BELOW IS
+      // + ONLY ABOUT WHEN TO COMMIT, WHICH IS THE ONLY PART THAT COSTS
+      // + ANYTHING TO GET WRONG.
+
+      look();
+
+      // + FROM MEMORY THERE IS NO THINKING TIMER. IT ANSWERS A PAUSE WITH
+      // + "THAT IS 2 OF THE 4 STROKES", WHICH IS THE ANSWER TO HALF THE
+      // + QUESTION, AND STOPPING TO THINK IS WHAT RECALLING LOOKS LIKE.
+      // + AND NO READING AT THE LAST STROKE EITHER. SOMEBODY WHO SPLITS A
+      // + STROKE REACHES THE COUNT ONE STROKE EARLY, AND WAS READ WITH THE
+      // + CHARACTER UNFINISHED. FROM MEMORY THE ONLY THING THAT READS IS
+      // + THE PERSON SAYING THEY ARE DONE.
+      if (lesson) {
+         if (recall) return;
+         if (drawn.length >= lesson.medians.length) check();
+         else arm(THINK);
+         return;
+      }
+      // + THERE USED TO BE A SHORTCUT HERE: WITH AS MANY STROKES AS THE
+      // + LONGEST OF THE HUNDRED, READ AT ONCE, BECAUSE NOTHING LONGER
+      // + EXISTED. SINCE THE READER CAN NAME ANY CHARACTER, LONGER ONES DO
+      // + EXIST, AND THE HUNDRED TOP OUT AT 5 STROKES: SO EVERY CHARACTER
+      // + OF 6 OR MORE WAS READ AFTER EACH STROKE FROM THE FIFTH ON, UNTIL
+      // + SOME PREFIX OF IT MATCHED. 爱 WAS TAKEN AS 受 AT STROKE 8 AND ITS
+      // + LAST TWO STROKES AS 又, AT ANY SPEED OF WRITING.
+
+      // + AND IF IT COULD STILL BE THE START OF SOMETHING LONGER, IT WAITS
+      // + THE FULL CEILING, NOT YOUR RHYTHM. YOUR RHYTHM IS THE GAP
+      // + BETWEEN STROKES YOU HAVE ALREADY WRITTEN, AND THE GAP BEFORE THE
+      // + ONE YOU HAVE NOT WRITTEN YET IS THE LONGEST OF THE LOT: IT IS
+      // + THE ONE WHERE YOU STOP AND WORK OUT WHERE THE NEXT STROKE GOES.
+      // + I WATCHED IT COMMIT TO A SINGLE STROKE BECAUSE OF THAT.
+      // +
+      // + WAITING IS ALMOST FREE NOW. THE READING IS ALREADY ON THE SCREEN
+      // + AND HAS BEEN SINCE YOU LIFTED THE PEN, SO THE ONLY THING THE
+      // + CLOCK STILL DECIDES IS WHEN TO TAKE THE PAPER AWAY FROM YOU,
+      // + AND THERE IS NO HURRY TO DO THAT.
+
+      // + AND IF NONE OF THE HUNDRED IS CONFIDENTLY WHAT IS ON THE PAPER, IT
+      // + WAITS STRANGER. unfinished() CAN ONLY SEE PREFIXES OF THE
+      // + HUNDRED, SO FOR A CHARACTER OUTSIDE THEM IT ALWAYS SAID "NOTHING
+      // + CAN CONTINUE FROM HERE" AND THE PAGE USED TO READ ON YOUR OWN
+      // + RHYTHM, ABOUT A SECOND: A PAUSE TO THINK IN THE MIDDLE OF 爱 WAS
+      // + ENOUGH FOR IT TO COLLECT WHATEVER PREFIX WAS ON THE PAPER.
+
+      // + IT USED TO RETURN HERE WITHOUT ARMING ANYTHING WHEN THE WRITING
+      // + WAS BOTH UNFINISHED LOOKING AND SMALL, AND "UNTIL YOU PRESS
+      // + SOMETHING" HAD NOTHING TO PRESS. EVERY TEST WROTE THE CHARACTER
+      // + ACROSS THE WHOLE SHEET, SO NONE OF THEM SAW IT: A REAL HAND ON A
+      // + TRACKPAD WRITES SMALL, AND 人 IS THE START OF 大, SO A SMALL 人
+      // + WAS NEVER READ AT ALL. NOW IT ALWAYS READS IN THE END, AND THE
+      // + READ IT BUTTON READS AT ONCE.
+
+      let open = unfinished();
+      arm(open ? LATE : seen && seen.ok ? QUICK : STRANGER);
+   }
+
+   // + ====================================================================
+   // + THE CONTROLS ARE WORDS, NOT BOXES
+
+   // + THE TOP ROW IS WHAT YOU DO WITH YOUR OWN WRITING AND NEEDS NOTHING
+   // + TO BE ASKED OF YOU. THE BOTTOM ROW IS THE TWO WAYS TO ASK FOR A
+   // + LESSON, WHICH IS WHY IT IS A SECOND ROW AND NOT A FIFTH WORD.
+
+   // + SHOW ME IS GONE, AND IT SHOULD NEVER HAVE BEEN BUILT. ASKING TO BE
+   // + TAUGHT A CHARACTER AND ASKING TO SEE IT WRITTEN ARE THE SAME
+   // + REQUEST: MRANDARIN HAS ONE BUTTON, LEARN A NEW HANZI, AND THE
+   // + ANIMATION IS WHAT IT GIVES YOU. A SEPARATE SHOW ME MEANT THE PAGE
+   // + COULD SIT IN A STATE WHERE IT HAD SET YOU A CHARACTER AND WAS
+   // + REFUSING TO SHOW IT, WHICH IS NOT A STATE ANYONE WANTS TO BE IN.
+
+   // + THE NEXT ONE IN THE STUDY. THE GRID IS EMPTIED WHEN THE SECOND HALF
+   // + BEGINS, BECAUSE THE FIVE JUST LEARNT ARE SITTING IN IT AND A GRID
+   // + FULL OF THE ANSWERS IS A MODEL TOO. A LESSON FROM MEMORY IS AN
+   // + ORDINARY LESSON WITH reveal TURNED BACK OFF.
+
+   // + AND IT MOVES ON BY ITSELF. AFTER A CHARACTER IS ACCEPTED, AND FROM
+   // + MEMORY AFTER ANY ANSWER AT ALL, SO EACH ONE IS ASKED EXACTLY ONCE
+   // + AND NOBODY HAS TO BE TOLD TO PRESS ANYTHING BETWEEN THEM. AFTER THE
+   // + LAST ONE THE QUESTIONS COME UP WITHOUT BEING ASKED FOR.
+
+   let later = null;
+   let advance = ms => {
+      if (later) clearTimeout(later);
+      later = setTimeout(() => { later = null; nextStudy(); }, ms);
+   }
+
+   let nextStudy = () => {
+      if (later) { clearTimeout(later); later = null; }
+      if (studyOver) return;
+      if (step >= 2 * STUDY.length) {
+         studyOver = true; recall = false;
+         taught(); clear();
+         Log.survey(STUDY);
+         return;
+      }
+      if (step == STUDY.length) { found = {}; remember(); mine = []; keepMine(); }
+      recall = step >= STUDY.length;
+      let got = known(STUDY[step % STUDY.length]);
+      step++;
+      if (! got) return;
+      seen = null; gaps = []; lifted = 0;
+      tried = false; locked = false;
+      lesson = got.e; lessonN = got.n;
+      Log.asked(recall ? 'recall' : 'study');
+      opened();
+      if (recall) reveal = false;
+      handedAt = Date.now();
+   }
+
+   // + A PRESS ON NEXT RIGHT AFTER THE PAGE HAS MOVED ON BY ITSELF IS
+   // + SOMEBODY ASKING FOR WHAT THEY ALREADY GOT, AND IT USED TO SKIP A
+   // + CHARACTER: 女 WAS HANDED OUT AND PASSED OVER IN THE SAME SECOND.
+   // + SO: WITH NOTHING ON THE TABLE, NEXT BEGINS OR CARRIES ON. WHILE
+   // + LEARNING, IT ONLY SKIPS A CHARACTER THAT HAS BEEN TRIED. FROM MEMORY,
+   // + PRESSING IT WITHOUT AN ANSWER IS "I DO NOT REMEMBER", WHICH IS AN
+   // + ANSWER, AND IT IS WRITTEN DOWN AS ONE BEFORE MOVING ON.
+   let handedAt = 0;
+   let pressNext = () => {
+      if (studyOver) return;
+      if (! lesson) { nextStudy(); return; }
+      if (Date.now() - handedAt < 1500) return;
+      // + AND WITH INK ON THE SHEET, NEXT FROM MEMORY MEANS "I AM DONE", THE
+      // + SAME AS READ IT. SOMEBODY WHO WRITES THE CHARACTER AND THEN REACHES
+      // + FOR THE WRONG BUTTON HAS STILL ANSWERED.
+      if (recall && ! tried && drawn.length) {
+         if (settle) clearTimeout(settle);
+         check();
+         return;
+      }
+      // + AND A BLANK SHEET ONLY COUNTS AS "I DO NOT REMEMBER" AFTER FOUR
+      // + SECONDS. IN THE FIRST REAL SESSIONS SEVERAL BLANK ANSWERS CAME 1.6
+      // + TO 3.3 SECONDS AFTER THE CHARACTER WAS ASKED FOR: NOBODY DECIDES
+      // + THEY HAVE FORGOTTEN THAT FAST. THAT WAS A HAND STILL PRESSING NEXT.
+      if (recall && ! tried && Date.now() - handedAt < 4000) return;
+      if (recall && ! tried) {
+         verdict = { short: true, drew: 0, needs: lesson.medians.length, final: true };
+         Log.attempt(verdict, lesson, drawn, gaps);
+      }
+      if (recall || tried) nextStudy();
+   }
+
+   let buttons = study ? [
+      { text: 'Next',            act: pressNext },
+      { text: 'Clear',           act: clear },
+   ] : [
+      { text: 'Learn a new one', act: teach },
+      { text: 'Type one',        act: typing },
+      { text: 'Clear',           act: clear },
+   ];
+
+   // + A CONTROL NEEDS AN EDGE. THESE WERE BARE WORDS AT HALF BRIGHTNESS
+   // + AND NOTHING SAID THEY COULD BE PRESSED, SO THE CHIP IS THE POINT
+   // + OF THIS AND THE PADDING IS WHAT MAKES IT A TARGET RATHER THAN A
+   // + LABEL YOU HAVE TO HIT EXACTLY.
+
+   let BTN = .042, PAD = .038, GAP = .042, bx = COL, by = -.685;
+   for (let b of buttons) {
+      b.w = BTN * Hanzi.measure(b.text);
+      b.x = bx + b.w / 2 + PAD;
+      b.y = by;
+      b.h = .104;
+      bx += b.w + 2 * PAD + GAP;
+   }
+   // + AND ONE THAT SAYS "I AM DONE", ON THE ROW BELOW, UNDER THE RIGHT
+   // + CORNER OF THE PAPER. THE PAGE GUESSES WHEN YOU HAVE STOPPED, AND A
+   // + GUESS CAN BE SLOW OR WRONG: THIS IS THE ANSWER THAT NEVER IS. IT
+   // + GOES LAST IN THE LIST SO THE OTHER THREE STAY WHERE THEY WERE.
+
+   let readNow = { text: 'Read it',
+                   act: () => { if (settle) clearTimeout(settle); check(); } };
+   readNow.w = BTN * Hanzi.measure(readNow.text);
+   readNow.x = SQ_X + SQ - PAD - readNow.w / 2;
+   readNow.y = by - .135;
+   readNow.h = .104;
+   buttons.push(readNow);
+
+   let over = b => Math.abs(pointer[0] - b.x) < b.w / 2 + PAD
+                && Math.abs(pointer[1] - b.y) < b.h / 2;
+
+   // + ====================================================================
+
+   // + ====================================================================
+   // + THE LEARN PANEL, PORTED FROM MRANDARIN
+   // +
+   // + Not a reimplementation: the same library, on a hidden 2D canvas,
+   // + copied into a texture every frame. Mine draws with Ken's shader
+   // + instead of mrandarin's G2, which is the only difference.
+   // +
+   // + It is worth it because the library draws the stroke OUTLINES, the
+   // + real ones from the font. My ribbon tapers a centreline, which is a
+   // + good guess at a brush, but a guess: it cannot know that this stroke
+   // + ends in a hook and that one in a flick. The model you copy should
+   // + be the true shape, so the model comes from the font and the ink you
+   // + make comes from the ribbon.
+
+   let HW = 512;
+   let hwCanvas = document.createElement('canvas');
+   hwCanvas.width = hwCanvas.height = HW;
+
+   // + THE LIBRARY DRAWS ON A TRANSPARENT CANVAS, AND KEN'S SHADER FORCES
+   // + ALPHA TO 1 WHEREVER uSheer IS 0, SO SENDING IT STRAIGHT UP WOULD PUT
+   // + A BLACK SQUARE ON THE SHEET. IT IS LAID ON PAPER FIRST, WHICH IS THE
+   // + SAME TWO STEP BLIT MRANDARIN USES: BACKGROUND, THEN drawImage.
+
+   let panel = document.createElement('canvas');
+   panel.width = panel.height = HW;
+   let writer = null, writerFor = -1, writerTex = null;
+
+   // + THE OUTLINES ARE STILL IN THE FONT'S 1024 BOX, BUT I NORMALISED THE
+   // + MEDIANS TO -.5 .. .5 FOR MY OWN SCORING. THE LIBRARY NEEDS BOTH IN
+   // + THE SAME SPACE, SO THEY GO BACK. HANDING IT THE NORMALISED ONES DREW
+   // + NOTHING AT ALL, WITH NO ERROR, WHICH IS A SLOW WAY TO FIND OUT.
+
+   let charData = c => {
+      let outside = lesson && lessonN < 0 ? [lesson].concat(mine) : mine;
+      for (let g of outside)
+         if (g.char == c) return {
+            strokes: g.strokes,
+            medians: g.medians.map(k => k.map(q => [ Math.round((q[0] + .5) * 1024),
+                                                     Math.round((q[1] + .5) * 1024) ])),
+         };
+      for (let e of HANZI_DATA)
+         if (e.char == c) return {
+            strokes: e.strokes,
+            medians: e.medians.map(s => s.map(q => [ Math.round((q[0] + .5) * 1024),
+                                                     Math.round((q[1] + .5) * 1024) ])),
+         };
+      return null;
+   }
+
+   // + ONE WRITER, REUSED. CALLING create() AGAIN LEAVES THE OLD ONE
+   // + ALIVE AND LOOPING INTO THE SAME CANVAS: ASK FOR A FEW LESSONS IN A
+   // + ROW AND EVERY CHARACTER YOU SKIPPED IS STILL ANIMATING ON TOP OF
+   // + THE ONE YOU ASKED FOR. setCharacter() DESTROYS THE RENDERER
+   // + AND CANCELS WHAT IT HAD RUNNING, WHICH IS THE WHOLE FIX.
+
+   let startWriter = n => {                    // + n is the character, not an index
+      if (! window.HanziWriter) return;
+      hwCanvas.getContext('2d').clearRect(0, 0, HW, HW);
+      if (writer) {
+         writer.setCharacter(n);
+         writer.loopCharacterAnimation();
+         writerFor = n;
+         return;
+      }
+      writer = window.HanziWriter.create(hwCanvas, n, {
+         renderer: 'canvas', width: HW, height: HW, padding: 18,
+         showOutline: true, showCharacter: false,
+         strokeColor:  '#4a9eff',              // + MRandarin's blue, on paper
+         outlineColor: '#ccd5e0',
+         strokeAnimationSpeed: .6,
+         delayBetweenStrokes: 420,
+         delayBetweenLoops: 1100,
+         charDataLoader: (ch, onLoad) => onLoad(charData(ch)),
+      });
+      writer.loopCharacterAnimation();
+      writerFor = n;
+   }
+
+   // + THE HIDDEN CANVAS GOES UP AS TEXTURE 2. KEN'S loadTexture ONLY TAKES
+   // + A FILE NAME, SO THE UPLOAD IS WRITTEN HERE, AND HIS FILE IS LEFT
+   // + ALONE. IT IS RE-SENT EVERY FRAME BECAUSE THE LIBRARY IS DRAWING INTO
+   // + IT EVERY FRAME, WHICH IS EXACTLY WHAT MRANDARIN DOES WITH ITS BLIT.
+
+   let sendWriter = () => {
+      gl.activeTexture(gl.TEXTURE2);
+      if (! writerTex) {
+         writerTex = gl.createTexture();
+         gl.bindTexture(gl.TEXTURE_2D, writerTex);
+         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      }
+      else gl.bindTexture(gl.TEXTURE_2D, writerTex);
+
+      let c = panel.getContext('2d');
+      c.fillStyle = '#ecefF3';               // + the sheet, so the blit is seamless
+      c.fillRect(0, 0, HW, HW);
+      c.drawImage(hwCanvas, 0, 0);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, panel);
+   }
+
+   // + ====================================================================
+   // + THE QUAD THE LESSON IS PAINTED ON, AND THE WORST BUG ON THE PAGE
+   // +
+   // + This was quad(uv, 0,0,0, 1,1). Hanzi.quad takes a FULL width and a
+   // + full height, not half extents: it builds l = x - w/2, r = x + w/2.
+   // + So the quad ran -.5 to .5, and scaled by SQ it covered the middle
+   // + HALF of the sheet. Every stroke-order animation this page has ever
+   // + shown was drawn at half the size of the square it was sitting in.
+   // +
+   // + Which makes the one thing the page asks of you impossible. You
+   // + copy what you see, so your character comes out half size too, and
+   // + then the marking draws the stroke you should have made from the
+   // + data, at full size, nowhere near the one you just wrote. The model
+   // + and the correction were in two different scales and only the model
+   // + was wrong.
+   // +
+   // + Shape.cube() runs -1 to 1, which is why everything built on the box
+   // + lined up and only this one did not.
+
+   let sheet = new Float32Array(Hanzi.quad([0,0,1,1], 0, 0, 0, 2, 2));
+
+   let caption = null, pinyinText = null, meaning = null;
+
+   // + ONE OF THE HUNDRED, 之, HAS A DEFINITION LONG ENOUGH TO RUN TO THREE
+   // + LINES, AND THE BLOCK GROWS DOWNWARD, SO ITS LAST LINE WAS PRINTING
+   // + INSIDE THE WRITING SQUARE. TWO LINES IS THE CEILING NOW, AND THE
+   // + BLOCK HANGS FROM ITS BOTTOM EDGE SO IT NEVER REACHES THE SHEET.
+
+   let MEANING = 26;                            // + measure units across the desk
+
+   let recaption = e => {
+      pinyinText = Hanzi.text(e.pinyin);
+      let str = e.meaning;
+      meaning  = Hanzi.block(str, MEANING);
+      if (meaning.lines > 2)
+         meaning = Hanzi.block(Hanzi.wrap(str, MEANING).slice(0, 2).join(' '), MEANING);
+      caption = e.char;
+   }
+
+   // + ====================================================================
+   // + SAYING HOW SURE IT IS
+   // +
+   // + Measured, not invented. A character against itself scores 0. The
+   // + nearest OTHER character in the book sits around .055, and a badly
+   // + wobbled hand lands about the same, so .10 is where a reading stops
+   // + meaning anything. That is the whole scale.
+   // +
+   // + Three ranked guesses are shown rather than one, the same as the
+   // + recogniser on the whiteboard does, because a list is the only way
+   // + to see that something is being recognised at all.
+
+   // + IT TAKES THE STROKE FIT NOW, NOT THE CLOUD DISTANCE, BECAUSE THE
+   // + NUMBER ON THE SCREEN SHOULD BE THE NUMBER THE DECISION WAS MADE
+   // + ON. THE OLD ONE WAS A DIFFERENT QUANTITY ON A DIFFERENT SCALE AND
+   // + IT SHOWED: EROS'S 山 CAME OUT AT 26% WHILE BEING, IN FACT, 山.
+
+   let sure = f => { let c = 1 - f / SPREAD; return c < 0 ? 0 : c > 1 ? 1 : c; }
+   let pct  = f => Math.round(sure(f) * 100) + '%';
+
+   // + AND HOW IT WAS WRITTEN, WHICH IS A DIFFERENT QUESTION FROM WHETHER
+   // + IT CAN BE READ. SAME NUMBERS, SAID THE WAY A PERSON WOULD.
+
+   // + THIS TOOK THE IN-ORDER MARKING AND SO IT CALLED A CLEAN 人 A
+   // + SCRAWL FOR THE SINGLE REASON THAT THE TWO STROKES WERE WRITTEN IN
+   // + THE OTHER ORDER. WHICH IS THE SAME MISTAKE I HAD JUST TAKEN OUT OF
+   // + THE READING AND LEFT ALIVE HERE. HOW WELL A CHARACTER IS FORMED
+   // + AND WHAT ORDER IT WAS BUILT IN ARE DIFFERENT QUESTIONS, AND THE
+   // + ORDER HAS ITS OWN LINE UNDERNEATH TO SAY SO. SO THIS ONE TAKES THE
+   // + ORDER-FREE FIT, AND THE NUMBERS ARE OFF THE SAME MEASUREMENT AS
+   // + EVERYTHING ELSE: .073 IS A TYPICAL GOOD READ, .123 IS THE NINTIETH.
+
+   let hand = f => f === undefined || f >= 9 ? null
+                 : f < .045 ? 'A clean hand.'
+                 : f < .075 ? 'Steady enough.'
+                 : f < .105 ? "Legible, but that is a first grader's hand."
+                 : f < .135 ? 'It reads, but only just.'
+                 :            'That is a scrawl.';
+
+   let put = (t, size, x, y, material) => {
+      m.push();
+         m.move(x, y, 0).scale(size).draw(t.mesh, material, 0);
+      m.pop();
+   }
+   let line = (str, size, x, y, material) => put(Hanzi.text(str), size, x, y, material);
+
+   // + A SENTENCE SET TO A COLUMN WIDTH INSTEAD OF RUNNING OFF THE PAGE.
+   // + line() PUTS DOWN WHATEVER IT IS GIVEN AND KEEPS GOING, AND THE
+   // + CANVAS DOES NOT COMPLAIN WHEN IT PASSES THE EDGE, IT JUST STOPS
+   // + SHOWING IT. "Write anything. It reads when your hand stops." WAS
+   // + BEING CUT OFF AT "stop". ANY TEXT THAT IS A SENTENCE GOES THROUGH
+   // + HERE NOW; line() IS KEPT FOR THE SHORT LABELS THAT CANNOT WRAP.
+
+   let says = (str, size, x, y, material, limit) => {
+      let b = Hanzi.block(str, limit, 1.9);
+      m.push().move(x, y, 0).scale(size).draw(b.mesh, material, 0).pop();
+      return b.lines;
+   }
+
+   this.init = () => {
+      setUniform('1iv', 'uSampler', [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]);
+      loadTexture(0, 'pinyin.png');
+      loadTexture(1, 'hanzi.png');
+
+      // + THE ONE CALL THAT PUTS SOMETHING IN FRONT OF THE PAGE, AND ONLY
+      // + ON A FIRST VISIT: THE WAY IN, WHERE YOU SAY WHETHER YOU READ
+      // + MANDARIN OR ARE LEARNING IT, AND WHETHER ANY OF THIS MAY BE
+      // + WRITTEN DOWN. SAY NO AND EVERYTHING BELOW BEHAVES EXACTLY AS IT
+      // + DID BEFORE THIS FILE EXISTED.
+      Log.start();
+
+      // + NOTHING IS ASKED FOR AT STARTUP. THE PAGE OPENS ON A BLANK SHEET,
+      // + WHICH IS THE WHOLE POINT OF THE FLOW.
+
+      // + DEV HOOKS, REACHED ONLY THROUGH THE URL. #demo FILLS THE SHEET
+      // + WITH THE RIGHT ANSWER, ONE STROKE REVERSED, SO THE MARKED STATE
+      // + CAN BE SEEN WITHOUT A MOUSE. #reset EMPTIES THE COLLECTION.
+      if (location.hash == '#show') teach();
+
+      // + A NEW PERSON GETS AN EMPTY GRID. THE LOG SAYS WHEN SOMEBODY NEW
+      // + HAS ANSWERED THE WAY IN (NEXT PERSON, OR THE FIRST LOAD), AND
+      // + #reset ASKS FOR THE SAME THING BY HAND. NEITHER ONE DELETES A
+      // + SINGLE ROW: THE LAST PERSON'S DATA STAYS WHERE IT WAS WRITTEN.
+      let empty = () => {
+         found = {}; remember(); mine = []; keepMine();
+         taught(); clear(); caught = null;
+      }
+      window.addEventListener('hanzi-person', empty);
+      if (location.hash == '#reset' || study) { empty(); Log.next(); }
+      // + WITH NOTHING ON THE TABLE IT WRITES SOMETHING OF ITS OWN
+      // + CHOOSING, WHICH IS THE FREE PATH: NOBODY ASKED FOR THAT
+      // + CHARACTER AND THE RECOGNISER HAS TO NAME IT. #demo ALSO ANSWERS A
+      // + LATER CHANGE OF THE HASH, SO IT CAN BE FIRED AT A CHARACTER THAT
+      // + WAS TYPED IN AFTER THE PAGE LOADED, WHICH IS THE ONLY WAY TO SEE
+      // + A GUEST MARKED WITHOUT A MOUSE.
+
+      let demo = () => {
+         let e = at() || HANZI_DATA[Math.floor(Math.random() * HANZI_DATA.length)];
+         drawn = e.medians.map(s => s.map(p => [p[0], p[1]]));
+         drawn[drawn.length - 1] = drawn[drawn.length - 1].slice().reverse();
+         check();
+      }
+      if (location.hash == '#demo') demo();
+      window.addEventListener('hashchange',
+                              () => { if (location.hash == '#demo') demo(); });
+   }
+
+   // + ====================================================================
+
+   this.update = () => {
+      let time = Date.now() / 1000;
+      let e    = at();
+
+      if (! e) caption = null;
+      else if (caption != e.char) recaption(e);
+
+      // + ---------------------------------------------------------------
+
+      // + ---------------------------------------------------------------
+      // + ONE LINE THAT IS NOT IN ANY OF KEN'S PAGES, AND IT IS A REAL BUG
+      // + I HAD TO GO AND FIND
+      // +
+      // + webgl4.js turns on DEPTH_TEST and never calls gl.clear. Nothing
+      // + clears: what clears is the browser, which empties the drawing
+      // + buffer after it has shown it, and the ground box repaints the
+      // + background on top of that. That works only while exactly one
+      // + update() happens between two of the browser's frames.
+      // +
+      // + This page is heavy enough to break that. The loop is a 30 ms
+      // + setInterval and it does not wait for anybody, so under load two
+      // + or three updates can land between two frames. The second one
+      // + draws its ground at the same depth the first one already wrote,
+      // + GL_LESS says no, and the background is never laid down: the new
+      // + frame is painted ON TOP of the old one. You see one sentence
+      // + printed through another, letter between letter, and a stroke
+      // + animation that keeps every frame it has ever drawn.
+      // +
+      // + Clearing here fixes it and leaves Ken's file alone.
+
+      // + DEPTH ONLY. THE COLOUR DOES NOT NEED CLEARING BECAUSE THE GROUND
+      // + BOX ON THE NEXT LINE PAINTS EVERY PIXEL ANYWAY, AND CLEARING IT
+      // + AS WELL COSTS A FULL PASS OVER 1800 BY 1800 THAT IS THROWN AWAY
+      // + IMMEDIATELY. ON A SOFTWARE RENDERER THAT ALONE PUSHED THE FRAME
+      // + PAST THE 30 ms THE LOOP RUNS AT, AND ONCE A FRAME TAKES LONGER
+      // + THAN THE INTERVAL, THE INTERVALS STACK UP AND THE PAGE STOPS
+      // + ANSWERING ANYTHING AT ALL.
+
+      gl.clear(gl.DEPTH_BUFFER_BIT);
+
+      setUniform('1f', 'uSheer', 0);
+      m.identity().move(0, 0, -.95).scale(1, 1, .001).draw(box, ground);
+      m.identity().perspective(10);
+
+      // + THE TWO PLATES, EACH WITH ONE HAIRLINE AROUND IT, DRAWN AS A
+      // + SLIGHTLY LARGER BOX BEHIND. LEFT IS WHERE YOUR HAND GOES; RIGHT
+      // + IS WHERE THE MACHINE ANSWERS. NOTHING ON THIS PAGE BELONGS TO
+      // + NEITHER, SO NOTHING FLOATS BETWEEN THEM ANY MORE.
+
+      for (let p of [[L_X, L_W], [R_X, R_W]]) {
+         m.push().move(p[0], 0, -.09).scale(p[1] + .006, PLATE_H + .006, .001)
+                 .draw(box, seam).pop();
+         m.push().move(p[0], 0, -.08).scale(p[1], PLATE_H, .001).draw(box, plate).pop();
+      }
+
+      // + THE SHEET AND ITS PRINTED GUIDES. THE CROSS AND THE DIAGONALS
+      // + ARE NOT DECORATION: THEY ARE HOW YOU JUDGE WHERE A STROKE LANDED.
+
+      m.push().move(SQ_X, SQ_Y, -.03).scale(SQ + .005, SQ + .005, .001).draw(box, edge).pop();
+      m.push().move(SQ_X, SQ_Y, -.02).scale(SQ, SQ, .001).draw(box, paper).pop();
+      // + SWITCHED OFF: A PLAIN SHEET. THEY WERE NEVER PART OF WHAT THE
+      // + READER GETS, WHICH IS THE PEN'S PATH AND NOTHING DRAWN ON THE
+      // + PAGE, BUT A BLANK SHEET LEAVES NO ROOM TO WONDER.
+      for (let n = 0 ; GUIDES && n < 4 ; n++) {
+         m.push();
+            m.move(SQ_X, SQ_Y, -.015).turnZ(n * Math.PI / 4);
+            m.scale(n % 2 ? SQ * 1.414 : SQ, .0014, .001).draw(box, guides);
+         m.pop();
+      }
+
+      // + THE LESSON: THE LIBRARY'S OWN ANIMATION, LAID ON THE SHEET
+
+      if (reveal && e) {
+         if (writerFor != e.char) startWriter(e.char);
+         if (writer) {
+            sendWriter();
+            setUniform('1f', 'uSheer', 0);
+            m.push().move(SQ_X, SQ_Y, -.018).scale(SQ, SQ, .001)
+                    .draw(sheet, whiteish, 2).pop();
+         }
+      }
+
+      // + ====================================================================
+      // + WHAT IT IS LOOKING AT, DRAWN
+      // +
+      // + Eros asked what the OCR is seeing, and the honest answer began
+      // + with: there is no OCR. MRandarin has one, Apple's Vision reading
+      // + a photograph of a whiteboard, pixels in and text out. This page
+      // + has no camera and never makes a picture of your ink at all. What
+      // + it has is the path your hand took, and what it does is lay the
+      // + centrelines of a candidate over that path and measure the gap.
+      // +
+      // + So that is what it draws. The character it is currently holding
+      // + up against yours, laid into your own ink's frame, exactly where
+      // + the comparison puts it, plus a line from each stroke you drew to
+      // + the stroke it was paired with. The pairing is the part nobody
+      // + can guess at: write 人 in the other order and those two lines
+      // + cross, which is the whole reason reading had to stop caring
+      // + about order.
+      // +
+      // + It is only drawn while your ink is still on the paper, which is
+      // + exactly when "what did it see" is a question worth asking.
+
+      // + AND NOT WHILE A LESSON IS PLAYING. THE ANIMATION IS ALREADY A
+      // + CHARACTER YOU DID NOT DRAW SITTING ON YOUR SHEET; A SECOND ONE
+      // + UNDER IT IN A THIRD COLOUR MAKES THE PAPER UNREADABLE, AND
+      // + DURING A LESSON YOU ALREADY KNOW WHAT YOU ARE AIMING AT.
+
+      // + AND NOT WHILE YOU ARE STILL WRITING. HALFWAY INTO A CHARACTER THE
+      // + BEST CANDIDATE IS SOME SHORTER CHARACTER YOU ARE NOT WRITING, AND
+      // + IT SAT UNDER THE PEN LIKE A SHADOW NOBODY ASKED FOR. IT ALSO PUT A
+      // + MODEL ON THE SHEET DURING FREE WRITING, WHICH IS WHERE THE STUDY
+      // + ASKS PEOPLE TO WRITE FROM MEMORY. SO IT WAITS UNTIL THE PAGE HAS
+      // + COMMITTED TO AN ANSWER, WHICH IS WHEN "WHAT DID IT SEE" IS ASKED.
+
+      if (! lesson && verdict && ! verdict.live && verdict.rank && verdict.rank.length
+          && drawn.length && sure(verdict.rank[0].fit) >= .25) {
+         // + AND ONLY WHEN THE CANDIDATE IS WORTH SHOWING. AT 11% IT IS
+         // + NOT WHAT IT THINKS YOU WROTE, IT IS THE LEAST BAD THING IN A
+         // + LIST, AND LAYING THAT OVER YOUR INK IS A SMEAR, NOT AN
+         // + EXPLANATION.
+         let win = verdict.rank[0];
+         let tmpl = verdict.shelf[win.n].medians;
+         if (tmpl.length == drawn.length && win.pair) {
+
+            // + YOUR INK'S OWN FRAME, THE SAME ONE Score.normalize BUILDS,
+            // + SO THE TEMPLATE LANDS WHERE THE MEASUREMENT PUT IT AND NOT
+            // + WHERE IT WOULD LOOK NICEST.
+
+            let x0 = 9, x1 = -9, y0 = 9, y1 = -9;
+            for (let st of drawn) for (let p of st) {
+               if (p[0] < x0) x0 = p[0];
+               if (p[0] > x1) x1 = p[0];
+               if (p[1] < y0) y0 = p[1];
+               if (p[1] > y1) y1 = p[1];
+            }
+            let w = x1 - x0, h = y1 - y0, sc = w > h ? w : h;
+            if (sc < .000001) sc = 1;
+            let cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+            let lay = p => [ p[0] * sc + cx, p[1] * sc + cy ];
+            let seenT = Score.normalize(tmpl).map(st => st.map(lay));
+            let mid = st => st[st.length >> 1];
+
+            m.push();
+               m.move(SQ_X, SQ_Y, -.012).scale(2 * SQ);
+               m.draw(Hanzi.strokes(seenT, 1, pen * .50, 0, true), ghost);
+               for (let i = 0 ; i < drawn.length ; i++) {
+                  let a = mid(drawn[i]), b = mid(seenT[win.pair[i]]);
+                  m.draw(Hanzi.strokes([[a, b]], 1, .0075, 0), tie);
+               }
+            m.pop();
+         }
+      }
+
+      // + THE INK, AND THE TEACHER'S RED WHERE A STROKE WENT WRONG
+
+      m.push();
+         m.move(SQ_X, SQ_Y, 0).scale(2 * SQ);
+
+         let all = here ? drawn.concat([here]) : drawn;
+         // + done, NOT live: the red and the blue corrections are a
+         // + marked exercise, and marking a character while the person
+         // + is still writing it is just interrupting.
+
+         // + AND NOT FROM MEMORY: THE BLUE CORRECTION IS THE MODEL'S OWN
+         // + STROKE, AND AFTER A MISS IT WAS LAYING THE ANSWER ON THE SHEET.
+         let marked = verdict && verdict.done && verdict.wrote && e
+                   && ! (recall && lesson)
+                   && verdict.wrote.strokes.length == all.length;
+
+         for (let s = 0 ; s < all.length ; s++)
+            m.draw(Hanzi.strokes([all[s]], 1, pen, 0, true, true),
+                   marked && ! verdict.wrote.strokes[s].good ? spent : ink);
+         if (marked)
+            for (let s = 0 ; s < all.length ; s++)
+               if (! verdict.wrote.strokes[s].good)
+                  m.draw(Hanzi.strokes([e.medians[s]], 1, pen * .55, 0, true), shown);
+      m.pop();
+
+      for (let b of buttons) {
+         m.push().move(b.x, b.y, -.06).scale(b.w / 2 + PAD + .004, b.h / 2 + .004, .001)
+                 .draw(box, seam).pop();
+         m.push().move(b.x, b.y, -.05).scale(b.w / 2 + PAD, b.h / 2, .001)
+                 .draw(box, over(b) ? chipOn : chip).pop();
+      }
+
+      // + ---------------------------------------------------------------
+      // + THE COLLECTION. ONE PAPER TILE PER CHARACTER, SO THE HUNDRED YOU
+      // + HAVE NOT FOUND ARE STILL A SHAPE ON THE PAGE AND YOU CAN SEE HOW
+      // + FAR IN YOU ARE.
+
+      m.push().draw(dexCells, blank).pop();
+
+      // + AND THE ONE UNDER THE POINTER LIGHTS UP, BECAUSE A HUNDRED
+      // + IDENTICAL SQUARES GIVE NO SIGN THAT ANY OF THEM DOES ANYTHING.
+      // + ONLY A FOUND ONE LIGHTS, SO THE PAGE NEVER OFFERS YOU A LESSON
+      // + IN A CHARACTER IT IS STILL HIDING FROM YOU.
+
+      {
+         let hov = cellUnder();
+         if (hov >= 0) {
+            let c = cellAt(hov);
+            m.push().move(c[0], c[1], -.015).scale(CELL * .46, CELL * .46, .001)
+                    .draw(box, chipOn).pop();
+         }
+         if (mineUnder()) {
+            let show = mineShow();
+            for (let k = 0 ; k < show.length ; k++)
+               if (show[k] == mineUnder())
+                  m.push().move(MINE_X + k * MINE_GAP, MINE_Y, -.015)
+                          .scale(CELL * .46, CELL * .46, .001).draw(box, chipOn).pop();
+         }
+      }
+
+      // + ---------------------------------------------------------------
+
+      setUniform('1f', 'uSheer', 1);
+
+      // + EVERY CHARACTER ALREADY FOUND, IN ONE CALL TO DRAW, BECAUSE THEY
+      // + ALL LIVE IN THE SAME IMAGE. THAT IS WHAT THE ATLAS IS FOR.
+
+      let key = total() + ':' + (caught ? caught.n : -1);
+      if (key != dexKey) {
+         let kept = n => found[n] && ! (caught && caught.n == n);
+         if (study) {
+            let mesh = [];
+            for (let k = 0 ; k < studyN.length ; k++) {
+               let n = studyN[k], c = slotAt(k);
+               if (n >= 0 && kept(n))
+                  mesh.push(Hanzi.quad(Hanzi.cell(n, HANZI.cols, HANZI.rows),
+                                       c[0] - DEX_X, c[1] - DEX_Y, 0, BIG * .92, BIG * .92));
+            }
+            dexTiles = new Float32Array(mesh.flat());
+         }
+         else
+         dexTiles = Hanzi.sheet(HANZI_DATA.length, HANZI.cols, HANZI.rows, CELL, kept);
+         dexKey = key;
+      }
+      m.push().move(DEX_X, DEX_Y, 0).draw(dexTiles, dexInk, 1).pop();
+
+      // + ---------------------------------------------------------------
+      // + THE HEADER SAYS WHAT THE PAGE CURRENTLY KNOWS, AND AT REST IT
+      // + KNOWS NOTHING, SO IT ASKS FOR NOTHING. THE SMALL WORD ABOVE THE
+      // + PINYIN IS LOAD BEARING: IT IS THE DIFFERENCE BETWEEN A CHARACTER
+      // + YOU ARE BEING TOLD TO WRITE AND ONE THE PAGE HAS JUST READ BACK
+      // + TO YOU, AND THEY LOOK THE SAME OTHERWISE.
+
+      if (! e)
+         says(! study     ? 'Write any hanzi you know.'
+            : studyOver   ? 'That is all. Thank you.'
+            : step == 0   ? 'Press Next to begin.'
+                          : 'Press Next for the next one.',
+              .050, COL, .80, letters, 20);
+      else {
+         // + IN THE STUDY THIS LINE IS THE ONLY THING THAT SAYS THE SECOND
+         // + HALF HAS BEGUN, AND AT THE SIZE OF A LABEL NOBODY SAW IT: THE
+         // + SAME CHARACTER CAME BACK AND IT LOOKED LIKE STARTING OVER.
+         let ask = ! study  ? 'write this'
+                 : recall   ? 'now from memory, ' + (step - STUDY.length) + ' of ' + STUDY.length
+                            : 'learn this, ' + step + ' of ' + STUDY.length;
+         line(lesson ? ask : 'you wrote', study && lesson ? .046 : .034, COL, .880,
+              lesson ? (study ? letters : caughtC) : stone);
+         put(pinyinText, .105, COL, .765, letters);
+         m.push().move(COL, .66, 0).scale(.034).draw(meaning.mesh, stone, 0).pop();
+      }
+
+      for (let b of buttons) line(b.text, BTN, b.x - b.w / 2, b.y, letters);
+
+      if (asking)
+         says('Type or paste a hanzi.', .040, COL, -.835, dexInk, 22);
+      else if (trouble)
+         says(trouble, .040, COL, -.835, spent, 22);
+
+      // + ---------------------------------------------------------------
+
+      line(study ? studyN.filter(n => found[n]).length + ' of ' + STUDY.length + ' found'
+                 : total() + ' of 100 found', .042, RX, .875, stone);
+
+      // + ---------------------------------------------------------------
+      // + THE ONES YOU WENT AND FOUND YOURSELF, BESIDE THE COUNT. NOT IN
+      // + THE GRID: THE GRID IS THE HUNDRED, AND THESE ARE NOT. THEY ARE
+      // + DRAWN FROM THEIR CENTRELINES, NOT CUT OUT OF THE ATLAS, WHICH
+      // + IS WHY THEY CAN BE ANY CHARACTER AT ALL.
+
+      if (mine.length) {
+         setUniform('1f', 'uSheer', 0);
+         let show = mineShow();
+         for (let k = 0 ; k < show.length ; k++) {
+            if (caught && caught.mine && show[k].char == caught.char) continue;
+            m.push().move(MINE_X + k * MINE_GAP, MINE_Y, 0).scale(.064)
+                    .draw(Hanzi.strokes(show[k].medians, 1, .085, 0), dexInk).pop();
+         }
+         setUniform('1f', 'uSheer', 1);
+         line('your own', .032, MINE_X, -.015, stone);
+      }
+
+      // + THE ONE RULE ON THE PANEL, AND IT IS THERE TO SAY THAT WHAT IS
+      // + ABOVE IT IS EVERYTHING YOU HAVE EVER FOUND AND WHAT IS BELOW IT
+      // + IS ONLY ABOUT THE SHEET RIGHT NOW.
+
+      // + AND IT HAS TO BE DRAWN WITH uSheer BACK AT 0. A PLAIN BOX HAS NO
+      // + TEXTURE, SO txtr IS vec4(1.), AND THE ALPHA LINE READS
+      // + 1 - 1 * uSheer: AT 1 THE RULE CAME OUT PERFECTLY TRANSPARENT.
+      // + IT WAS BEING DRAWN THE WHOLE TIME AND I COULD NOT SEE IT.
+
+      setUniform('1f', 'uSheer', 0);
+      m.push().move(R_X, -.075, -.04).scale(R_W - .045, .0020, .001).draw(box, seam).pop();
+      setUniform('1f', 'uSheer', 1);
+
+      // + NO BUTTON IS NAMED HERE ANY MORE, BECAUSE THERE IS NO BUTTON.
+      // + THE LINE HAS TO SAY WHAT WILL HAPPEN BY ITSELF, OR THE PAGE
+      // + LOOKS LIKE IT IS WAITING FOR SOMETHING YOU CANNOT FIND.
+      // +
+      // + AND IT IS SET AS A BLOCK, NOT A LINE. EVERY SENTENCE ON THE
+      // + RIGHT USED TO RUN STRAIGHT OFF THE EDGE OF THE CANVAS AND GET
+      // + CUT IN HALF BY IT.
+
+      // + FROM MEMORY NEITHER LINE MAY MENTION HOW MANY STROKES THERE ARE.
+      let memory = 'Write it from memory. Press Read it when you are done. '
+                 + 'If you do not remember it, press Next.';
+      if (! verdict && study && ! lesson) {}    // + nothing to write, nothing to say
+      else if (! verdict)
+         says(lesson && recall ? memory
+            : lesson ? 'Write it. It reads when the last stroke lands.'
+                     : 'Write anything. It reads when your hand stops.',
+              .040, RX, -.16, stone, 16);
+      else if (verdict.short && lesson && recall)
+         says(verdict.final ? 'That is not it.' : memory,
+              .040, RX, -.16, stone, 16);
+      else if (verdict.short)
+         says(verdict.drew < verdict.needs
+              ? 'That is ' + verdict.drew + ' of the ' + verdict.needs
+                + ' strokes ' + at().pinyin + ' takes. Keep going.'
+              : 'That is ' + verdict.drew + ' strokes and ' + at().pinyin
+                + ' takes ' + verdict.needs + '. Write over it to start again.',
+              .040, RX, -.16, stone, 16);
+
+      else {
+         // + THE LIST IS SHOWN WHETHER IT ACCEPTED OR TURNED YOU DOWN, AND
+         // + THAT IS THE POINT: A REFUSAL WITH NO NUMBER ON IT IS THE
+         // + MACHINE SAYING NO AND REFUSING TO SHOW ITS WORKING. SEEING
+         // + 41% ON ONE CHARACTER AND 39% ON ANOTHER IS WHAT MAKES "TOO
+         // + CLOSE TO CALL" MEAN SOMETHING INSTEAD OF SOUNDING LIKE AN
+         // + EXCUSE. IT IS ALSO THE ONLY WAY TO SEE THE THING WORKING AT
+         // + ALL, SINCE EVERYTHING ELSE IT DOES IS SILENT.
+
+         // + UNLESS THERE IS NOTHING TO LIST. WHEN NOTHING IT KNOWS IS
+         // + WRITTEN IN THE NUMBER OF STROKES YOU USED, THE SHORTLIST IS
+         // + EMPTY AND A HEADING OVER NOTHING WOULD BE WORSE THAN SILENCE.
+
+         if (verdict.rank.length)
+            line(verdict.live ? 'reading' : verdict.noise ? 'closest it has'
+                                                          : 'reads as',
+                 .034, RX, -.15, verdict.live ? caughtC : stone);
+
+         // + EVERY ONE OF THESE IS WRITTEN IN THE NUMBER OF STROKES YOU
+         // + USED, SO THE LIST IS A LIST OF REAL ALTERNATIVES NOW RATHER
+         // + THAN WHATEVER HAPPENED TO BE NEAR. THE BEST IS ALWAYS SHOWN,
+         // + EVEN WHEN IT IS A BAD ONE, BECAUSE THAT IS THE ANSWER.
+
+         // + THE READER'S FIRST ANSWER STAYS ON TOP ONLY WHEN IT IS THE
+         // + ANSWER, I.E. IT WAS TAKEN. WHEN IT WAS TURNED DOWN OR WAS NOT
+         // + THE LESSON, NOTHING WAS TAKEN, AND THE LIST IS JUST WHAT IS
+         // + NEAREST, SO IT GOES IN THE ORDER OF ITS NUMBERS. OTHERWISE A
+         // + MISSED LESSON READ "0%" OVER "30%", WHICH LOOKS BROKEN.
+         // + DISPLAY ONLY: verdict.rank IS WHAT THE LOG RECORDS AND IT IS
+         // + LEFT IN THE READER'S ORDER.
+
+         let list = verdict.noise || verdict.missed
+                  ? verdict.rank.slice().sort((a, b) => a.fit - b.fit) : verdict.rank;
+
+         for (let k = 0 ; k < 3 && k < list.length ; k++) {
+            let r = list[k], y = -.265 - .132 * k;
+            if (k > 0 && sure(r.fit) < .12) break;
+            setUniform('1f', 'uSheer', r.tile >= 0 ? 1 : 0);
+            // + A GUEST HAS NO TILE IN THE ATLAS, SO IT IS DRAWN THE
+            // + OTHER WAY THE PAGE KNOWS: AS A RIBBON OFF ITS OWN
+            // + CENTRELINES. SAME CHARACTER, DIFFERENT MACHINERY.
+            m.push().move(RX + .07, y + .010, 0).scale(.072);
+               if (r.tile >= 0)
+                  m.draw(Hanzi.tile(r.tile, HANZI.cols, HANZI.rows),
+                         k == 0 ? letters : stone, 1);
+               else
+                  m.draw(Hanzi.strokes(verdict.shelf[r.n].medians, 1, .085, 0),
+                         k == 0 ? letters : stone);
+            m.pop();
+            setUniform('1f', 'uSheer', 1);
+            line(pct(r.fit), .042, RX + .17, y, k == 0 ? letters : stone);
+         }
+
+         // + AND UNDER THE NUMBERS, WHY IT SAID NO, IN THE TERMS IT
+         // + ACTUALLY DECIDED IN. A REFUSAL THAT ONLY SAYS NO IS A
+         // + REFUSAL YOU CANNOT ANSWER.
+
+         if (verdict.live || verdict.noise) {
+            let word = verdict.why == 'count'
+                     ? 'Nothing it knows is written in ' + verdict.drew
+                       + ' strokes. The nearest, ' + verdict.near.pinyin
+                       + ', takes ' + verdict.needs + '.'
+                     : verdict.why == 'split'
+                     ? 'Too close to call between those two.'
+                     : 'Not close enough to anything it knows yet.';
+
+            // + WHILE YOU ARE STILL WRITING IT IS SAID QUIETLY AND IT IS
+            // + NOT A REFUSAL, BECAUSE NOTHING HAS BEEN REFUSED: HALF A
+            // + CHARACTER IS SUPPOSED TO LOOK LIKE NOTHING IN PARTICULAR.
+
+            // + ONLY ONCE IT HAS DECIDED. WHILE YOU ARE STILL WRITING THE
+            // + LIST AND ITS NUMBERS SAY EVERYTHING THERE IS TO SAY, AND
+            // + A SENTENCE ABOUT NOT BEING SURE YET IS JUST THE PAGE
+            // + TALKING OVER YOUR HAND.
+
+            if (verdict.noise)
+               says(word, .040, RX, verdict.rank.length ? -.60 : -.16, spent, 16);
+         }
+         else {
+            let w = verdict.wrote;
+
+            if (verdict.missed)
+               says(recall ? 'That is not it.'
+                           : 'That is not ' + at().pinyin + '. Write over it to try again.',
+                    .040, RX, -.60, shown, 16);
+            else {
+               let remark = hand(verdict.rank.length ? verdict.rank[0].fit : undefined);
+               if (remark) says(remark, .040, RX, -.60, letters, 16);
+            }
+
+            let second = w.why == 'count'
+                       ? 'You drew ' + w.drew + ' strokes. It takes ' + w.needs + '.'
+                       : w.ok ? 'All ' + w.strokes.length + ' strokes in order.' : null;
+            if (second === null) {
+               let first = 0;
+               while (first < w.strokes.length && w.strokes[first].good) first++;
+               second = w.strokes[first].backwards
+                      ? 'Stroke ' + (first+1) + ' went the wrong way.'
+                      : 'Stroke ' + (first+1) + ' is out of place.';
+            }
+            if (! (recall && verdict.missed))
+               says(second, .040, RX, -.76, w.ok ? letters : shown, 16);
+         }
+      }
+
+      // + ---------------------------------------------------------------
+      // + THE CREDIT, IN THE STRIP UNDER BOTH PLATES, WHICH IS WHERE A
+      // + CREDIT BELONGS: PRESENT, AND NOT PART OF THE INSTRUMENT. EVERY
+      // + STROKE SHAPE AND EVERY CENTRELINE ON THIS PAGE IS makemeahanzi,
+      // + INCLUDING THE ONES FETCHED LIVE WHEN YOU TYPE A CHARACTER THAT
+      // + IS NOT ONE OF THE HUNDRED, AND ITS FONT DATA CARRIES THE ARPHIC
+      // + PUBLIC LICENSE, WHICH ASKS TO BE NAMED.
+
+      line('stroke data from makemeahanzi, Arphic Public License',
+           .026, COL, -.968, faint);
+
+      // + ---------------------------------------------------------------
+      // + THE REWARD. WHAT YOU WROTE, IN YOUR OWN STROKES, CARRIED FROM THE
+      // + SHEET INTO ITS CELL. IT IS THE ONLY MOTION ON THE PAGE, AND IT IS
+      // + THERE TO SAY WHERE THE CHARACTER WENT, NOT TO DECORATE.
+
+      if (caught) {
+         let u = (time - caught.at) / .95;
+         if (u >= 1) caught = null;
+         else {
+            setUniform('1f', 'uSheer', 0);
+            let s = u * u * (3 - 2 * u);                  // + ease, both ends calm
+            let c = caught.to;
+            m.push();
+               m.move(SQ_X + s * (c[0] - SQ_X), SQ_Y + s * (c[1] - SQ_Y), .02);
+               m.scale(2 * SQ + s * (caught.size - 2 * SQ));
+               // + IT LEAVES THE PAPER AS BLACK INK AND ARRIVES IN THE
+               // + COLLECTION AS ONE OF ITS OWN, WHICH IS THE WHOLE
+               // + SENTENCE THE MOTION IS THERE TO SAY
+               m.draw(Hanzi.strokes(caught.strokes, 1, pen, 0, true, true),
+                      between(INK, DEX, s));
+            m.pop();
+         }
+      }
+   }
+}
+
+gl_start(canvas, new Scene());
+</script>
